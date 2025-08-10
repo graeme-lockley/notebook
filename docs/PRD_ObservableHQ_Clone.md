@@ -97,9 +97,18 @@ Create an ObservableHQ-compatible notebook editor that provides the same intuiti
 - Document-level actions (share, duplicate, download)
 - Minimalist, airy design with subtle elevation
 
-**Left Rail (Editor Mode)**
+**Left Gutter (Per Cell)**
 
-- Outline panel showing cell structure
+- Individual left gutter attached to each cell
+- Drag handle for cell reordering
+- Pin/unpin functionality with visual feedback
+- Cell type icon (JS/MD/HTML) with color coding
+- Kebab menu for cell actions
+- **Focused-cell grey highlight**: Soft grey bar spanning cell height when focused, fades on blur (120-160ms)
+
+**LeftRail (Optional Sidebar)**
+
+- Outline panel showing cell structure (collapsible)
 - Inputs list for interactive controls
 - Search functionality across notebook
 - Collapsible sidebar with smooth animations
@@ -108,6 +117,7 @@ Create an ObservableHQ-compatible notebook editor that provides the same intuiti
 
 - Stacked cells with consistent spacing
 - **Output rendered ABOVE editor text** (key ObservableHQ pattern)
+- **Left gutter attached to each cell** (not a global sidebar)
 - Responsive layout adapting to screen size
 - Smooth scrolling and navigation
 
@@ -128,8 +138,9 @@ Create an ObservableHQ-compatible notebook editor that provides the same intuiti
 - Syntax highlighting for JavaScript, Markdown, HTML
 - Smooth resize animations (120-200ms)
 
-**Left Gutter Components**
+**Left Gutter (Per Cell)**
 
+- Individual left gutter attached to each cell (not a global sidebar)
 - Drag handle for cell reordering
 - Pin/unpin functionality with visual feedback
 - Cell type icon (JS/MD/HTML) with color coding
@@ -255,14 +266,13 @@ Create an ObservableHQ-compatible notebook editor that provides the same intuiti
 **Core Components**
 
 1. `TopBar` - Document title, metadata, actions
-2. `LeftRail` - Outline, inputs, search
-3. `CellShell` - Wrapper with gutters and focus states
-4. `CellEditor` - CodeMirror integration with run button
-5. `CellMenu` - Kebab popup with actions
-6. `AddCellBetween` - "+" affordances with type chooser
-7. `OutputPanel` - Results display above editor
-8. `FooterBar` - Global action bar
-9. `ShortcutsHelp` - Keyboard shortcuts modal
+2. `CellShell` - Wrapper with left gutter (per cell) and focus states
+3. `CellEditor` - CodeMirror integration with run button
+4. `CellMenu` - Kebab popup with actions
+5. `AddCellBetween` - "+" affordances with type chooser
+6. `OutputPanel` - Results display above editor
+7. `FooterBar` - Global action bar
+8. `ShortcutsHelp` - Keyboard shortcuts modal
 
 **Data Models**
 

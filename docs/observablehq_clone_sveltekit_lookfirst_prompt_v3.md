@@ -13,7 +13,6 @@ Eventing (for later phases): https://github.com/graeme-lockley/event-store
 ### A. Global Layout
 
 - **Top menu bar** above the document: title, metadata (e.g., last edited), and doc-level actions (share/duplicate/download). Minimalist, airy.
-- **Left rail** (editor mode): outline, inputs list, search.
 - **Main work area**: stacked cells with **rendered output ABOVE the editor text** for each focused cell.
 - **Footer action bar**: persistent bottom bar with global actions (add cell, run all, settings/view), subtle elevation.
 - **Icons on the right**: context actions aligned along the right edge where relevant (e.g., collapse, comments).

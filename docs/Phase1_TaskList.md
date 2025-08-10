@@ -160,36 +160,7 @@
    - Test touch interactions
    - **Test**: Create `tests/ui/footer-responsive.spec.ts` with Playwright
 
-### Task 2.3: LeftRail Component
 
-**Objective**: Create collapsible left sidebar with outline and inputs
-
-**Subtasks**:
-
-1. **2.3.1**: Create LeftRail component structure
-   - Create `src/lib/components/LeftRail.svelte`
-   - Add collapsible sidebar layout
-   - **Test**: Create `tests/components/LeftRail.test.ts` - verify component renders
-
-2. **2.3.2**: Add outline panel
-   - Display cell structure in tree format
-   - Add click-to-navigate functionality
-   - **Test**: Test outline navigation and tree rendering
-
-3. **2.3.3**: Add inputs list
-   - Show interactive inputs in sidebar
-   - Add input type indicators
-   - **Test**: Test inputs list rendering and interactions
-
-4. **2.3.4**: Add search functionality
-   - Implement search across notebook content
-   - Add search result highlighting
-   - **Test**: Test search functionality in `tests/ui/leftrail-search.spec.ts`
-
-5. **2.3.5**: Add collapse/expand animations
-   - Implement smooth sidebar animations
-   - Add keyboard shortcuts for toggle
-   - **Test**: Test animations and keyboard shortcuts
 
 ---
 
@@ -197,22 +168,22 @@
 
 ### Task 3.1: CellShell Component
 
-**Objective**: Create cell wrapper with gutters and focus states
+**Objective**: Create cell wrapper with left gutter (per cell) and focus states
 
 **Subtasks**:
 
 1. **3.1.1**: Create CellShell component structure
    - Create `src/lib/components/CellShell.svelte`
-   - Add basic cell layout with left gutter
+   - Add basic cell layout with left gutter (attached to each cell)
    - **Test**: Create `tests/components/CellShell.test.ts` - verify component renders
 
 2. **3.1.2**: Add left gutter with focus highlight
-   - Implement soft grey focus bar on far-left
+   - Implement soft grey focus bar on far-left of each cell
    - Add fade in/out animations (120-160ms)
    - **Test**: Test focus states and animations in `tests/ui/cellshell-focus.spec.ts`
 
 3. **3.1.3**: Add left gutter icons
-   - Implement drag handle, pin, type icon, kebab menu
+   - Implement drag handle, pin, type icon, kebab menu in cell gutter
    - Add proper hover states and interactions
    - **Test**: Test gutter icon interactions
 
@@ -362,7 +333,7 @@
 
 1. **4.1.1**: Create main editor layout
    - Create `src/routes/n/[id]/+page.svelte`
-   - Integrate TopBar, LeftRail, CellShell, FooterBar
+   - Integrate TopBar, CellShell, FooterBar
    - **Test**: Create `tests/pages/editor.test.ts` - verify page renders
 
 2. **4.1.2**: Add cell management logic
@@ -375,12 +346,7 @@
    - Implement mobile-friendly interactions
    - **Test**: Create `tests/ui/editor-responsive.spec.ts` with Playwright
 
-4. **4.1.4**: Add keyboard shortcuts
-   - Implement global keyboard shortcuts
-   - Add shortcuts help modal
-   - **Test**: Test keyboard shortcuts in `tests/ui/editor-keyboard.spec.ts`
-
-5. **4.1.5**: Add smooth scrolling
+4. **4.1.4**: Add smooth scrolling
    - Implement smooth cell navigation
    - Add scroll-to-cell functionality
    - **Test**: Test scrolling behavior
@@ -718,11 +684,10 @@ documentation:
 - [ ] Pre-commit hooks set up
 - [ ] Development scripts created
 
-### Core Layout Components (Tasks 2.1-2.3)
+### Core Layout Components (Tasks 2.1-2.2)
 
 - [ ] TopBar component with title and actions
 - [ ] FooterBar component with cell management
-- [ ] LeftRail component with outline and inputs
 - [ ] All components have unit tests
 - [ ] All components have UI tests
 - [ ] Responsive design implemented
@@ -731,7 +696,7 @@ documentation:
 
 ### Cell System Components (Tasks 3.1-3.5)
 
-- [ ] CellShell with gutters and focus states
+- [ ] CellShell with left gutter (per cell) and focus states
 - [ ] CellEditor with CodeMirror 6 and auto-resize
 - [ ] CellMenu with kebab actions
 - [ ] AddCellBetween with "+" affordances
@@ -762,6 +727,6 @@ documentation:
 
 ---
 
-**Total Estimated Tasks**: 85 subtasks  
+**Total Estimated Tasks**: 80 subtasks  
 **Estimated Timeline**: 4-6 weeks  
 **Success Criteria**: All tasks completed with passing tests and visual parity with ObservableHQ
