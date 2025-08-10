@@ -14,21 +14,25 @@ export async function waitFor(
 	interval: number = 100
 ): Promise<void> {
 	const startTime = Date.now();
-	
+
 	while (Date.now() - startTime < timeout) {
 		if (await condition()) {
 			return;
 		}
 		await page.waitForTimeout(interval);
 	}
-	
+
 	throw new Error(`Condition not met within ${timeout}ms`);
 }
 
 /**
  * Wait for an element to be visible
  */
-export async function waitForElement(page: Page, selector: string, timeout: number = 5000): Promise<Locator> {
+export async function waitForElement(
+	page: Page,
+	selector: string,
+	timeout: number = 5000
+): Promise<Locator> {
 	const element = page.locator(selector);
 	await element.waitFor({ state: 'visible', timeout });
 	return element;
@@ -37,7 +41,11 @@ export async function waitForElement(page: Page, selector: string, timeout: numb
 /**
  * Wait for an element to be hidden
  */
-export async function waitForElementHidden(page: Page, selector: string, timeout: number = 5000): Promise<void> {
+export async function waitForElementHidden(
+	page: Page,
+	selector: string,
+	timeout: number = 5000
+): Promise<void> {
 	const element = page.locator(selector);
 	await element.waitFor({ state: 'hidden', timeout });
 }
@@ -79,7 +87,7 @@ export async function hoverElement(page: Page, selector: string): Promise<void> 
  */
 export async function elementExists(page: Page, selector: string): Promise<boolean> {
 	const element = page.locator(selector);
-	return await element.count() > 0;
+	return (await element.count()) > 0;
 }
 
 /**
@@ -87,13 +95,17 @@ export async function elementExists(page: Page, selector: string): Promise<boole
  */
 export async function getElementText(page: Page, selector: string): Promise<string> {
 	const element = await waitForElement(page, selector);
-	return await element.textContent() || '';
+	return (await element.textContent()) || '';
 }
 
 /**
  * Get attribute value of an element
  */
-export async function getElementAttribute(page: Page, selector: string, attribute: string): Promise<string | null> {
+export async function getElementAttribute(
+	page: Page,
+	selector: string,
+	attribute: string
+): Promise<string | null> {
 	const element = await waitForElement(page, selector);
 	return await element.getAttribute(attribute);
 }
@@ -103,7 +115,8 @@ export async function getElementAttribute(page: Page, selector: string, attribut
  */
 export async function hasClass(page: Page, selector: string, className: string): Promise<boolean> {
 	const element = await waitForElement(page, selector);
-	return await element.hasClass(className);
+	const classAttribute = await element.getAttribute('class');
+	return classAttribute?.includes(className) || false;
 }
 
 /**
@@ -144,7 +157,6 @@ export const UI_CONSTANTS = {
 		FOOTER_BAR: '[data-testid="footer-bar"]',
 		LEFT_RAIL: '[data-testid="left-rail"]',
 		CELL_SHELL: '[data-testid="cell-shell"]',
-		CELL_EDITOR: '[data-testid="cell-editor"]',
 		CELL_MENU: '[data-testid="cell-menu"]',
 		ADD_CELL_BETWEEN: '[data-testid="add-cell-between"]',
 		OUTPUT_PANEL: '[data-testid="output-panel"]',
@@ -223,7 +235,7 @@ export class ObservableHQActions {
 		await clickElement(this.page, '[data-testid="menu-item-delete"]');
 		// Confirm deletion if there's a confirmation dialog
 		const confirmButton = this.page.locator('[data-testid="confirm-delete"]');
-		if (await confirmButton.count() > 0) {
+		if ((await confirmButton.count()) > 0) {
 			await confirmButton.click();
 		}
 	}

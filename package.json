@@ -1,5 +1,5 @@
 {
-	"name": "observablehq-clone",
+	"name": "notebook",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -11,10 +11,22 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
+		"format:check": "prettier --check .",
 		"lint": "prettier --check . && eslint .",
+		"lint:fix": "eslint . --fix",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:unit:watch": "vitest --watch",
+		"test:unit:run": "vitest --run",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:headed": "playwright test --headed",
+		"test": "npm run test:unit:run && npm run test:e2e",
+		"test:watch": "npm run test:unit:watch",
+		"test:coverage": "vitest --run --coverage",
+		"test:all": "npm run lint && npm run check && npm run test",
+		"clean": "rm -rf .svelte-kit build dist test-results playwright-report coverage",
+		"dev:test": "concurrently \"npm run dev\" \"npm run test:unit:watch\"",
+		"dev:check": "concurrently \"npm run dev\" \"npm run check:watch\""
 	},
 	"lint-staged": {
 		"*.{js,ts,svelte}": [
@@ -36,6 +48,7 @@
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
 		"@vitest/browser": "^3.2.3",
+		"concurrently": "^9.2.0",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",

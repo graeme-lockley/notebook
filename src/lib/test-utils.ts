@@ -1,5 +1,3 @@
-import { render, type RenderResult } from '@testing-library/svelte';
-import type { ComponentType } from 'svelte';
 import { tick } from 'svelte';
 
 /**
@@ -7,21 +5,11 @@ import { tick } from 'svelte';
  */
 
 /**
- * Render a Svelte component with common test setup
- */
-export function renderComponent<T extends Record<string, any>>(
-	Component: ComponentType<T>,
-	props: T = {} as T
-): RenderResult {
-	return render(Component, { props });
-}
-
-/**
  * Wait for all pending promises and Svelte updates
  */
 export async function waitForUpdates(): Promise<void> {
 	await tick();
-	await new Promise(resolve => setTimeout(resolve, 0));
+	await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /**
@@ -87,7 +75,7 @@ export const TEST_CONSTANTS = {
 /**
  * Helper to create a mock event
  */
-export function createMockEvent(type: string, target?: HTMLElement): Event {
+export function createMockEvent(type: string): Event {
 	return new Event(type, { bubbles: true, cancelable: true });
 }
 
@@ -138,21 +126,24 @@ export async function waitFor(
 	interval: number = 100
 ): Promise<void> {
 	const startTime = Date.now();
-	
+
 	while (Date.now() - startTime < timeout) {
 		if (await condition()) {
 			return;
 		}
-		await new Promise(resolve => setTimeout(resolve, interval));
+		await new Promise((resolve) => setTimeout(resolve, interval));
 	}
-	
+
 	throw new Error(`Condition not met within ${timeout}ms`);
 }
 
 /**
  * Helper to wait for an element to be present in the DOM
  */
-export async function waitForElement(selector: string, timeout: number = 5000): Promise<HTMLElement> {
+export async function waitForElement(
+	selector: string,
+	timeout: number = 5000
+): Promise<HTMLElement> {
 	await waitFor(() => !!document.querySelector(selector), timeout);
 	return document.querySelector(selector) as HTMLElement;
 }
@@ -160,7 +151,10 @@ export async function waitForElement(selector: string, timeout: number = 5000): 
 /**
  * Helper to wait for an element to be removed from the DOM
  */
-export async function waitForElementRemoved(selector: string, timeout: number = 5000): Promise<void> {
+export async function waitForElementRemoved(
+	selector: string,
+	timeout: number = 5000
+): Promise<void> {
 	await waitFor(() => !document.querySelector(selector), timeout);
 }
 

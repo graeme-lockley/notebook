@@ -1,16 +1,15 @@
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	resolve: {
 		alias: {
-			'@': fileURLToPath(new URL('./src', import.meta.url)),
-			'@lib': fileURLToPath(new URL('./src/lib', import.meta.url)),
-			'@components': fileURLToPath(new URL('./src/lib/components', import.meta.url)),
-			'@utils': fileURLToPath(new URL('./src/lib/utils', import.meta.url))
+			'@': './src',
+			'@lib': './src/lib',
+			'@components': './src/lib/components',
+			'@utils': './src/lib/utils'
 		}
 	},
 	server: {

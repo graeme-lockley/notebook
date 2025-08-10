@@ -1,4 +1,5 @@
 # Phase 1 Task List: ObservableHQ Clone
+
 ## Visual & Interaction Parity (Experience First)
 
 **Development Philosophy**: Test-First, Small Steps, Continuous Integration
@@ -8,9 +9,11 @@
 ## Development Setup & Infrastructure
 
 ### Task 1.1: Project Scaffolding
+
 **Objective**: Set up SvelteKit project with all development tools
 
 **Subtasks**:
+
 1. **1.1.1**: Initialize SvelteKit project with TypeScript
    - Run: `npm create svelte@latest observablehq-clone -- --template skeleton --types typescript`
    - Verify TypeScript strict mode in `tsconfig.json`
@@ -38,9 +41,11 @@
    - **Test**: Verify `npm run dev` starts without errors
 
 ### Task 1.2: Testing Infrastructure
+
 **Objective**: Set up comprehensive testing framework
 
 **Subtasks**:
+
 1. **1.2.1**: Install testing dependencies
    - Install: `npm install -D vitest @testing-library/svelte @testing-library/jest-dom jsdom`
    - Install: `npm install -D @playwright/test`
@@ -69,9 +74,11 @@
    - **Test**: Verify test utilities can be imported and used
 
 ### Task 1.3: Development Environment
+
 **Objective**: Set up local development with proper tooling
 
 **Subtasks**:
+
 1. **1.3.1**: Configure Cursor ruleset
    - Create `.cursorrules` file with project-specific rules
    - Include TypeScript, SvelteKit, and testing conventions
@@ -92,9 +99,11 @@
 ## Core Layout Components
 
 ### Task 2.1: TopBar Component
+
 **Objective**: Create the top menu bar with document title and actions
 
 **Subtasks**:
+
 1. **2.1.1**: Create TopBar component structure
    - Create `src/lib/components/TopBar.svelte`
    - Add basic layout with title area and actions area
@@ -121,9 +130,11 @@
    - **Test**: Create `tests/ui/topbar-responsive.spec.ts` with Playwright
 
 ### Task 2.2: FooterBar Component
+
 **Objective**: Create persistent bottom action bar
 
 **Subtasks**:
+
 1. **2.2.1**: Create FooterBar component structure
    - Create `src/lib/components/FooterBar.svelte`
    - Add basic layout with action buttons
@@ -150,9 +161,11 @@
    - **Test**: Create `tests/ui/footer-responsive.spec.ts` with Playwright
 
 ### Task 2.3: LeftRail Component
+
 **Objective**: Create collapsible left sidebar with outline and inputs
 
 **Subtasks**:
+
 1. **2.3.1**: Create LeftRail component structure
    - Create `src/lib/components/LeftRail.svelte`
    - Add collapsible sidebar layout
@@ -183,9 +196,11 @@
 ## Cell System Components
 
 ### Task 3.1: CellShell Component
+
 **Objective**: Create cell wrapper with gutters and focus states
 
 **Subtasks**:
+
 1. **3.1.1**: Create CellShell component structure
    - Create `src/lib/components/CellShell.svelte`
    - Add basic cell layout with left gutter
@@ -212,9 +227,11 @@
    - **Test**: Test pinned and collapsed states
 
 ### Task 3.2: CellEditor Component
+
 **Objective**: Create auto-resizing editor with CodeMirror 6
 
 **Subtasks**:
+
 1. **3.2.1**: Create CellEditor component structure
    - Create `src/lib/components/CellEditor.svelte`
    - Set up basic CodeMirror 6 integration
@@ -241,9 +258,11 @@
    - **Test**: Test type switching functionality
 
 ### Task 3.3: CellMenu Component
+
 **Objective**: Create kebab menu with cell actions
 
 **Subtasks**:
+
 1. **3.3.1**: Create CellMenu component structure
    - Create `src/lib/components/CellMenu.svelte`
    - Add kebab menu trigger and popup
@@ -270,9 +289,11 @@
    - **Test**: Test menu closing behavior
 
 ### Task 3.4: AddCellBetween Component
+
 **Objective**: Create "+" affordances between cells
 
 **Subtasks**:
+
 1. **3.4.1**: Create AddCellBetween component structure
    - Create `src/lib/components/AddCellBetween.svelte`
    - Add "+ above / + below" buttons
@@ -299,9 +320,11 @@
    - **Test**: Test animation timing and smoothness
 
 ### Task 3.5: OutputPanel Component
+
 **Objective**: Create output display above editor
 
 **Subtasks**:
+
 1. **3.5.1**: Create OutputPanel component structure
    - Create `src/lib/components/OutputPanel.svelte`
    - Add output container above editor
@@ -332,9 +355,11 @@
 ## Integration & Polish
 
 ### Task 4.1: Main Editor Page
+
 **Objective**: Integrate all components into main editor interface
 
 **Subtasks**:
+
 1. **4.1.1**: Create main editor layout
    - Create `src/routes/n/[id]/+page.svelte`
    - Integrate TopBar, LeftRail, CellShell, FooterBar
@@ -361,9 +386,11 @@
    - **Test**: Test scrolling behavior
 
 ### Task 4.2: ShortcutsHelp Modal
+
 **Objective**: Create keyboard shortcuts help modal
 
 **Subtasks**:
+
 1. **4.2.1**: Create ShortcutsHelp component
    - Create `src/lib/components/ShortcutsHelp.svelte`
    - Add modal with shortcuts list
@@ -390,9 +417,11 @@
    - **Test**: Test responsive behavior
 
 ### Task 4.3: Visual Polish & Animations
+
 **Objective**: Polish visual details and animations
 
 **Subtasks**:
+
 1. **4.3.1**: Refine spacing and typography
    - Ensure consistent 4/8px spacing scale
    - Verify typography hierarchy
@@ -419,9 +448,11 @@
    - **Test**: Test loading state behavior
 
 ### Task 4.4: Cross-Browser Testing
+
 **Objective**: Ensure compatibility across browsers
 
 **Subtasks**:
+
 1. **4.4.1**: Test in Chrome
    - Run Playwright tests in Chrome
    - Verify all interactions work
@@ -452,9 +483,11 @@
 ## Final Integration & Testing
 
 ### Task 5.1: End-to-End Testing
+
 **Objective**: Comprehensive testing of complete user workflows
 
 **Subtasks**:
+
 1. **5.1.1**: Create notebook creation workflow test
    - Test creating new notebook
    - Test adding first cell
@@ -481,9 +514,11 @@
    - **Test**: Create `tests/e2e/responsive-workflow.spec.ts`
 
 ### Task 5.2: Performance Testing
+
 **Objective**: Ensure performance meets requirements
 
 **Subtasks**:
+
 1. **5.2.1**: Test initial load performance
    - Measure time to interactive
    - Test on 3G connection simulation
@@ -510,9 +545,11 @@
    - **Test**: Verify optimizations work
 
 ### Task 5.3: Accessibility Testing
+
 **Objective**: Ensure full accessibility compliance
 
 **Subtasks**:
+
 1. **5.3.1**: Test keyboard navigation
    - Verify all elements are keyboard accessible
    - Test focus management
@@ -539,9 +576,11 @@
    - **Test**: Verify all accessibility issues are resolved
 
 ### Task 5.4: Documentation & Deployment
+
 **Objective**: Prepare for deployment and documentation
 
 **Subtasks**:
+
 1. **5.4.1**: Create component documentation
    - Document all component APIs
    - Add usage examples
@@ -666,6 +705,7 @@ documentation:
 ## Task Completion Checklist
 
 ### Development Setup (Tasks 1.1-1.3)
+
 - [ ] SvelteKit project initialized with TypeScript
 - [ ] Tailwind CSS configured
 - [ ] Core dependencies installed
@@ -679,6 +719,7 @@ documentation:
 - [ ] Development scripts created
 
 ### Core Layout Components (Tasks 2.1-2.3)
+
 - [ ] TopBar component with title and actions
 - [ ] FooterBar component with cell management
 - [ ] LeftRail component with outline and inputs
@@ -689,6 +730,7 @@ documentation:
 - [ ] Accessibility features implemented
 
 ### Cell System Components (Tasks 3.1-3.5)
+
 - [ ] CellShell with gutters and focus states
 - [ ] CellEditor with CodeMirror 6 and auto-resize
 - [ ] CellMenu with kebab actions
@@ -700,6 +742,7 @@ documentation:
 - [ ] Keyboard shortcuts implemented
 
 ### Integration & Polish (Tasks 4.1-4.4)
+
 - [ ] Main editor page integrated
 - [ ] ShortcutsHelp modal implemented
 - [ ] Visual polish and animations complete
@@ -709,6 +752,7 @@ documentation:
 - [ ] Accessibility compliance verified
 
 ### Final Testing (Tasks 5.1-5.4)
+
 - [ ] End-to-end workflows tested
 - [ ] Performance testing complete
 - [ ] Accessibility testing complete
