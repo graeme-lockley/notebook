@@ -335,6 +335,15 @@ interface Cell {
 - Error states: Gentle red tinting
 - Success states: Subtle green indicators
 
+**Button Styling**
+
+- **Primary Action Buttons**: Light gray borders with white backgrounds, dark gray icons
+- **Secondary Action Buttons**: Consistent light gray borders, white backgrounds
+- **Icon Buttons**: Square-shaped with light gray borders, dark gray icons
+- **Hover States**: Subtle background color changes, no bright colors
+- **Active States**: Minimal visual feedback, maintaining the clean aesthetic
+- **No Bright Colors**: Avoid garish blue, green, or other bright colors for primary actions
+
 **Spacing & Layout**
 
 - 4/8px spacing scale throughout

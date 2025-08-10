@@ -25,6 +25,10 @@ export default defineConfig({
 		host: true,
 		strictPort: false
 	},
+	// Add SSR-specific configuration
+	ssr: {
+		noExternal: ['@sveltejs/kit']
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
@@ -39,7 +43,7 @@ export default defineConfig({
 						instances: [{ browser: 'chromium' }]
 					},
 					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**'],
+					exclude: ['src/lib/server/**', '**/*.server.{js,ts}'],
 					setupFiles: ['./vitest-setup-client.ts']
 				}
 			},
@@ -49,7 +53,11 @@ export default defineConfig({
 					name: 'server',
 					environment: 'node',
 					include: ['src/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+					exclude: [
+						'src/**/*.svelte.{test,spec}.{js,ts}',
+						'src/lib/server/**',
+						'**/*.server.{js,ts}'
+					]
 				}
 			}
 		]
