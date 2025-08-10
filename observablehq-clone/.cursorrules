@@ -1,0 +1,230 @@
+# ObservableHQ Clone Development Rules
+
+## Project Overview
+This is an ObservableHQ clone built with SvelteKit, TypeScript, and modern web technologies. The project follows a test-first development approach with comprehensive UI testing.
+
+## Code Style
+
+### TypeScript
+- Use TypeScript strict mode for all files
+- Prefer explicit types over implicit inference
+- Use interfaces for object shapes, types for unions/primitives
+- Always use proper type annotations for function parameters and return types
+- Use `const` assertions for literal types
+- Prefer `readonly` arrays and objects when possible
+
+### SvelteKit Conventions
+- Follow SvelteKit file-based routing conventions
+- Use `+page.svelte` for page components
+- Use `+layout.svelte` for layout components
+- Use `+server.ts` for API endpoints
+- Place reusable components in `src/lib/components/`
+- Use `$lib` alias for imports from `src/lib/`
+
+### Component Structure
+- Use PascalCase for component names
+- Export components as default exports
+- Include TypeScript interfaces for props
+- Add proper accessibility attributes (ARIA labels, roles)
+- Implement keyboard navigation for all interactive elements
+- Use `data-testid` attributes for testing
+
+### Styling
+- Use Tailwind CSS for styling with consistent spacing (4/8px scale)
+- Prefer utility classes over custom CSS
+- Use CSS custom properties for theme values
+- Maintain consistent color palette and typography
+- Ensure responsive design for all components
+
+## Testing Requirements
+
+### Test-First Development
+- Write unit tests for all components before implementation (TDD)
+- Create Playwright UI tests for all user interactions
+- Keep tests small and focused on single features
+- Use descriptive test names that explain the behavior
+- Mock external dependencies in unit tests
+- Test accessibility features in UI tests
+
+### Test Organization
+- Place unit tests alongside components with `.test.ts` or `.spec.ts` extension
+- Place UI tests in `e2e/` directory
+- Use test utilities from `src/lib/test-utils.ts`
+- Use Playwright helpers from `tests/helpers/playwright-helpers.ts`
+
+### Test Coverage
+- Aim for 90%+ code coverage
+- Test all user interactions and edge cases
+- Test error states and loading states
+- Test accessibility compliance
+- Test responsive behavior
+
+## File Organization
+
+### Directory Structure
+```
+src/
+├── lib/
+│   ├── components/     # Reusable components
+│   ├── utils/         # Utility functions
+│   ├── stores/        # Svelte stores
+│   └── types/         # TypeScript type definitions
+├── routes/            # SvelteKit routes
+├── app.html           # HTML template
+└── app.css            # Global styles
+```
+
+### Naming Conventions
+- Use kebab-case for file names
+- Use PascalCase for component names
+- Use camelCase for functions and variables
+- Use UPPER_SNAKE_CASE for constants
+
+## Performance
+
+### Optimization
+- Optimize for 60fps animations
+- Use efficient re-rendering with Svelte reactivity
+- Lazy load components when possible
+- Minimize bundle size with code splitting
+- Test performance with large datasets
+
+### Code Splitting
+- Use dynamic imports for large components
+- Split routes automatically with SvelteKit
+- Lazy load non-critical features
+
+## Accessibility
+
+### Standards
+- Ensure keyboard navigation works for all elements
+- Add proper focus management
+- Use semantic HTML elements
+- Provide alternative text for images
+- Test with screen readers
+- Maintain WCAG AA color contrast
+
+### ARIA
+- Use appropriate ARIA roles and labels
+- Implement proper focus trapping in modals
+- Provide skip links for navigation
+- Use ARIA live regions for dynamic content
+
+## Security
+
+### Best Practices
+- Sanitize user input
+- Use Content Security Policy
+- Validate all data
+- Avoid XSS vulnerabilities
+- Keep dependencies updated
+
+### Data Handling
+- Never trust client-side data
+- Validate all API inputs
+- Use proper authentication and authorization
+- Implement proper error handling
+
+## Git Workflow
+
+### Commit Messages
+- Write descriptive commit messages
+- Keep commits small and focused
+- Test before committing
+- Use conventional commit format
+- Update documentation with code changes
+
+### Branch Strategy
+- Use feature branches for new development
+- Create pull requests for code review
+- Squash commits before merging
+- Keep main branch stable
+
+## Error Handling
+
+### Principles
+- Add proper error boundaries
+- Provide user-friendly error messages
+- Log errors for debugging
+- Handle edge cases gracefully
+- Test error scenarios
+
+### Implementation
+- Use try-catch blocks appropriately
+- Implement proper error states in components
+- Provide fallback UI for errors
+- Log errors with context
+
+## Documentation
+
+### Code Documentation
+- Document component APIs
+- Add inline comments for complex logic
+- Keep README updated
+- Document testing strategies
+- Provide usage examples
+
+### JSDoc
+- Use JSDoc for all public functions
+- Include parameter and return type documentation
+- Add examples for complex functions
+- Document exceptions and edge cases
+
+## ObservableHQ Specific
+
+### UI Patterns
+- Output above editor (key ObservableHQ pattern)
+- Left gutter with focus highlight
+- Top-right run icon in editors
+- "+" add cell affordances between cells
+- Kebab menus and type switchers
+- Auto-resizing editors
+
+### Animation Guidelines
+- Use 120-200ms for micro-animations
+- Implement smooth focus transitions
+- Add hover/focus reveal animations
+- Maintain consistent timing curves
+
+### Component Architecture
+- CellShell: Wrapper with gutters and focus states
+- CellEditor: CodeMirror integration with auto-resize
+- CellMenu: Kebab menu with cell actions
+- AddCellBetween: "+" affordances with type chooser
+- OutputPanel: Results display above editor
+
+## Development Workflow
+
+### Local Development
+- Use `npm run dev` for development server
+- Use `npm run test:unit` for unit tests
+- Use `npm run test:e2e` for UI tests
+- Use `npm run lint` for code quality
+- Use `npm run build` for production build
+
+### Quality Assurance
+- All tests must pass before merging
+- Code must pass linting
+- TypeScript must compile without errors
+- Accessibility must be verified
+- Performance must meet requirements
+
+## Dependencies
+
+### Core Dependencies
+- SvelteKit for framework
+- TypeScript for type safety
+- Tailwind CSS for styling
+- CodeMirror 6 for code editing
+- Lucide icons for iconography
+
+### Testing Dependencies
+- Vitest for unit testing
+- Playwright for UI testing
+- Testing Library for component testing
+
+### Development Dependencies
+- ESLint for linting
+- Prettier for formatting
+- Husky for git hooks
+- Lint-staged for pre-commit checks
