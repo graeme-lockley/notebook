@@ -1,35 +1,44 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15" version="28.1.0">
   <diagram name="Page-1" id="v8kcRsboXOkJTreoNOFN">
-    <mxGraphModel dx="1139" dy="667" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="930" dy="667" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-1" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-1" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="200" y="40" width="400" height="280" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-3" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-3" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="180" y="40" width="20" height="280" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-4" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-4" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="160" y="40" width="20" height="280" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-5" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-5" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" parent="1" vertex="1">
           <mxGeometry x="120" y="40" width="40" height="280" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-6" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-6" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" parent="1" vertex="1">
           <mxGeometry x="600" y="40" width="40" height="280" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-7" value="&lt;font style=&quot;font-size: 17px;&quot;&gt;&lt;b&gt;Closed Cell showing only the rendered content&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-7" value="&lt;font style=&quot;font-size: 17px;&quot;&gt;&lt;b&gt;Closed Cell showing only the rendered content&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
           <mxGeometry x="120" width="400" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-8" value="Responsive margin" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-8" value="Responsive margin" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="590" y="220" width="60" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-9" value="Responsive margin" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-9" value="Responsive margin" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="110" y="220" width="60" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="AnTes73A0zcBJoY5SzQ1-10" value="Rendered Content stretched to 100% less the responsive margins and the 2 gutters" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="AnTes73A0zcBJoY5SzQ1-10" value="Rendered Content stretched to 100% less the responsive margins and the 2 gutters" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="330" y="100" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Hk6lh6S93i9iXvIj0dQF-1" value="Toggle Gutter" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="140" y="270" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hk6lh6S93i9iXvIj0dQF-2" value="Popup Gutter" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="160" y="310" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Hk6lh6S93i9iXvIj0dQF-4" value="Responsive Margin:&lt;div&gt;- The margin will expand and shrink depending on screen width shrinking to 0 on narrow width screens&lt;/div&gt;&lt;div&gt;- The left hand Responsive Margin, when clicked on, will behave as if the click was directed to the Toggle Gutter&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;ToggleGutter:&lt;/div&gt;&lt;div&gt;- Width of this element is 20px irrespective of screen size&lt;/div&gt;&lt;div&gt;- Height of this element is the height of the rendered content&lt;/div&gt;&lt;div&gt;- When the cell is not in focus, this gutter renders no content&lt;/div&gt;&lt;div&gt;- When the cell is in focus, the lucide icon (chevron-right) will be rendered at the top of the gutter to indicate that the cell&#39;s source code is not visible.&lt;/div&gt;&lt;div&gt;- When the cell is in focus, and the gutter (and left responsive margin) are not in focus, the icon is light grey.&lt;/div&gt;&lt;div&gt;- When the cell is in focus, and the gutter (and left responsive margin) is in focus, the icon is dark grey.&lt;/div&gt;&lt;div&gt;- ToggleGutter background is always white&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Popup Gutter:&lt;/div&gt;&lt;div&gt;- Width of this element is 20px irrespective of the screen size&lt;/div&gt;&lt;div&gt;- Height of this element is the height of the rendered content&lt;/div&gt;&lt;div&gt;- When the cell is not in focus, this gutter renders no content&lt;/div&gt;&lt;div&gt;- When the cell is in focus, and the gutter is not in focus, the lucide icon (ellipsis-vertical) will be rendered at the top of the gutter in light grey and serves as a pop-up menu.&lt;/div&gt;&lt;div&gt;- When the cell is in focus, and the gutter is in focus, the lucide icon (ellipsis-vertical) will be rendered at the top of the gutter in dark grey and serves as a pop-up menu.&lt;/div&gt;&lt;div&gt;- When the cell and gutter are in focus, clicking within the gutter, will cause a pop-up menu to appear with a collection of content sensitive actions.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Rendered Content:&lt;/div&gt;&lt;div&gt;- This will display the rendered cell.&lt;/div&gt;&lt;div&gt;- By default, the background of this rendering is white.&lt;/div&gt;&lt;div&gt;- The width of this element will be as wide as possible.&lt;/div&gt;&lt;div&gt;- The height of this element is restricted to the rendered high of the content.&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="120" y="400" width="630" height="450" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
