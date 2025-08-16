@@ -70,11 +70,7 @@
 					data-testid="title-input"
 				/>
 			{:else}
-				<button
-					onclick={handleTitleClick}
-					class="title-button"
-					data-testid="title-button"
-				>
+				<button onclick={handleTitleClick} class="title-button" data-testid="title-button">
 					{titleValue}
 				</button>
 			{/if}

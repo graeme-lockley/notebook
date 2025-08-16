@@ -104,7 +104,7 @@
 	<main class="demo-main">
 		<div class="demo-container">
 			<div>
-				{#each cells as cell, index (cell.id)}
+				{#each cells as cell (cell.id)}
 					<AddCellBetween
 						position="between"
 						cellId={cell.id}

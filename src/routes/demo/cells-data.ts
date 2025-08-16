@@ -7,8 +7,7 @@ export const initialCells: Cell[] = [
 		kind: 'html',
 		value: '<h1>Hello, ObservableHQ!</h1>\n<p>This is an HTML cell with some basic content.</p>',
 		status: 'ok',
-		valueHtml:
-			'<h1>Hello, ObservableHQ!</h1><p>This is an HTML cell with some basic content.</p>',
+		valueHtml: '<h1>Hello, ObservableHQ!</h1><p>This is an HTML cell with some basic content.</p>',
 		isFocused: false,
 		isPinned: false,
 		hasError: false,

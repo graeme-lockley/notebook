@@ -78,7 +78,11 @@
 
 <div data-testid="cell-shell" class="cell-shell {isFocused ? 'focused' : ''}">
 	<!-- Left Gutter -->
-	<div data-testid="cell-gutter" class="cell-gutter {isFocused ? 'focused' : ''}" aria-hidden="true">
+	<div
+		data-testid="cell-gutter"
+		class="cell-gutter {isFocused ? 'focused' : ''}"
+		aria-hidden="true"
+	>
 		<!-- Drag Handle -->
 		<button
 			data-testid="drag-handle"
@@ -136,10 +140,7 @@
 			onkeydown={(e) => e.key === 'Enter' && handleToggleClosed()}
 		>
 			<div class="toggle-gutter-content">
-				<ChevronRight
-					size={14}
-					class="toggle-icon {isClosed ? 'closed' : ''}"
-				/>
+				<ChevronRight size={14} class="toggle-icon {isClosed ? 'closed' : ''}" />
 			</div>
 		</div>
 	{/if}
@@ -178,11 +179,7 @@
 	<!-- Right Edge Context Icons -->
 	<div class="context-icons">
 		{#if hasError}
-			<div
-				data-testid="error-indicator"
-				class="error-indicator"
-				title="Cell has error"
-			>
+			<div data-testid="error-indicator" class="error-indicator" title="Cell has error">
 				<AlertCircle size={14} />
 			</div>
 		{/if}
@@ -281,9 +278,15 @@
 		font-weight: var(--font-weight-medium);
 	}
 
-	.text-yellow-600 { color: var(--color-js); }
-	.text-blue-600 { color: var(--color-md); }
-	.text-green-600 { color: var(--color-html); }
+	.text-yellow-600 {
+		color: var(--color-js);
+	}
+	.text-blue-600 {
+		color: var(--color-md);
+	}
+	.text-green-600 {
+		color: var(--color-html);
+	}
 
 	.gutter-button {
 		display: flex;

@@ -35,7 +35,7 @@
 {#if hasOutput}
 	<div
 		data-testid="output-panel"
-		class="space-y-2 p-4 {isClosed ? 'bg-white' : 'border-t border-gray-200 bg-gray-50'}"
+		class="space-y-2 p-4 {isClosed ? 'bg-white' : 'border-gray-200 bg-gray-50 border-t'}"
 		role="region"
 		aria-label="Cell output"
 	>
@@ -43,7 +43,7 @@
 		{#if status === 'pending'}
 			<div
 				data-testid="pending-indicator"
-				class="flex animate-pulse items-center space-x-2 text-gray-500"
+				class="animate-pulse space-x-2 text-gray-500 flex items-center"
 			>
 				<Loader2 size={16} class="animate-spin" />
 				<span class="text-sm">Running...</span>
@@ -52,17 +52,17 @@
 
 		<!-- Error State -->
 		{#if status === 'error' && error}
-			<div data-testid="error-panel" class="rounded-md border border-red-200 bg-red-50 p-3">
-				<div class="flex items-start space-x-2">
-					<AlertCircle size={16} class="mt-0.5 flex-shrink-0 text-red-500" />
+			<div data-testid="error-panel" class="rounded-md border-red-200 bg-red-50 p-3 border">
+				<div class="space-x-2 flex items-start">
+					<AlertCircle size={16} class="mt-0.5 text-red-500 flex-shrink-0" />
 					<div class="flex-1">
 						<pre
 							data-testid="error-message"
-							class="font-mono text-sm break-words whitespace-pre-wrap text-red-800">
+							class="font-mono text-sm text-red-800 break-words whitespace-pre-wrap">
 							{error}
 						</pre>
 						<button
-							class="mt-2 text-sm text-red-600 underline hover:text-red-800"
+							class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
 							onclick={handleRetry}
 						>
 							Retry
@@ -76,7 +76,7 @@
 		{#if consoleOutput.length > 0}
 			<div
 				data-testid="console-output"
-				class="max-h-32 overflow-y-auto rounded border border-gray-200 bg-gray-900 p-3 font-mono text-sm text-gray-100"
+				class="max-h-32 rounded border-gray-200 bg-gray-900 p-3 font-mono text-sm text-gray-100 overflow-y-auto border"
 			>
 				{#each consoleOutput as message (message)}
 					<div class="break-words whitespace-pre-wrap">{message}</div>
@@ -88,7 +88,7 @@
 		{#if status === 'ok' && valueHtml}
 			<div
 				data-testid="output-content"
-				class="rounded {isClosed ? '' : 'border border-gray-200 bg-white p-3'} {valueHtml.includes(
+				class="rounded {isClosed ? '' : 'border-gray-200 bg-white p-3 border'} {valueHtml.includes(
 					'<div'
 				) || valueHtml.includes('<svg')
 					? 'overflow-auto'

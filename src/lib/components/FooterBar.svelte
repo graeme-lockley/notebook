@@ -51,24 +51,13 @@
 
 			{#if showTypeSelector}
 				<div class="type-selector">
-					<button
-						onclick={() => handleCellTypeSelect('javascript')}
-						class="type-option"
-					>
+					<button onclick={() => handleCellTypeSelect('javascript')} class="type-option">
 						JavaScript
 					</button>
-					<button
-						onclick={() => handleCellTypeSelect('markdown')}
-						class="type-option"
-					>
+					<button onclick={() => handleCellTypeSelect('markdown')} class="type-option">
 						Markdown
 					</button>
-					<button
-						onclick={() => handleCellTypeSelect('html')}
-						class="type-option"
-					>
-						HTML
-					</button>
+					<button onclick={() => handleCellTypeSelect('html')} class="type-option"> HTML </button>
 				</div>
 			{/if}
 		</div>

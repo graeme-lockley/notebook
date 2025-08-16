@@ -131,7 +131,7 @@
 	<!-- Menu Trigger Button -->
 	<button
 		data-testid="kebab-menu-button"
-		class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors duration-150 hover:text-gray-600"
+		class="h-6 w-6 rounded text-gray-400 hover:text-gray-600 flex items-center justify-center transition-colors duration-150"
 		onclick={handleToggle}
 		onkeydown={handleKeyDown}
 		aria-expanded={isOpen}
@@ -146,21 +146,21 @@
 	{#if isOpen}
 		<div
 			data-testid="cell-menu"
-			class="absolute top-full right-0 z-50 mt-1 min-w-[200px] rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+			class="right-0 mt-1 rounded-md border-gray-200 bg-white py-1 shadow-lg absolute top-full z-50 min-w-[200px] border"
 			role="menu"
 			aria-label="Cell actions"
 		>
 			{#each menuItems as item (item.id)}
 				<button
 					data-testid="menu-item-{item.id}"
-					class="flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors duration-150 hover:bg-gray-100 {item.danger
+					class="px-4 py-2 text-sm hover:bg-gray-100 flex w-full items-center justify-between text-left transition-colors duration-150 {item.danger
 						? 'text-red-600 hover:text-red-700'
 						: 'text-gray-700'}"
 					onclick={() => handleItemClick(item.action)}
 					role="menuitem"
 					aria-label={item.label}
 				>
-					<div class="flex items-center space-x-3">
+					<div class="space-x-3 flex items-center">
 						{#if item.icon === Copy}
 							<Copy size={16} />
 						{:else if item.icon === Trash2}

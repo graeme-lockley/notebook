@@ -45,7 +45,7 @@
 	<!-- Add Cell Button -->
 	<button
 		data-testid="add-cell-button"
-		class="group flex h-8 w-full items-center justify-center border-t border-gray-100 bg-white text-gray-400 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-600"
+		class="group h-8 border-gray-100 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-600 flex w-full items-center justify-center border-t transition-colors duration-150"
 		onclick={handleAddClick}
 		onkeydown={handleKeyDown}
 		aria-label="Add cell"
@@ -58,7 +58,7 @@
 	{#if isMenuOpen}
 		<div
 			data-testid="type-menu"
-			class="absolute top-0 left-1/2 z-50 -translate-x-1/2 transform rounded-md border border-gray-200 bg-white p-2 shadow-lg"
+			class="top-0 rounded-md border-gray-200 bg-white p-2 shadow-lg absolute left-1/2 z-50 -translate-x-1/2 transform border"
 			role="menu"
 			aria-label="Select cell type"
 			tabindex="-1"
@@ -67,7 +67,7 @@
 			{#each cellTypes as cellType (cellType.type)}
 				<button
 					data-testid="type-option-{cellType.type}"
-					class="flex w-full items-center space-x-2 rounded px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-gray-100"
+					class="space-x-2 rounded px-3 py-2 text-sm hover:bg-gray-100 flex w-full items-center text-left transition-colors duration-150"
 					onclick={() => handleTypeSelect(cellType.type)}
 					role="menuitem"
 					aria-label="Add {cellType.label} cell"
