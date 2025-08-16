@@ -1,3 +1,270 @@
-@import 'tailwindcss';
-@plugin '@tailwindcss/forms';
-@plugin '@tailwindcss/typography';
+/* ==========================================================================
+   ObservableHQ Clone - CSS Foundation
+   ========================================================================== */
+
+/* ==========================================================================
+   CSS Reset & Normalize
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+/* ==========================================================================
+   Design Tokens (CSS Custom Properties)
+   ========================================================================== */
+:root {
+  /* Colors */
+  --color-white: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* Semantic Colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #06b6d4;
+  
+  /* Cell Type Colors */
+  --color-js: #fbbf24;
+  --color-md: #3b82f6;
+  --color-html: #10b981;
+  
+  /* Spacing Scale (4px base) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+  
+  /* Typography */
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Borders & Shadows */
+  --border-radius-sm: 0.25rem;   /* 4px */
+  --border-radius: 0.375rem;     /* 6px */
+  --border-radius-md: 0.5rem;    /* 8px */
+  --border-radius-lg: 0.75rem;   /* 12px */
+  
+  --border-width: 1px;
+  --border-color: var(--color-gray-200);
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+  
+  /* Layout */
+  --gutter-width: 3rem;        /* 48px */
+  --cell-min-height: 3.75rem;  /* 60px */
+  --max-width: 72rem;          /* 1152px */
+}
+
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+body {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  color: var(--color-gray-900);
+  background-color: var(--color-gray-50);
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+/* Layout */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1 1 0%; }
+.flex-none { flex: none; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.min-h-screen { min-height: 100vh; }
+.min-h-0 { min-height: 0; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-auto { overflow: auto; }
+.overflow-hidden { overflow: hidden; }
+
+/* Spacing */
+.p-4 { padding: var(--space-4); }
+.px-4 { padding-left: var(--space-4); padding-right: var(--space-4); }
+.py-2 { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+.py-4 { padding-top: var(--space-4); padding-bottom: var(--space-4); }
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+/* Typography */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+
+/* Colors */
+.text-gray-400 { color: var(--color-gray-400); }
+.text-gray-500 { color: var(--color-gray-500); }
+.text-gray-600 { color: var(--color-gray-600); }
+.text-red-500 { color: var(--color-error); }
+.text-blue-600 { color: var(--color-primary); }
+.text-yellow-600 { color: var(--color-js); }
+.text-green-600 { color: var(--color-html); }
+
+.bg-white { background-color: var(--color-white); }
+.bg-gray-50 { background-color: var(--color-gray-50); }
+.bg-gray-100 { background-color: var(--color-gray-100); }
+
+/* Borders */
+.border { border: var(--border-width) solid var(--border-color); }
+.border-b { border-bottom: var(--border-width) solid var(--border-color); }
+.border-r { border-right: var(--border-width) solid var(--border-color); }
+.border-gray-100 { border-color: var(--color-gray-100); }
+.border-gray-200 { border-color: var(--color-gray-200); }
+
+/* Shadows */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+
+/* Transitions */
+.transition-colors { transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast); }
+.transition-opacity { transition: opacity var(--transition-fast); }
+.transition-all { transition: all var(--transition-fast); }
+
+/* Interactive States */
+.hover\:bg-gray-50:hover { background-color: var(--color-gray-50); }
+.hover\:text-gray-600:hover { color: var(--color-gray-600); }
+.hover\:opacity-100:hover { opacity: 1; }
+
+/* Opacity */
+.opacity-0 { opacity: 0; }
+.opacity-100 { opacity: 1; }
+
+/* Cursor */
+.cursor-pointer { cursor: pointer; }
+
+/* ==========================================================================
+   Component-Specific Utilities
+   ========================================================================== */
+
+/* Cell Gutter */
+.cell-gutter {
+  width: var(--gutter-width);
+  border-right: var(--border-width) solid var(--border-color);
+  background-color: var(--color-gray-50);
+  transition: background-color var(--transition-fast);
+}
+
+.cell-gutter.focused {
+  background-color: var(--color-gray-100);
+}
+
+/* Cell Focus States */
+.cell-focus {
+  background-color: var(--color-gray-50);
+  transition: background-color var(--transition-fast);
+}
+
+.cell-focus:hover {
+  background-color: var(--color-gray-50);
+}
+
+/* Responsive Utilities */
+@media (min-width: 640px) {
+  .sm\:w-16 { width: 4rem; }
+  .sm\:flex-none { flex: none; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:w-24 { width: 6rem; }
+}
+
+@media (min-width: 1280px) {
+  .xl\:w-32 { width: 8rem; }
+}

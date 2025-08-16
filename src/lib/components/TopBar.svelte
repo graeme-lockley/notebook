@@ -55,27 +55,24 @@
 	}
 </script>
 
-<header
-	data-testid="topbar"
-	class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3"
->
+<header data-testid="topbar" class="topbar">
 	<!-- Title and Metadata Area -->
-	<div class="flex items-center space-x-4">
+	<div class="topbar-left">
 		<!-- Editable Title -->
-		<div class="flex items-center">
+		<div class="title-container">
 			{#if isEditingTitle}
 				<input
 					type="text"
 					bind:value={titleValue}
 					onblur={handleTitleBlur}
 					onkeydown={handleTitleKeydown}
-					class="focus:ring-opacity-50 rounded border-none bg-transparent px-2 py-1 text-xl font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+					class="title-input"
 					data-testid="title-input"
 				/>
 			{:else}
 				<button
 					onclick={handleTitleClick}
-					class="rounded px-2 py-1 text-xl font-semibold text-gray-900 transition-colors duration-150 hover:bg-gray-100"
+					class="title-button"
 					data-testid="title-button"
 				>
 					{titleValue}
@@ -84,21 +81,21 @@
 		</div>
 
 		<!-- Metadata -->
-		<div class="flex items-center space-x-3 text-sm text-gray-500">
+		<div class="metadata">
 			<span data-testid="last-edited">
 				Last edited {formatDate(lastEdited)}
 			</span>
-			<span class="text-gray-300">•</span>
+			<span class="separator">•</span>
 			<span data-testid="version">v{version}</span>
 		</div>
 	</div>
 
 	<!-- Actions Area -->
-	<div class="flex items-center space-x-1">
+	<div class="topbar-actions">
 		<button
 			onclick={handleShare}
 			data-testid="share-button"
-			class="flex items-center space-x-1.5 rounded border border-gray-300 px-2.5 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:bg-gray-100"
+			class="action-button action-button-text"
 			title="Share notebook"
 		>
 			<Globe size={14} />
@@ -108,7 +105,7 @@
 		<button
 			onclick={handleDuplicate}
 			data-testid="duplicate-button"
-			class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-gray-700 transition-colors duration-150 hover:bg-gray-100"
+			class="action-button action-button-icon"
 			title="Duplicate notebook"
 		>
 			<Copy size={14} />
@@ -117,10 +114,108 @@
 		<button
 			onclick={handleDownload}
 			data-testid="download-button"
-			class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-gray-700 transition-colors duration-150 hover:bg-gray-100"
+			class="action-button action-button-icon"
 			title="Download notebook"
 		>
 			<Download size={14} />
 		</button>
 	</div>
 </header>
+
+<style>
+	.topbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-bottom: var(--border-width) solid var(--color-gray-200);
+		background-color: var(--color-white);
+		padding: var(--space-3) var(--space-6);
+	}
+
+	.topbar-left {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+	}
+
+	.title-container {
+		display: flex;
+		align-items: center;
+	}
+
+	.title-button {
+		border-radius: var(--border-radius);
+		padding: var(--space-2) var(--space-4);
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-gray-900);
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+	}
+
+	.title-button:hover {
+		background-color: var(--color-gray-100);
+	}
+
+	.title-input {
+		border: none;
+		background: transparent;
+		padding: var(--space-2) var(--space-4);
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-gray-900);
+		outline: none;
+		border-radius: var(--border-radius);
+	}
+
+	.title-input:focus {
+		box-shadow: 0 0 0 2px var(--color-primary);
+	}
+
+	.metadata {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		font-size: var(--font-size-sm);
+		color: var(--color-gray-500);
+	}
+
+	.separator {
+		color: var(--color-gray-300);
+	}
+
+	.topbar-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.action-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: var(--border-width) solid var(--color-gray-300);
+		border-radius: var(--border-radius);
+		color: var(--color-gray-700);
+		background: transparent;
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+	}
+
+	.action-button:hover {
+		background-color: var(--color-gray-100);
+	}
+
+	.action-button-text {
+		gap: var(--space-1);
+		padding: var(--space-1) var(--space-2);
+		font-size: var(--font-size-sm);
+	}
+
+	.action-button-icon {
+		width: 2rem;
+		height: 2rem;
+	}
+</style>

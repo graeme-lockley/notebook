@@ -35,42 +35,37 @@
 	}
 </script>
 
-<footer
-	data-testid="footerbar"
-	class="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-3"
->
+<footer data-testid="footerbar" class="footerbar">
 	<!-- Left side - Cell Management -->
-	<div class="flex items-center space-x-1">
+	<div class="footerbar-left">
 		<!-- Add Cell Button with Type Selector -->
-		<div class="relative">
+		<div class="type-selector-container">
 			<button
 				onclick={handleAddCell}
 				data-testid="add-cell-button"
-				class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 transition-colors duration-150 hover:bg-gray-50"
+				class="footer-button"
 				title="Add new cell"
 			>
 				<Plus size={14} />
 			</button>
 
 			{#if showTypeSelector}
-				<div
-					class="absolute top-full left-0 mt-2 min-w-[120px] rounded-md border border-gray-200 bg-white p-2 shadow-lg"
-				>
+				<div class="type-selector">
 					<button
 						onclick={() => handleCellTypeSelect('javascript')}
-						class="w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-100"
+						class="type-option"
 					>
 						JavaScript
 					</button>
 					<button
 						onclick={() => handleCellTypeSelect('markdown')}
-						class="w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-100"
+						class="type-option"
 					>
 						Markdown
 					</button>
 					<button
 						onclick={() => handleCellTypeSelect('html')}
-						class="w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-100"
+						class="type-option"
 					>
 						HTML
 					</button>
@@ -82,7 +77,7 @@
 		<button
 			onclick={handleRunAll}
 			data-testid="run-all-button"
-			class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 transition-colors duration-150 hover:bg-gray-50"
+			class="footer-button"
 			title="Run all cells"
 		>
 			<Play size={14} />
@@ -90,43 +85,37 @@
 	</div>
 
 	<!-- Right side - Settings and View Options -->
-	<div class="flex items-center space-x-1">
+	<div class="footerbar-right">
 		<!-- Settings Button -->
 		<button
 			onclick={handleToggleSettings}
 			data-testid="settings-button"
-			class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-gray-700 transition-colors duration-150 hover:bg-gray-100"
+			class="footer-button"
 			title="Settings"
 		>
 			<Settings size={14} />
 		</button>
 
 		<!-- View Mode Switcher -->
-		<div class="flex items-center space-x-0.5 rounded border border-gray-300 bg-white p-0.5">
+		<div class="view-mode-switcher">
 			<button
 				onclick={() => handleViewModeChange('edit')}
 				data-testid="view-mode-switcher"
-				class="rounded px-2 py-1 text-xs {currentViewMode === 'edit'
-					? 'bg-gray-100 text-gray-900'
-					: 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
+				class="view-mode-button {currentViewMode === 'edit' ? 'active' : ''}"
 				title="Edit mode"
 			>
 				Edit
 			</button>
 			<button
 				onclick={() => handleViewModeChange('preview')}
-				class="rounded px-2 py-1 text-xs {currentViewMode === 'preview'
-					? 'bg-gray-100 text-gray-900'
-					: 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
+				class="view-mode-button {currentViewMode === 'preview' ? 'active' : ''}"
 				title="Preview mode"
 			>
 				Preview
 			</button>
 			<button
 				onclick={() => handleViewModeChange('presentation')}
-				class="rounded px-2 py-1 text-xs {currentViewMode === 'presentation'
-					? 'bg-gray-100 text-gray-900'
-					: 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
+				class="view-mode-button {currentViewMode === 'presentation' ? 'active' : ''}"
 				title="Presentation mode"
 			>
 				<Eye size={12} />
@@ -134,3 +123,109 @@
 		</div>
 	</div>
 </footer>
+
+<style>
+	.footerbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-top: var(--border-width) solid var(--color-gray-200);
+		background-color: var(--color-white);
+		padding: var(--space-3) var(--space-6);
+	}
+
+	.footerbar-left {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.footerbar-right {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.footer-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: var(--border-width) solid var(--color-gray-300);
+		border-radius: var(--border-radius);
+		background-color: var(--color-white);
+		color: var(--color-gray-700);
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+	}
+
+	.footer-button:hover {
+		background-color: var(--color-gray-50);
+	}
+
+	.type-selector-container {
+		position: relative;
+	}
+
+	.type-selector {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		margin-top: var(--space-2);
+		min-width: 120px;
+		border: var(--border-width) solid var(--color-gray-200);
+		border-radius: var(--border-radius-md);
+		background-color: var(--color-white);
+		padding: var(--space-2);
+		box-shadow: var(--shadow-lg);
+		z-index: 10;
+	}
+
+	.type-option {
+		width: 100%;
+		padding: var(--space-2) var(--space-3);
+		text-align: left;
+		font-size: var(--font-size-sm);
+		background: transparent;
+		border: none;
+		border-radius: var(--border-radius);
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+	}
+
+	.type-option:hover {
+		background-color: var(--color-gray-100);
+	}
+
+	.view-mode-switcher {
+		display: flex;
+		align-items: center;
+		gap: 0;
+		border: var(--border-width) solid var(--color-gray-300);
+		border-radius: var(--border-radius);
+		background-color: var(--color-white);
+		padding: var(--space-1);
+	}
+
+	.view-mode-button {
+		padding: var(--space-1) var(--space-2);
+		font-size: var(--font-size-xs);
+		background: transparent;
+		border: none;
+		border-radius: var(--border-radius);
+		color: var(--color-gray-600);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.view-mode-button:hover {
+		background-color: var(--color-gray-50);
+		color: var(--color-gray-900);
+	}
+
+	.view-mode-button.active {
+		background-color: var(--color-gray-100);
+		color: var(--color-gray-900);
+	}
+</style>
