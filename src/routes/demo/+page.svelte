@@ -5,47 +5,31 @@
 	import CellEditor from '$lib/components/CellEditor.svelte';
 	import AddCellBetween from '$lib/components/AddCellBetween.svelte';
 	import OutputPanel from '$lib/components/OutputPanel.svelte';
-	import type { Cell } from '$lib/types/cell';
-	import { initialCells } from './cells-data';
+	import { Notebook } from '$lib/types/cell';
+	import { createDemoNotebook } from './cells-data';
 
-	// Initialize cells with demo data
-	let cells = $state<Cell[]>(initialCells);
+	// Initialize notebook with demo data
+	let notebook = $state<Notebook>(createDemoNotebook());
 
 	function handleCellFocus(event: CustomEvent) {
 		const { id } = event.detail;
-
-		// Update focus state for all cells
-		cells = cells.map((cell) => ({
-			...cell,
-			isFocused: cell.id === id
-		}));
+		notebook.setFocus(id);
 	}
 
 	function handleCellValueChange(event: CustomEvent) {
 		const { id, value } = event.detail;
-		cells = cells.map((cell) => (cell.id === id ? { ...cell, value } : cell));
+		notebook.updateCell(id, { value });
 	}
 
-	function handleCellRun(event: CustomEvent) {
+	async function handleCellRun(event: CustomEvent) {
 		const { id } = event.detail;
 		console.log(`Running cell ${id}`);
-
-		// Update cell status to show it's running
-		cells = cells.map((cell) =>
-			cell.id === id ? { ...cell, status: 'pending' as 'ok' | 'error' | 'pending' } : cell
-		);
-
-		// Simulate execution delay
-		setTimeout(() => {
-			cells = cells.map((cell) =>
-				cell.id === id ? { ...cell, status: 'ok' as 'ok' | 'error' | 'pending' } : cell
-			);
-		}, 1000);
+		await notebook.runCell(id);
 	}
 
 	function handlePinToggle(event: CustomEvent) {
 		const { id, pinned } = event.detail;
-		cells = cells.map((cell) => (cell.id === id ? { ...cell, isPinned: pinned } : cell));
+		notebook.updateCell(id, { isPinned: pinned });
 	}
 
 	function handleAddCell(event: CustomEvent) {
@@ -57,54 +41,33 @@
 		const { type, position, cellId } = event.detail;
 		console.log(`Selected type ${type} for position ${position} relative to ${cellId}`);
 
-		// Create new cell
-		const newCell = {
-			id: `cell-${Date.now()}`,
+		// Add new cell using notebook
+		notebook.addCell({
 			kind: type,
-			value:
-				type === 'js'
-					? '// New JavaScript cell\nconsole.log("Hello!");'
-					: type === 'md'
-						? '# New Markdown Cell\n\nStart typing here...'
-						: '<div>New HTML Cell</div>',
-			status: 'ok' as 'ok' | 'error' | 'pending',
-			valueHtml:
-				type === 'js'
-					? '<div>Hello!</div>'
-					: type === 'md'
-						? '<h1>New Markdown Cell</h1><p>Start typing here...</p>'
-						: '<div>New HTML Cell</div>',
-			isFocused: false,
-			isPinned: false,
-			hasError: false,
-			isClosed: true // New cells start closed
-		};
-
-		// Find the index of the reference cell
-		const refIndex = cells.findIndex((cell) => cell.id === cellId);
-		if (refIndex !== -1) {
-			const insertIndex = position === 'above' ? refIndex : refIndex + 1;
-			cells = [...cells.slice(0, insertIndex), newCell, ...cells.slice(insertIndex)];
-		}
+			position: position === 'above' ? 'above' : 'below',
+			relativeToId: cellId,
+			focus: false
+		});
 	}
 
 	function handleTitleChange(event: CustomEvent) {
-		console.log('Title changed:', event.detail);
+		const { title } = event.detail;
+		notebook.updateTitle(title);
 	}
 
 	function handleToggleClosed(event: CustomEvent) {
 		const { id } = event.detail;
-		cells = cells.map((cell) => (cell.id === id ? { ...cell, isClosed: !cell.isClosed } : cell));
+		notebook.toggleClosed(id);
 	}
 </script>
 
 <div class="demo-page">
-	<TopBar title="ObservableHQ Clone - Closed & Open Cell Demo" on:titleChange={handleTitleChange} />
+	<TopBar title={notebook.title} on:titleChange={handleTitleChange} />
 
 	<main class="demo-main">
 		<div class="demo-container">
 			<div>
-				{#each cells as cell (cell.id)}
+				{#each notebook.cells as cell (cell.id)}
 					<AddCellBetween
 						position="between"
 						cellId={cell.id}
@@ -150,7 +113,7 @@
 				<!-- Add Cell After Last -->
 				<AddCellBetween
 					position="between"
-					cellId={cells[cells.length - 1]?.id || 'end'}
+					cellId={notebook.cells[notebook.cells.length - 1]?.id || 'end'}
 					on:addCell={handleAddCell}
 					on:selectType={handleSelectType}
 				/>

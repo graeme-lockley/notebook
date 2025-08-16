@@ -1,7 +1,8 @@
 import type { Cell } from '$lib/types/cell';
+import { Notebook } from '$lib/types/cell';
 
 // Initial cells data with closed/open state
-export const initialCells: Cell[] = [
+const initialCells: Cell[] = [
 	{
 		id: 'cell-1',
 		kind: 'html',
@@ -68,3 +69,34 @@ export const initialCells: Cell[] = [
 		isClosed: false // Open cell with error
 	}
 ];
+
+/**
+ * Creates a notebook with demo data
+ */
+export function createDemoNotebook(): Notebook {
+	const notebook = new Notebook({
+		title: 'ObservableHQ Clone - Closed & Open Cell Demo',
+		description: 'A demonstration of the ObservableHQ clone with various cell types and states'
+	});
+
+	// Add demo cells to the notebook
+	initialCells.forEach((cellData) => {
+		const cell = notebook.addCell({
+			kind: cellData.kind,
+			value: cellData.value,
+			focus: false
+		});
+
+		// Update cell with demo-specific properties
+		notebook.updateCell(cell.id, {
+			status: cellData.status,
+			valueHtml: cellData.valueHtml,
+			console: cellData.console,
+			isPinned: cellData.isPinned,
+			hasError: cellData.hasError,
+			isClosed: cellData.isClosed
+		});
+	});
+
+	return notebook;
+}
