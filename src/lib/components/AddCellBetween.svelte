@@ -41,7 +41,7 @@
 	}
 </script>
 
-<div class="relative">
+<div>
 	<!-- Add Cell Button -->
 	<button
 		data-testid="add-cell-button"

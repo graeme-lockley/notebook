@@ -209,7 +209,7 @@ export class Notebook {
 				cell.hasError = false;
 				this._updatedAt = new Date();
 				resolve();
-			}, 1000);
+			}, 10);
 		});
 	}
 
