@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MoreVertical } from 'lucide-svelte';
+	import { EllipsisVertical } from 'lucide-svelte';
 	import type { Cell } from '$lib/types/cell';
 
 	interface Props {
@@ -17,6 +17,6 @@
 
 <div>
 	{#if shouldShowIcon}
-		<MoreVertical size={16} class={iconColor} data-testid="popup-icon" />
+		<EllipsisVertical size={16} class={iconColor} />
 	{/if}
 </div>

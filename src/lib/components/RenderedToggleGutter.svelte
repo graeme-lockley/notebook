@@ -8,19 +8,44 @@
 
 	let { cell }: Props = $props();
 
-	// Determine if we should show the toggle icon
 	let shouldShowIcon = $derived(cell.isFocused);
 
-	// Determine icon color based on focus state
-	let iconColor = $derived(cell.isFocused ? 'text-gray-600' : 'text-gray-400');
+	let isClosed = $state(cell.isClosed);
+
+	let hover = $state(false);
+
+	let iconColor = $derived(
+		hover ? 'text-black' : cell.isFocused ? 'text-gray-400' : 'text-gray-400'
+	);
+
+	function toggleIsClosed() {
+		isClosed = !isClosed;
+		cell.isClosed = isClosed;
+	}
 </script>
 
-<div>
-	{#if shouldShowIcon}
-		{#if cell.isClosed}
+{#if shouldShowIcon}
+	<div
+		class="flex justify-center"
+		role="button"
+		tabindex="0"
+		onclick={() => toggleIsClosed()}
+		onkeydown={(e) => {
+			if (e.key === ' ') {
+				toggleIsClosed();
+			}
+		}}
+		onmouseover={() => (hover = true)}
+		onmouseleave={() => (hover = false)}
+		onfocus={() => (hover = true)}
+		onblur={() => (hover = false)}
+	>
+		{#if isClosed}
 			<ChevronRight size={16} class={iconColor} />
 		{:else}
 			<ChevronDown size={16} class={iconColor} />
 		{/if}
-	{/if}
-</div>
+	</div>
+{:else}
+	<div></div>
+{/if}

@@ -23,10 +23,10 @@ const initialCells: Cell[] = [
 		status: 'ok',
 		valueHtml:
 			'<h1>Markdown Cell</h1><p>This is a <strong>markdown</strong> cell with:</p><ul><li>Bullet points</li><li><em>Italic text</em></li><li><code>code snippets</code></li></ul><h2>Subsection</h2><p>And even more content!</p>',
-		isFocused: false,
+		isFocused: true,
 		isPinned: false,
 		hasError: false,
-		isClosed: false, // Open cell example with comment
+		isClosed: false,
 		isEditing: false
 	},
 	{
@@ -89,7 +89,7 @@ export function createDemoNotebook(): Notebook {
 		const cell = notebook.addCell({
 			kind: cellData.kind,
 			value: cellData.value,
-			focus: false
+			focus: cellData.isFocused
 		});
 
 		// Update cell with demo-specific properties
