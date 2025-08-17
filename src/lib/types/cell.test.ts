@@ -209,6 +209,50 @@ describe('Notebook', () => {
 		});
 	});
 
+	describe('Editing Management', () => {
+		beforeEach(() => {
+			notebook.addCell({ kind: 'js' });
+			notebook.addCell({ kind: 'md' });
+		});
+
+		it('should set editing on a cell', () => {
+			const cell = notebook.cells[0];
+			const result = notebook.setEditing(cell.id);
+			expect(result).toBe(true);
+			expect(cell.isEditing).toBe(true);
+			expect(notebook.cells[1].isEditing).toBe(false);
+		});
+
+		it('should clear editing from other cells when setting editing', () => {
+			notebook.setEditing(notebook.cells[0].id);
+			notebook.setEditing(notebook.cells[1].id);
+			expect(notebook.cells[0].isEditing).toBe(false);
+			expect(notebook.cells[1].isEditing).toBe(true);
+		});
+
+		it('should return false for non-existent cell', () => {
+			const result = notebook.setEditing('non-existent');
+			expect(result).toBe(false);
+		});
+
+		it('should clear editing from all cells', () => {
+			notebook.setEditing(notebook.cells[0].id);
+			notebook.clearEditing();
+			expect(notebook.cells[0].isEditing).toBe(false);
+			expect(notebook.cells[1].isEditing).toBe(false);
+		});
+
+		it('should return editing cell', () => {
+			expect(notebook.editingCell).toBeNull();
+
+			notebook.setEditing(notebook.cells[0].id);
+			expect(notebook.editingCell).toBe(notebook.cells[0]);
+
+			notebook.clearEditing();
+			expect(notebook.editingCell).toBeNull();
+		});
+	});
+
 	describe('Cell Operations', () => {
 		beforeEach(() => {
 			notebook.addCell({ kind: 'js' });
@@ -446,6 +490,19 @@ describe('Notebook', () => {
 			expect(result.isValid).toBe(false);
 			expect(result.errors).toContain('Multiple cells are focused');
 		});
+
+		it('should detect multiple editing cells', () => {
+			notebook.addCell({ kind: 'js' });
+			notebook.addCell({ kind: 'md' });
+
+			// Manually set multiple cells as editing
+			notebook.cells[0].isEditing = true;
+			notebook.cells[1].isEditing = true;
+
+			const result = notebook.validate();
+			expect(result.isValid).toBe(false);
+			expect(result.errors).toContain('Multiple cells are being edited');
+		});
 	});
 
 	describe('Default Values', () => {
@@ -457,6 +514,11 @@ describe('Notebook', () => {
 			expect(jsCell.value).toContain('console.log("Hello!")');
 			expect(mdCell.value).toContain('# New Markdown Cell');
 			expect(htmlCell.value).toContain('<div>New HTML Cell</div>');
+		});
+
+		it('should set default editing state to false', () => {
+			const cell = notebook.addCell();
+			expect(cell.isEditing).toBe(false);
 		});
 	});
 

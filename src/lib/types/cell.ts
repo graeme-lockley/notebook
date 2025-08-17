@@ -15,6 +15,7 @@ export interface Cell {
 	isPinned: boolean;
 	hasError: boolean;
 	isClosed: boolean;
+	isEditing: boolean;
 }
 
 export interface NotebookOptions {
@@ -83,6 +84,10 @@ export class Notebook {
 		return this._cells.filter((cell) => cell.isClosed);
 	}
 
+	get editingCell(): Cell | null {
+		return this._cells.find((cell) => cell.isEditing) || null;
+	}
+
 	// Cell management methods
 	addCell(options: AddCellOptions = {}): Cell {
 		const {
@@ -103,7 +108,8 @@ export class Notebook {
 			isFocused: focus,
 			isPinned: false,
 			hasError: false,
-			isClosed: true // New cells start closed
+			isClosed: true, // New cells start closed
+			isEditing: false // New cells start not editing
 		};
 
 		if (relativeToId) {
@@ -168,6 +174,29 @@ export class Notebook {
 	clearFocus(): void {
 		this._cells.forEach((cell) => {
 			cell.isFocused = false;
+		});
+		this._updatedAt = new Date();
+	}
+
+	// Editing management
+	setEditing(id: string): boolean {
+		const cell = this._cells.find((cell) => cell.id === id);
+		if (!cell) return false;
+
+		// Clear editing from all cells
+		this._cells.forEach((cell) => {
+			cell.isEditing = false;
+		});
+
+		// Set editing on target cell
+		cell.isEditing = true;
+		this._updatedAt = new Date();
+		return true;
+	}
+
+	clearEditing(): void {
+		this._cells.forEach((cell) => {
+			cell.isEditing = false;
 		});
 		this._updatedAt = new Date();
 	}
@@ -325,6 +354,12 @@ export class Notebook {
 		const focusedCells = this._cells.filter((cell) => cell.isFocused);
 		if (focusedCells.length > 1) {
 			errors.push('Multiple cells are focused');
+		}
+
+		// Check for multiple editing cells
+		const editingCells = this._cells.filter((cell) => cell.isEditing);
+		if (editingCells.length > 1) {
+			errors.push('Multiple cells are being edited');
 		}
 
 		return {

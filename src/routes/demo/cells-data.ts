@@ -12,7 +12,8 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: false,
 		hasError: false,
-		isClosed: true // Closed cell example
+		isClosed: true, // Closed cell example
+		isEditing: false
 	},
 	{
 		id: 'cell-2',
@@ -25,7 +26,8 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: false,
 		hasError: false,
-		isClosed: false // Open cell example with comment
+		isClosed: false, // Open cell example with comment
+		isEditing: false
 	},
 	{
 		id: 'cell-3',
@@ -38,7 +40,8 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: false,
 		hasError: false,
-		isClosed: false // Open cell example
+		isClosed: false, // Open cell example
+		isEditing: false
 	},
 	{
 		id: 'cell-4',
@@ -52,7 +55,8 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: true, // Pinned cell example
 		hasError: false,
-		isClosed: true // Closed cell with pin and comment
+		isClosed: true, // Closed cell with pin and comment
+		isEditing: false
 	},
 	{
 		id: 'cell-5',
@@ -66,7 +70,8 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: false,
 		hasError: true, // Has error
-		isClosed: false // Open cell with error
+		isClosed: false, // Open cell with error
+		isEditing: false
 	}
 ];
 
@@ -94,7 +99,8 @@ export function createDemoNotebook(): Notebook {
 			console: cellData.console,
 			isPinned: cellData.isPinned,
 			hasError: cellData.hasError,
-			isClosed: cellData.isClosed
+			isClosed: cellData.isClosed,
+			isEditing: cellData.isEditing
 		});
 	});
 
