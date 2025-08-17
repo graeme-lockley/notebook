@@ -2,14 +2,31 @@
 	import { createEventDispatcher } from 'svelte';
 	import { AlertCircle, Loader2 } from 'lucide-svelte';
 
+	import type { Cell } from '$lib/types/cell';
+
+	interface Props {
+		cell: Cell;
+	}
+
+	let { cell }: Props = $props();
+
+	// Extract properties from cell for backward compatibility
 	let {
 		id,
 		status,
 		valueHtml = null,
-		error = null,
 		console: consoleOutput = [],
 		isClosed = false
-	} = $props();
+	} = $derived({
+		id: cell.id,
+		status: cell.status,
+		valueHtml: cell.valueHtml,
+		console: cell.console || [],
+		isClosed: cell.isClosed
+	});
+
+	// Determine error state
+	let error = $derived(cell.hasError ? 'Example error message' : null);
 
 	const dispatch = createEventDispatcher<{
 		retry: { id: string };

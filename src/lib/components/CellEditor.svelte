@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CellShell from './CellShell.svelte';
 	import SourceContent from './SourceContent.svelte';
-	import OutputPanel from './OutputPanel.svelte';
+	import RenderedCell from './RenderedCell.svelte';
 	import type { Cell } from '$lib/types/cell';
 
 	interface Props {
@@ -12,10 +11,10 @@
 	let { cell }: Props = $props();
 	const dispatch = createEventDispatcher();
 
-	function handleCellFocus(event: CustomEvent) {
-		const { id } = event.detail;
-		dispatch('focus', { id });
-	}
+	// function handleCellFocus(event: CustomEvent) {
+	// 	const { id } = event.detail;
+	// 	dispatch('focus', { id });
+	// }
 
 	function handleCellValueChange(event: CustomEvent) {
 		const { id, value } = event.detail;
@@ -28,39 +27,20 @@
 		dispatch('run', { id });
 	}
 
-	function handlePinToggle(event: CustomEvent) {
-		const { id, pinned } = event.detail;
-		dispatch('pinToggle', { id, pinned });
-	}
+	// function handlePinToggle(event: CustomEvent) {
+	// 	const { id, pinned } = event.detail;
+	// 	dispatch('pinToggle', { id, pinned });
+	// }
 
-	function handleToggleClosed(event: CustomEvent) {
-		const { id } = event.detail;
-		dispatch('toggleClosed', { id });
-	}
+	// function handleToggleClosed(event: CustomEvent) {
+	// 	const { id } = event.detail;
+	// 	dispatch('toggleClosed', { id });
+	// }
 </script>
 
-<CellShell
-	id={cell.id}
-	kind={cell.kind}
-	isFocused={cell.isFocused}
-	isPinned={cell.isPinned}
-	hasError={cell.hasError}
-	isClosed={cell.isClosed}
-	on:focus={handleCellFocus}
-	on:pinToggle={handlePinToggle}
-	on:toggleClosed={handleToggleClosed}
->
-	<!-- Output Panel (always visible, above editor) -->
-	<OutputPanel
-		id={cell.id}
-		status={cell.status}
-		valueHtml={cell.valueHtml}
-		error={cell.hasError ? 'Example error message' : null}
-		console={cell.console}
-		isClosed={cell.isClosed}
-	/>
+<div>
+	<RenderedCell {cell} />
 
-	<!-- Cell Editor (only visible when not closed) -->
 	{#if !cell.isClosed}
 		<SourceContent
 			id={cell.id}
@@ -71,4 +51,4 @@
 			on:run={handleCellRun}
 		/>
 	{/if}
-</CellShell>
+</div>
