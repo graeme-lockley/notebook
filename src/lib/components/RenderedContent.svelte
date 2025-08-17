@@ -8,11 +8,7 @@
 	let { cell }: Props = $props();
 
 	// Extract properties from cell
-	let {
-		status,
-		valueHtml = null,
-		isClosed = false
-	} = $derived({
+	let { status, valueHtml = null } = $derived({
 		status: cell.status,
 		valueHtml: cell.valueHtml,
 		isClosed: cell.isClosed
@@ -30,6 +26,7 @@
 
 {#if status === 'ok' && valueHtml}
 	<div>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html sanitizeHtml(valueHtml)}
 	</div>
 {:else}
