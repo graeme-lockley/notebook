@@ -143,7 +143,6 @@
 <div data-testid="cell-editor" class="relative w-full">
 	<!-- Editor Container -->
 	<div
-		data-testid="editor-container"
 		bind:this={editorContainer}
 		class="rounded border-gray-200 bg-white p-3 font-mono text-sm leading-relaxed min-h-[60px] w-full resize-none border transition-all duration-150 outline-none"
 		class:ring-2={isFocused}
@@ -159,7 +158,6 @@
 	<!-- Top-Right Run Icon -->
 	{#if isFocused}
 		<button
-			data-testid="run-button"
 			class="top-2 right-2 h-6 w-6 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 absolute flex items-center justify-center rounded-full opacity-0 transition-all duration-150 group-hover:opacity-100"
 			onclick={handleRunClick}
 			aria-label="Run cell"

@@ -395,3 +395,24 @@ body {
 		width: 8rem;
 	}
 }
+
+.notebook-editor {
+	display: grid;
+	row-gap: 0px;
+}
+
+.notebook-editor-row {
+	display: grid;
+	grid-template-columns: 20px 20px 1fr; /* fixed, fixed, flexible */
+	column-gap: 8px; /* space between columns */
+	align-items: center;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.notebook-editor-row > :nth-child(3) {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis; /* optional */
+	white-space: nowrap; /* remove if you prefer wrapping */
+}
