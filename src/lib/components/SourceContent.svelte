@@ -60,70 +60,6 @@
 		},
 		'.cm-line': {
 			backgroundColor: '#e5e7eb !important' // bg-gray-200 (lighter)
-		},
-		// CodeMirror 6 syntax highlighting selectors
-		'& .cm-keyword': {
-			color: '#dc2626 !important' // text-red-600
-		},
-		'& .cm-operator': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-string': {
-			color: '#059669 !important' // text-emerald-600
-		},
-		'& .cm-string-2': {
-			color: '#059669 !important' // text-emerald-600
-		},
-		'& .cm-comment': {
-			color: '#6b7280 !important' // text-gray-500
-		},
-		'& .cm-number': {
-			color: '#7c3aed !important' // text-violet-600
-		},
-		'& .cm-variable': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-variable-2': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-property': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-definition': {
-			color: '#2563eb !important' // text-blue-600
-		},
-		'& .cm-function': {
-			color: '#2563eb !important' // text-blue-600
-		},
-		'& .cm-tag': {
-			color: '#dc2626 !important' // text-red-600
-		},
-		'& .cm-attribute': {
-			color: '#059669 !important' // text-emerald-600
-		},
-		'& .cm-builtin': {
-			color: '#2563eb !important' // text-blue-600
-		},
-		'& .cm-typeName': {
-			color: '#dc2626 !important' // text-red-600
-		},
-		'& .cm-meta': {
-			color: '#6b7280 !important' // text-gray-500
-		},
-		'& .cm-qualifier': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-punctuation': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-propertyName': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-variableName': {
-			color: '#1f2937 !important' // text-gray-800
-		},
-		'& .cm-definitionName': {
-			color: '#2563eb !important' // text-blue-600
 		}
 	});
 
@@ -157,12 +93,40 @@
 							dispatch('run', { id });
 							return true;
 						}
+					},
+					{
+						key: 'Enter',
+						run: (view) => {
+							const { state } = view;
+							const { selection } = state;
+							const line = state.doc.lineAt(selection.main.head);
+
+							// Get the indentation of the current line
+							const indentMatch = line.text.match(/^\s*/);
+							const currentIndent = indentMatch ? indentMatch[0] : '';
+
+							// Insert newline with the same indentation
+							const insertText = '\n' + currentIndent;
+
+							view.dispatch({
+								changes: {
+									from: selection.main.head,
+									insert: insertText
+								},
+								selection: {
+									anchor: selection.main.head + insertText.length
+								}
+							});
+							return true;
+						}
 					}
 				]),
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
 						const newValue = update.state.doc.toString();
-						dispatch('valueChange', { id, value: newValue });
+						// Remove trailing newlines to prevent extra lines
+						const trimmedValue = newValue.replace(/\n+$/, '');
+						dispatch('valueChange', { id, value: trimmedValue });
 					}
 				}),
 				EditorView.focusChangeEffect.of((state, focused) => {
