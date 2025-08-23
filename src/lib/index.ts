@@ -6,3 +6,4 @@ export { default as RenderedToggleGutter } from './components/RenderedToggleGutt
 export { default as RenderedPopupGutter } from './components/RenderedPopupGutter.svelte';
 export { default as RenderedContent } from './components/RenderedContent.svelte';
 export { default as SourceCell } from './components/SourceCell.svelte';
+export { default as SourcePopupGutter } from './components/SourcePopupGutter.svelte';

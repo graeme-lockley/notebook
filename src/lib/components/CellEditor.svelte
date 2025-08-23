@@ -35,10 +35,12 @@
 	tabindex="0"
 	onmouseenter={handleOnFocus}
 	onmouseleave={handleLooseFocus}
+	onfocus={handleOnFocus}
+	onblur={handleLooseFocus}
 >
 	<RenderedCell {isClosed} {isFocused} {cell} on:ToggleSourceView={handleToggleSourceView} />
 
 	{#if !isClosed}
-		<SourceCell {cell} />
+		<SourceCell {isFocused} {cell} />
 	{/if}
 </div>
