@@ -182,10 +182,10 @@
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
-		// if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-		// 	event.preventDefault();
-		// 	handleRunClick();
-		// }
+		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+			event.preventDefault();
+			handleRunClick();
+		}
 	}
 
 	onMount(() => {
