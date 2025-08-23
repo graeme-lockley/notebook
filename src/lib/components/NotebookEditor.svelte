@@ -14,7 +14,7 @@
 	{#each notebook.cells as cell (cell.id)}
 		<AddCellBetween />
 
-		<CellEditor {cell} />
+		<CellEditor {notebook} {cell} />
 	{/each}
 
 	<AddCellBetween />

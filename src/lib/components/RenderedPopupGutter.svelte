@@ -1,22 +1,30 @@
 <script lang="ts">
 	import { EllipsisVertical } from 'lucide-svelte';
-	import type { Cell } from '$lib/types/cell';
 
 	interface Props {
-		cell: Cell;
+		isFocused: boolean;
 	}
 
-	let { cell }: Props = $props();
+	let { isFocused }: Props = $props();
 
-	// Determine if we should show the popup icon
-	let shouldShowIcon = $derived(cell.isFocused);
+	let hover = $state(false);
 
-	// Determine icon color based on focus state
-	let iconColor = $derived(cell.isFocused ? 'text-gray-600' : 'text-gray-400');
+	// Determine icon color based on focus and hover state
+	let iconColor = $derived(hover ? 'text-gray-600' : 'text-gray-400');
 </script>
 
-<div>
-	{#if shouldShowIcon}
+{#if isFocused}
+	<div
+		class="flex justify-center bg-gray-100 pt-1"
+		role="button"
+		tabindex="0"
+		onmouseover={() => (hover = true)}
+		onmouseleave={() => (hover = false)}
+		onfocus={() => (hover = true)}
+		onblur={() => (hover = false)}
+	>
 		<EllipsisVertical size={16} class={iconColor} />
-	{/if}
-</div>
+	</div>
+{:else}
+	<div></div>
+{/if}

@@ -23,10 +23,10 @@ const initialCells: Cell[] = [
 		status: 'ok',
 		valueHtml:
 			'<h1>Markdown Cell</h1><p>This is a <strong>markdown</strong> cell with:</p><ul><li>Bullet points</li><li><em>Italic text</em></li><li><code>code snippets</code></li></ul><h2>Subsection</h2><p>And even more content!</p>',
-		isFocused: true,
+		isFocused: false,
 		isPinned: false,
 		hasError: false,
-		isClosed: false,
+		isClosed: true,
 		isEditing: false
 	},
 	{
@@ -40,7 +40,7 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: false,
 		hasError: false,
-		isClosed: false, // Open cell example
+		isClosed: true, // Open cell example
 		isEditing: false
 	},
 	{
@@ -70,7 +70,7 @@ const initialCells: Cell[] = [
 		isFocused: false,
 		isPinned: false,
 		hasError: true, // Has error
-		isClosed: false, // Open cell with error
+		isClosed: true, // Open cell with error
 		isEditing: false
 	}
 ];

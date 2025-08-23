@@ -1,25 +1,44 @@
 <script lang="ts">
 	import RenderedCell from './RenderedCell.svelte';
-	import type { Cell } from '$lib/types/cell';
+	import SourceCell from './SourceCell.svelte';
+	import type { Notebook, Cell } from '$lib/types/cell';
+	import type { ToggleSourceViewEvent } from './event-types';
 
 	interface Props {
+		notebook: Notebook;
 		cell: Cell;
 	}
 
-	let { cell }: Props = $props();
+	let { notebook, cell }: Props = $props();
+	let isClosed = $derived(cell.isClosed);
+	let isFocused = $derived(cell.isFocused);
+
+	function handleToggleSourceView(event: CustomEvent<ToggleSourceViewEvent>) {
+		notebook.toggleClosed(event.detail.cellId);
+		isClosed = cell.isClosed;
+	}
+
+	function handleOnFocus() {
+		notebook.setFocus(cell.id);
+		isFocused = cell.isFocused;
+	}
+
+	function handleLooseFocus() {
+		notebook.clearFocus();
+		isFocused = cell.isFocused;
+	}
 </script>
 
-<div class="notebook-editor-row">
-	<RenderedCell {cell} />
+<div
+	class="notebook-editor-row"
+	role="button"
+	tabindex="0"
+	onmouseenter={handleOnFocus}
+	onmouseleave={handleLooseFocus}
+>
+	<RenderedCell {isClosed} {isFocused} {cell} on:ToggleSourceView={handleToggleSourceView} />
 
-	<!-- {#if !cell.isClosed}
-		<SourceContent
-			id={cell.id}
-			kind={cell.kind}
-			value={cell.value}
-			isFocused={cell.isFocused}
-			on:valueChange={handleCellValueChange}
-			on:run={handleCellRun}
-		/>
-	{/if} -->
+	{#if !isClosed}
+		<SourceCell {cell} />
+	{/if}
 </div>

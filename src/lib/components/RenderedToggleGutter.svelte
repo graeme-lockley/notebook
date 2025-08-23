@@ -1,32 +1,32 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
 	import { ChevronRight, ChevronDown } from 'lucide-svelte';
-	import type { Cell } from '$lib/types/cell';
+	import type { ToggleSourceViewEvent } from './event-types';
 
 	interface Props {
-		cell: Cell;
+		isClosed: boolean;
+		cellId: string;
+		isFocused: boolean;
 	}
 
-	let { cell }: Props = $props();
-
-	let shouldShowIcon = $derived(cell.isFocused);
-
-	let isClosed = $state(cell.isClosed);
+	let { isClosed, cellId, isFocused }: Props = $props();
 
 	let hover = $state(false);
 
-	let iconColor = $derived(
-		hover ? 'text-black' : cell.isFocused ? 'text-gray-400' : 'text-gray-400'
-	);
+	const dispatch = createEventDispatcher<{
+		ToggleSourceView: ToggleSourceViewEvent;
+	}>();
+
+	let iconColor = $derived(hover ? 'text-black' : isFocused ? 'text-gray-400' : 'text-gray-400');
 
 	function toggleIsClosed() {
-		isClosed = !isClosed;
-		cell.isClosed = isClosed;
+		dispatch('ToggleSourceView', { cellId });
 	}
 </script>
 
-{#if shouldShowIcon}
+{#if isFocused}
 	<div
-		class="flex justify-center"
+		class="flex justify-center pt-1"
 		role="button"
 		tabindex="0"
 		onclick={() => toggleIsClosed()}
