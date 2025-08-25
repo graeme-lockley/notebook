@@ -58,7 +58,6 @@
 	onblur={() => (hover = false)}
 	onclick={handleClick}
 	onkeydown={(e) => e.key === 'Enter' && handleClick(e as unknown as MouseEvent)}
-	data-testid="cell-type-button"
 >
 	{#if kind === 'js'}
 		<Braces size={16} class={iconColor} />
