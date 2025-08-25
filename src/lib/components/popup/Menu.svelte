@@ -5,7 +5,7 @@
 
 	interface Props<T> {
 		options: Item<T>[];
-		selectedValue: T;
+		selectedValue: T | undefined;
 		position: { top: number; left: number };
 		onOptionClick: (value: T) => void;
 		onClose: () => void;

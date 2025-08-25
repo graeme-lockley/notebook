@@ -2,16 +2,17 @@
 	import { createEventDispatcher } from 'svelte';
 	import RenderedCell from './RenderedCell.svelte';
 	import SourceCell from './SourceCell.svelte';
-	import type { Notebook, Cell } from '$lib/types/cell';
+	import type { Cell } from '$lib/types/cell';
 	import type { ToggleSourceViewEvent, OnFocusEvent } from './event-types';
+	import { type NotebookStore } from '$lib/stores/notebook';
 
 	interface Props {
-		notebook: Notebook;
+		notebookStore: NotebookStore;
 		cell: Cell;
 		focusedCellId: string | undefined;
 	}
 
-	let { notebook, cell, focusedCellId }: Props = $props();
+	let { notebookStore, cell, focusedCellId }: Props = $props();
 
 	let isClosed = $derived(cell.isClosed);
 	let isFocused = $derived(cell.id === focusedCellId);
@@ -21,8 +22,7 @@
 	}>();
 
 	function handleToggleSourceView(event: CustomEvent<ToggleSourceViewEvent>) {
-		notebook.toggleClosed(event.detail.cellId);
-		isClosed = cell.isClosed;
+		notebookStore.toggleClosed(event.detail.cellId);
 	}
 
 	function handleOnFocus() {

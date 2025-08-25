@@ -2,24 +2,25 @@
 	import TopBar from '$lib/components/TopBar.svelte';
 	import FooterBar from '$lib/components/FooterBar.svelte';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
-	import { Notebook } from '$lib/types/cell';
+	import { createNotebookStore, type NotebookStore } from '$lib/stores/notebook';
 	import { createDemoNotebook } from './cells-data';
 
-	// Initialize notebook with demo data
-	let notebook = $state<Notebook>(createDemoNotebook());
+	// Create notebook and wrap it in a reactive store
+	const notebook = createDemoNotebook();
+	const notebookStore: NotebookStore = createNotebookStore(notebook);
 
 	function handleTitleChange(event: CustomEvent) {
 		const { title } = event.detail;
-		notebook.updateTitle(title);
+		notebookStore.updateTitle(title);
 	}
 </script>
 
 <div class="demo-page">
-	<TopBar title={notebook.title} on:titleChange={handleTitleChange} />
+	<TopBar title={notebookStore.notebook.title} on:titleChange={handleTitleChange} />
 
 	<main class="demo-main">
 		<div class="demo-container">
-			<NotebookEditor {notebook} />
+			<NotebookEditor {notebookStore} />
 		</div>
 	</main>
 

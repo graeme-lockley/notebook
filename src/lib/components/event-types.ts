@@ -1,3 +1,11 @@
+import type { CellKind } from '$lib/types/cell';
+
+export type CellCreatedEvent = {
+	cellBeforeId: string | undefined;
+	cellAfterId: string | undefined;
+	cellKind: CellKind;
+};
+
 export type ToggleSourceViewEvent = {
 	cellId: string;
 };

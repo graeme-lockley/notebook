@@ -1,38 +1,54 @@
 <script lang="ts">
 	import CellEditor from './CellEditor.svelte';
 	import AddCellBetween from './AddCellBetween.svelte';
-	import type { Notebook } from '$lib/types/cell';
-	import type { OnFocusEvent } from './event-types';
+	import type { CellCreatedEvent, OnFocusEvent } from './event-types';
+	import type { NotebookStore } from '$lib/stores/notebook';
 
 	interface Props {
-		notebook: Notebook;
+		notebookStore: NotebookStore;
 	}
 
-	let { notebook }: Props = $props();
-	let focusedCellId = $state(notebook.focusedCell?.id);
+	let { notebookStore }: Props = $props();
+
+	function handleCellCreated(event: CustomEvent<CellCreatedEvent>) {
+		notebookStore.addCell({
+			kind: event.detail.cellKind,
+			relativeToId: event.detail.cellBeforeId || event.detail.cellAfterId,
+			position: event.detail.cellBeforeId ? 'below' : 'above',
+			focus: true
+		});
+
+		console.log('NotebookEditor: CellCreated:', $notebookStore.cells);
+	}
 
 	function handleOnFocus(event: CustomEvent<OnFocusEvent>) {
-		notebook.setFocus(event.detail.cellId);
-		focusedCellId = event.detail.cellId;
+		notebookStore.setFocus(event.detail.cellId);
 	}
 </script>
 
 <div class="notebook-editor">
-	{#each notebook.cells as cell, index (cell.id)}
+	{#each $notebookStore.cells as cell, index (cell.id)}
 		<AddCellBetween
-			cellBeforeId={index > 0 ? notebook.cells[index - 1].id : undefined}
+			cellBeforeId={index > 0 ? $notebookStore.cells[index - 1].id : undefined}
 			cellAfterId={cell.id}
-			{focusedCellId}
+			focusedCellId={$notebookStore.focusedCell?.id}
+			on:CellCreated={handleCellCreated}
 		/>
 
-		<CellEditor {notebook} {cell} {focusedCellId} on:OnFocus={handleOnFocus} />
+		<CellEditor
+			{notebookStore}
+			{cell}
+			focusedCellId={$notebookStore.focusedCell?.id}
+			on:OnFocus={handleOnFocus}
+		/>
 	{/each}
 
 	<AddCellBetween
-		cellBeforeId={notebook.cells.length > 0
-			? notebook.cells[notebook.cells.length - 1].id
+		cellBeforeId={$notebookStore.cells.length > 0
+			? $notebookStore.cells[$notebookStore.cells.length - 1].id
 			: undefined}
 		cellAfterId={undefined}
-		{focusedCellId}
+		focusedCellId={$notebookStore.focusedCell?.id}
+		on:CellCreated={handleCellCreated}
 	/>
 </div>

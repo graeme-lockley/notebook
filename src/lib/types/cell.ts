@@ -39,6 +39,7 @@ export class Notebook {
 	private _description: string;
 	private _createdAt: Date;
 	private _updatedAt: Date;
+	private _version = 0; // Used for triggering reactivity
 
 	constructor(options: NotebookOptions = {}) {
 		this._title = options.title || 'Untitled Notebook';
@@ -62,6 +63,10 @@ export class Notebook {
 
 	get createdAt(): Date {
 		return this._createdAt;
+	}
+
+	get version(): number {
+		return this._version;
 	}
 
 	get updatedAt(): Date {
@@ -130,6 +135,7 @@ export class Notebook {
 		}
 
 		this._updatedAt = new Date();
+		this._version++;
 		return newCell;
 	}
 
@@ -139,6 +145,7 @@ export class Notebook {
 
 		this._cells.splice(index, 1);
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -148,6 +155,7 @@ export class Notebook {
 
 		Object.assign(cell, updates);
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -168,6 +176,7 @@ export class Notebook {
 		// Set focus on target cell
 		cell.isFocused = true;
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -176,6 +185,7 @@ export class Notebook {
 			cell.isFocused = false;
 		});
 		this._updatedAt = new Date();
+		this._version++;
 	}
 
 	// Editing management
@@ -191,6 +201,7 @@ export class Notebook {
 		// Set editing on target cell
 		cell.isEditing = true;
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -199,6 +210,7 @@ export class Notebook {
 			cell.isEditing = false;
 		});
 		this._updatedAt = new Date();
+		this._version++;
 	}
 
 	// Cell operations
@@ -208,6 +220,7 @@ export class Notebook {
 
 		cell.isClosed = !cell.isClosed;
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -217,6 +230,7 @@ export class Notebook {
 
 		cell.isPinned = !cell.isPinned;
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -231,12 +245,14 @@ export class Notebook {
 			// Set status to pending
 			cell.status = 'pending';
 			this._updatedAt = new Date();
+			this._version++;
 
 			// Simulate execution (in real implementation, this would execute the cell)
 			setTimeout(() => {
 				cell.status = 'ok';
 				cell.hasError = false;
 				this._updatedAt = new Date();
+				this._version++;
 				resolve();
 			}, 10);
 		});
@@ -256,6 +272,7 @@ export class Notebook {
 		const cell = this._cells.splice(currentIndex, 1)[0];
 		this._cells.splice(newIndex, 0, cell);
 		this._updatedAt = new Date();
+		this._version++;
 		return true;
 	}
 
@@ -277,11 +294,13 @@ export class Notebook {
 	updateTitle(title: string): void {
 		this._title = title;
 		this._updatedAt = new Date();
+		this._version++;
 	}
 
 	updateDescription(description: string): void {
 		this._description = description;
 		this._updatedAt = new Date();
+		this._version++;
 	}
 
 	// Utility methods
