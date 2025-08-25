@@ -262,6 +262,9 @@ body {
 }
 
 /* Colors */
+.text-white {
+	color: var(--color-white);
+}
 .text-gray-400 {
 	color: var(--color-gray-400);
 }

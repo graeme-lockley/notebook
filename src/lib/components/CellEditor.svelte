@@ -1,17 +1,24 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
 	import RenderedCell from './RenderedCell.svelte';
 	import SourceCell from './SourceCell.svelte';
 	import type { Notebook, Cell } from '$lib/types/cell';
-	import type { ToggleSourceViewEvent } from './event-types';
+	import type { ToggleSourceViewEvent, OnFocusEvent } from './event-types';
 
 	interface Props {
 		notebook: Notebook;
 		cell: Cell;
+		focusedCellId: string | undefined;
 	}
 
-	let { notebook, cell }: Props = $props();
+	let { notebook, cell, focusedCellId }: Props = $props();
+
 	let isClosed = $derived(cell.isClosed);
-	let isFocused = $derived(cell.isFocused);
+	let isFocused = $derived(cell.id === focusedCellId);
+
+	const dispatch = createEventDispatcher<{
+		OnFocus: OnFocusEvent;
+	}>();
 
 	function handleToggleSourceView(event: CustomEvent<ToggleSourceViewEvent>) {
 		notebook.toggleClosed(event.detail.cellId);
@@ -19,13 +26,7 @@
 	}
 
 	function handleOnFocus() {
-		notebook.setFocus(cell.id);
-		isFocused = cell.isFocused;
-	}
-
-	function handleLooseFocus() {
-		notebook.clearFocus();
-		isFocused = cell.isFocused;
+		dispatch('OnFocus', { cellId: cell.id });
 	}
 </script>
 
@@ -34,9 +35,7 @@
 	role="button"
 	tabindex="0"
 	onmouseenter={handleOnFocus}
-	onmouseleave={handleLooseFocus}
 	onfocus={handleOnFocus}
-	onblur={handleLooseFocus}
 >
 	<RenderedCell {isClosed} {isFocused} {cell} on:ToggleSourceView={handleToggleSourceView} />
 
