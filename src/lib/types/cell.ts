@@ -305,7 +305,7 @@ export class Notebook {
 
 	// Utility methods
 	private generateCellId(): string {
-		return `cell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+		return `cell-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 	}
 
 	private getDefaultValue(kind: CellKind): string {
