@@ -24,9 +24,9 @@
 		<div
 			onclick={handleClick}
 			onkeydown={(e) => e.key === 'Enter' && handleClick()}
-			class="cursor-pointer hover:bg-gray-100 hover:text-gray-600 rounded transition-colors p-1 {!isFocused
-				? 'text-white'
-				: 'text-gray-400'}"
+			class="cursor-pointer hover:bg-gray-100 hover:text-gray-600 rounded transition-colors p-1 {isFocused
+				? 'text-gray-400'
+				: 'text-white'}"
 			data-testid="add-cell-button"
 			tabindex="0"
 			role="button"
