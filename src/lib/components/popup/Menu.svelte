@@ -56,10 +56,9 @@
 >
 	{#each options as option (option.value)}
 		{@const isSelected = option.value === selectedValue}
-		{@const itemClass = isSelected ? 'popup-menu-item popup-menu-item-selected' : 'popup-menu-item'}
 
 		<li
-			class={itemClass}
+			class="popup-menu-item"
 			role="menuitem"
 			data-testid="cell-type-option-{option.value}"
 			onclick={() => onOptionClick(option.value)}
@@ -90,13 +89,6 @@
 </ul>
 
 <style>
-	.popup {
-		position: fixed;
-		top: 0;
-		left: 0;
-		pointer-events: auto;
-	}
-
 	.popup-menu {
 		background-color: var(--color-white);
 		border: var(--border-width) solid var(--border-color);
@@ -128,10 +120,6 @@
 	.popup-menu-item:focus {
 		background-color: var(--color-gray-100);
 		outline: none;
-	}
-
-	.popup-menu-item-selected {
-		/* No background color for selected state */
 	}
 
 	.popup-menu-item-content {
