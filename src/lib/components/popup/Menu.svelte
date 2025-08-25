@@ -13,10 +13,19 @@
 
 	let { options, selectedValue, position, onOptionClick, onClose }: Props<T> = $props();
 
+	// Generate unique ID for this popup instance
+	const popupId = `popup-${Math.random().toString(36).substring(2, 11)}`;
+
 	function handleClickOutside(event: MouseEvent) {
-		if (!(event.target as Element).closest('[data-testid="cell-type-button"]')) {
-			onClose();
+		const target = event.target as Element;
+
+		// Don't close if clicking inside this specific popup
+		if (target.closest(`#${popupId}`)) {
+			return;
 		}
+
+		// Close if clicking anywhere else
+		onClose();
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -26,7 +35,11 @@
 	}
 
 	onMount(() => {
-		document.addEventListener('click', handleClickOutside);
+		// Delay adding the click listener to avoid interfering with the trigger button click
+		setTimeout(() => {
+			document.addEventListener('click', handleClickOutside);
+		}, 0);
+
 		document.addEventListener('keydown', handleKeydown);
 
 		return () => {
@@ -36,7 +49,11 @@
 	});
 </script>
 
-<ul class="popup-menu" style="top: {position.top - 20}px; left: {position.left + 5}px;">
+<ul
+	id={popupId}
+	class="popup-menu"
+	style="top: {position.top - 20}px; left: {position.left + 5}px;"
+>
 	{#each options as option (option.value)}
 		{@const isSelected = option.value === selectedValue}
 		{@const itemClass = isSelected ? 'popup-menu-item popup-menu-item-selected' : 'popup-menu-item'}
@@ -50,13 +67,14 @@
 			tabindex="0"
 		>
 			<div class="popup-menu-item-content">
-				<div class="popup-menu-item-icon">
-					<div class="popup-menu-icon-wrapper">
-						{@render option.icon({
-							size: 14,
-							class: isSelected ? 'popup-menu-icon-selected' : 'popup-menu-icon'
-						})}
-					</div>
+				<div
+					class={isSelected
+						? 'popup-menu-icon-wrapper popup-menu-icon-wrapper-selected'
+						: 'popup-menu-icon-wrapper'}
+				>
+					{@render option.icon({
+						size: 16
+					})}
 				</div>
 				<span class={isSelected ? 'popup-menu-text-selected' : 'popup-menu-text'}
 					>{option.label}</span
@@ -64,7 +82,7 @@
 			</div>
 			{#if isSelected}
 				<div class="popup-menu-check">
-					<Check size={16} class="popup-menu-check-icon" />
+					<Check size={16} />
 				</div>
 			{/if}
 		</li>
@@ -93,7 +111,7 @@
 	}
 
 	.popup-menu-item {
-		padding: var(--space-1) var(--space-1);
+		padding: var(--space-1) var(--space-3);
 		text-align: left;
 		font-size: var(--font-size-sm);
 		display: flex;
@@ -113,7 +131,7 @@
 	}
 
 	.popup-menu-item-selected {
-		background-color: var(--color-gray-50);
+		/* No background color for selected state */
 	}
 
 	.popup-menu-item-content {
@@ -122,25 +140,17 @@
 		gap: var(--space-2);
 	}
 
-	.popup-menu-item-icon {
-		display: flex;
-		align-items: center;
-		padding-left: var(--space-2);
-	}
-
 	.popup-menu-icon-wrapper {
-		width: 16px;
-		height: 16px;
+		width: 24px;
+		height: 20px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-	}
-
-	.popup-menu-icon {
+		padding-left: var(--space-2);
 		color: var(--color-gray-600);
 	}
 
-	.popup-menu-icon-selected {
+	.popup-menu-icon-wrapper-selected {
 		color: var(--color-primary);
 	}
 
@@ -155,10 +165,7 @@
 	.popup-menu-check {
 		display: flex;
 		align-items: center;
-		margin-left: var(--space-4);
-	}
-
-	.popup-menu-check-icon {
+		margin-left: var(--space-2);
 		color: var(--color-primary);
 	}
 </style>
