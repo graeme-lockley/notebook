@@ -1,15 +1,22 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
 	import { Braces, Code, Text } from 'lucide-svelte';
 	import type { CellKind } from '$lib/types/cell';
 	import Menu from './popup/Menu.svelte';
 	import type { Item } from './popup/types';
+	import type { SourceKindChangeEvent } from './event-types';
 
 	interface Props {
+		id: string;
 		isFocused: boolean;
 		kind: CellKind;
 	}
 
-	let { isFocused, kind }: Props = $props();
+	let { id, isFocused, kind }: Props = $props();
+
+	const dispatch = createEventDispatcher<{
+		SourceKindChange: SourceKindChangeEvent;
+	}>();
 
 	let hover = $state(false);
 	let showPopup = $state(false);
@@ -39,7 +46,7 @@
 	}
 
 	function handleOptionClick(selectedKind: CellKind) {
-		console.log('Selected option:', selectedKind);
+		dispatch('SourceKindChange', { id, kind: selectedKind });
 		showPopup = false;
 	}
 

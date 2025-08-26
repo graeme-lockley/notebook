@@ -3,7 +3,12 @@
 	import RenderedCell from './RenderedCell.svelte';
 	import SourceCell from './SourceCell.svelte';
 	import type { Cell } from '$lib/types/cell';
-	import type { ToggleSourceViewEvent, OnFocusEvent, SourceValueChangeEvent } from './event-types';
+	import type {
+		OnFocusEvent,
+		SourceKindChangeEvent,
+		SourceValueChangeEvent,
+		ToggleSourceViewEvent
+	} from './event-types';
 	import { type NotebookStore } from '$lib/stores/notebook';
 
 	interface Props {
@@ -19,6 +24,7 @@
 
 	const dispatch = createEventDispatcher<{
 		OnFocus: OnFocusEvent;
+		SourceKindChange: SourceKindChangeEvent;
 		SourceValueChange: SourceValueChangeEvent;
 	}>();
 
@@ -28,6 +34,10 @@
 
 	function handleOnFocus() {
 		dispatch('OnFocus', { cellId: cell.id });
+	}
+
+	function handleSourceKindChange(event: CustomEvent<SourceKindChangeEvent>) {
+		dispatch('SourceKindChange', event.detail);
 	}
 
 	function handleSourceValueChange(event: CustomEvent<SourceValueChangeEvent>) {
@@ -45,6 +55,11 @@
 	<RenderedCell {isClosed} {isFocused} {cell} on:ToggleSourceView={handleToggleSourceView} />
 
 	{#if !isClosed}
-		<SourceCell {isFocused} {cell} on:SourceValueChange={handleSourceValueChange} />
+		<SourceCell
+			{isFocused}
+			{cell}
+			on:SourceValueChange={handleSourceValueChange}
+			on:SourceKindChange={handleSourceKindChange}
+		/>
 	{/if}
 </div>
