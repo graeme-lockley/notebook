@@ -29,10 +29,6 @@
 	}>();
 
 	function handleClick(event: MouseEvent) {
-		console.log('AddCellBetween clicked:');
-		console.log('  Cell before:', cellBeforeId || 'none');
-		console.log('  Cell after:', cellAfterId || 'none');
-
 		if (!showPopup) {
 			// Calculate position based on the clicked element
 			const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();

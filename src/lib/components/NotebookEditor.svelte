@@ -22,8 +22,6 @@
 			position: event.detail.cellBeforeId ? 'below' : 'above',
 			focus: true
 		});
-
-		console.log('NotebookEditor: CellCreated:', $notebookStore.cells);
 	}
 
 	function handleOnFocus(event: CustomEvent<OnFocusEvent>) {
