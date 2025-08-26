@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CellEditor from './CellEditor.svelte';
 	import AddCellBetween from './AddCellBetween.svelte';
-	import type { CellCreatedEvent, OnFocusEvent } from './event-types';
+	import type { CellCreatedEvent, OnFocusEvent, SourceValueChangeEvent } from './event-types';
 	import type { NotebookStore } from '$lib/stores/notebook';
 
 	interface Props {
@@ -24,6 +24,10 @@
 	function handleOnFocus(event: CustomEvent<OnFocusEvent>) {
 		notebookStore.setFocus(event.detail.cellId);
 	}
+
+	function handleSourceValueChange(event: CustomEvent<SourceValueChangeEvent>) {
+		notebookStore.updateCell(event.detail.id, { value: event.detail.value });
+	}
 </script>
 
 <div class="notebook-editor">
@@ -40,6 +44,7 @@
 			{cell}
 			focusedCellId={$notebookStore.focusedCell?.id}
 			on:OnFocus={handleOnFocus}
+			on:SourceValueChange={handleSourceValueChange}
 		/>
 	{/each}
 

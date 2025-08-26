@@ -9,6 +9,7 @@
 	import { html } from '@codemirror/lang-html';
 	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { Play } from 'lucide-svelte';
+	import type { SourceValueChangeEvent } from './event-types';
 
 	let {
 		id,
@@ -19,14 +20,14 @@
 	} = $props();
 
 	const dispatch = createEventDispatcher<{
-		valueChange: { id: string; value: string };
+		SourceValueChange: SourceValueChangeEvent;
 		run: { id: string };
-		focus: { id: string };
-		blur: { id: string };
 	}>();
 
 	let editorContainer: HTMLDivElement;
 	let editorView: EditorView;
+	let newValue = value;
+	let currentKind = kind;
 
 	// Language configuration based on cell type
 	const getLanguageSupport = () => {
@@ -123,18 +124,15 @@
 				]),
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
-						const newValue = update.state.doc.toString();
-						// Remove trailing newlines to prevent extra lines
-						const trimmedValue = newValue.replace(/\n+$/, '');
-						dispatch('valueChange', { id, value: trimmedValue });
+						newValue = update.state.doc.toString();
 					}
 				}),
 				EditorView.focusChangeEffect.of((state, focused) => {
-					if (focused) {
-						dispatch('focus', { id });
-					} else {
-						dispatch('blur', { id });
+					if (!focused && newValue !== value) {
+						value = newValue;
+						dispatch('SourceValueChange', { id, value: newValue });
 					}
+
 					return null;
 				})
 			]
@@ -143,13 +141,6 @@
 
 	function handleRunClick() {
 		dispatch('run', { id });
-	}
-
-	function handleKeyDown(event: KeyboardEvent) {
-		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-			event.preventDefault();
-			handleRunClick();
-		}
 	}
 
 	onMount(() => {
@@ -167,22 +158,27 @@
 		}
 	});
 
-	// Update editor when value changes
+	// Update editor when value changes (only if not user-initiated)
 	$effect(() => {
 		if (editorView && value !== editorView.state.doc.toString()) {
-			editorView.dispatch({
-				changes: {
-					from: 0,
-					to: editorView.state.doc.length,
-					insert: value
-				}
-			});
+			// Only update if the change didn't come from user input
+			const currentDoc = editorView.state.doc.toString();
+			if (value !== currentDoc) {
+				editorView.dispatch({
+					changes: {
+						from: 0,
+						to: editorView.state.doc.length,
+						insert: value
+					}
+				});
+			}
 		}
 	});
 
-	// Update language when kind changes
+	// Update language when kind changes (only if actually changed)
 	$effect(() => {
-		if (editorView) {
+		if (editorView && kind !== currentKind) {
+			currentKind = kind;
 			editorView.destroy();
 			editorView = new EditorView({
 				state: createEditorState(),
@@ -200,10 +196,8 @@
 		class:ring-2={isFocused}
 		class:ring-blue-500={isFocused}
 		role="textbox"
-		tabindex="0"
 		aria-label="Cell editor"
 		data-placeholder={placeholderText}
-		onkeydown={handleKeyDown}
 	></div>
 
 	<!-- Top-Right Run Icon -->

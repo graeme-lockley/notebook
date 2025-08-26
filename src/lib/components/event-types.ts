@@ -6,6 +6,11 @@ export type CellCreatedEvent = {
 	cellKind: CellKind;
 };
 
+export type SourceValueChangeEvent = {
+	id: string;
+	value: string;
+};
+
 export type ToggleSourceViewEvent = {
 	cellId: string;
 };
