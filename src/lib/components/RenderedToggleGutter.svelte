@@ -11,13 +11,9 @@
 
 	let { isClosed, cellId, isFocused }: Props = $props();
 
-	let hover = $state(false);
-
 	const dispatch = createEventDispatcher<{
 		ToggleSourceView: ToggleSourceViewEvent;
 	}>();
-
-	let iconColor = $derived(hover ? 'text-black' : isFocused ? 'text-gray-400' : 'text-gray-400');
 
 	function toggleIsClosed() {
 		dispatch('ToggleSourceView', { cellId });
@@ -26,7 +22,7 @@
 
 {#if isFocused}
 	<div
-		class="flex justify-center pt-1"
+		class="flex justify-center pt-1 text-gray-400 hover:text-gray-600"
 		role="button"
 		tabindex="0"
 		onclick={() => toggleIsClosed()}
@@ -35,15 +31,11 @@
 				toggleIsClosed();
 			}
 		}}
-		onmouseover={() => (hover = true)}
-		onmouseleave={() => (hover = false)}
-		onfocus={() => (hover = true)}
-		onblur={() => (hover = false)}
 	>
 		{#if isClosed}
-			<ChevronRight size={16} class={iconColor} />
+			<ChevronRight size={16} />
 		{:else}
-			<ChevronDown size={16} class={iconColor} />
+			<ChevronDown size={16} />
 		{/if}
 	</div>
 {:else}
