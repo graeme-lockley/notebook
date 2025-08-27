@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { plot } from '@observablehq/plot';
 	import katex from '@observablehq/katex';
+	import { marked } from 'marked';
 	import type { CellKind } from '$lib/types/cell';
 
 	let {
@@ -54,6 +55,8 @@
 		try {
 			if (kind === 'html' && isString(value)) {
 				renderStringHTMLElement(value);
+			} else if (kind === 'md' && isString(value)) {
+				await renderStringMarkdown(value);
 			} else if (isPlot(value)) {
 				await renderPlot(value);
 			} else if (isHTMLElement(value)) {
@@ -92,6 +95,15 @@
 		const div = document.createElement('div');
 		div.innerHTML = element;
 
+		// eslint-disable-next-line svelte/no-dom-manipulating
+		container.appendChild(div);
+		renderedElement = div;
+	}
+
+	// Render Markdown
+	async function renderStringMarkdown(element: string) {
+		const div = document.createElement('div');
+		div.innerHTML = await marked.parse(element);
 		// eslint-disable-next-line svelte/no-dom-manipulating
 		container.appendChild(div);
 		renderedElement = div;
@@ -297,5 +309,98 @@
 	.observable-value-renderer :global(.graphviz) {
 		text-align: center;
 		margin: 1rem 0;
+	}
+
+	/* HTML and Markdown content styling */
+	.observable-value-renderer :global(h1),
+	.observable-value-renderer :global(h2),
+	.observable-value-renderer :global(h3),
+	.observable-value-renderer :global(h4),
+	.observable-value-renderer :global(h5),
+	.observable-value-renderer :global(h6) {
+		margin: 1rem 0 0.5rem 0;
+		font-weight: var(--font-weight-semibold);
+		line-height: 1.25;
+	}
+
+	.observable-value-renderer :global(h1) {
+		font-size: 1.5rem;
+	}
+
+	.observable-value-renderer :global(h2) {
+		font-size: 1.25rem;
+	}
+
+	.observable-value-renderer :global(h3) {
+		font-size: 1.125rem;
+	}
+
+	.observable-value-renderer :global(p) {
+		margin: 0.5rem 0;
+		line-height: 1.6;
+	}
+
+	.observable-value-renderer :global(ul),
+	.observable-value-renderer :global(ol) {
+		margin: 0.5rem 0;
+		padding-left: 1.5rem;
+	}
+
+	.observable-value-renderer :global(li) {
+		margin: 0.25rem 0;
+		line-height: 1.5;
+	}
+
+	.observable-value-renderer :global(ul li) {
+		list-style-type: disc;
+	}
+
+	.observable-value-renderer :global(ol li) {
+		list-style-type: decimal;
+	}
+
+	.observable-value-renderer :global(blockquote) {
+		margin: 0.5rem 0;
+		padding-left: 1rem;
+		border-left: 3px solid var(--color-gray-300);
+		color: var(--color-gray-600);
+	}
+
+	.observable-value-renderer :global(code) {
+		background-color: var(--color-gray-100);
+		padding: 0.125rem 0.25rem;
+		border-radius: 0.25rem;
+		font-family: var(--font-family-mono);
+		font-size: 0.875em;
+	}
+
+	.observable-value-renderer :global(pre) {
+		background-color: var(--color-gray-100);
+		padding: 1rem;
+		border-radius: 0.375rem;
+		overflow-x: auto;
+		margin: 0.5rem 0;
+	}
+
+	.observable-value-renderer :global(pre code) {
+		background-color: transparent;
+		padding: 0;
+	}
+
+	.observable-value-renderer :global(strong) {
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.observable-value-renderer :global(em) {
+		font-style: italic;
+	}
+
+	.observable-value-renderer :global(a) {
+		color: var(--color-primary);
+		text-decoration: underline;
+	}
+
+	.observable-value-renderer :global(a:hover) {
+		color: var(--color-primary-hover);
 	}
 </style>

@@ -103,6 +103,99 @@
 		width: 100%;
 	}
 
+	/* HTML content styling for rendered output */
+	.html-output :global(h1),
+	.html-output :global(h2),
+	.html-output :global(h3),
+	.html-output :global(h4),
+	.html-output :global(h5),
+	.html-output :global(h6) {
+		margin: 1rem 0 0.5rem 0;
+		font-weight: var(--font-weight-semibold);
+		line-height: 1.25;
+	}
+
+	.html-output :global(h1) {
+		font-size: 1.5rem;
+	}
+
+	.html-output :global(h2) {
+		font-size: 1.25rem;
+	}
+
+	.html-output :global(h3) {
+		font-size: 1.125rem;
+	}
+
+	.html-output :global(p) {
+		margin: 0.5rem 0;
+		line-height: 1.6;
+	}
+
+	.html-output :global(ul),
+	.html-output :global(ol) {
+		margin: 0.5rem 0;
+		padding-left: 1.5rem;
+	}
+
+	.html-output :global(li) {
+		margin: 0.25rem 0;
+		line-height: 1.5;
+	}
+
+	.html-output :global(ul li) {
+		list-style-type: disc;
+	}
+
+	.html-output :global(ol li) {
+		list-style-type: decimal;
+	}
+
+	.html-output :global(blockquote) {
+		margin: 0.5rem 0;
+		padding-left: 1rem;
+		border-left: 3px solid var(--color-gray-300);
+		color: var(--color-gray-600);
+	}
+
+	.html-output :global(code) {
+		background-color: var(--color-gray-100);
+		padding: 0.125rem 0.25rem;
+		border-radius: 0.25rem;
+		font-family: var(--font-family-mono);
+		font-size: 0.875em;
+	}
+
+	.html-output :global(pre) {
+		background-color: var(--color-gray-100);
+		padding: 1rem;
+		border-radius: 0.375rem;
+		overflow-x: auto;
+		margin: 0.5rem 0;
+	}
+
+	.html-output :global(pre code) {
+		background-color: transparent;
+		padding: 0;
+	}
+
+	.html-output :global(strong) {
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.html-output :global(em) {
+		font-style: italic;
+	}
+
+	.html-output :global(a) {
+		color: var(--color-primary);
+		text-decoration: underline;
+	}
+
+	.html-output :global(a:hover) {
+		color: var(--color-primary-hover);
+	}
+
 	.no-output {
 		padding: 1rem;
 		color: var(--color-gray-500);
