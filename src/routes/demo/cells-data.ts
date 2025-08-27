@@ -10,10 +10,8 @@ const initialCells: Cell[] = [
 		status: 'ok',
 		valueHtml: '<h1>Hello, ObservableHQ!</h1><p>This is an HTML cell with some basic content.</p>',
 		isFocused: false,
-		isPinned: false,
 		hasError: false,
-		isClosed: true, // Closed cell example
-		isEditing: false
+		isClosed: true // Closed cell example
 	},
 	{
 		id: 'cell-2',
@@ -24,10 +22,8 @@ const initialCells: Cell[] = [
 		valueHtml:
 			'<h1>Markdown Cell</h1><p>This is a <strong>markdown</strong> cell with:</p><ul><li>Bullet points</li><li><em>Italic text</em></li><li><code>code snippets</code></li></ul><h2>Subsection</h2><p>And even more content!</p>',
 		isFocused: false,
-		isPinned: false,
 		hasError: false,
-		isClosed: true,
-		isEditing: false
+		isClosed: true
 	},
 	{
 		id: 'cell-3',
@@ -38,10 +34,8 @@ const initialCells: Cell[] = [
 		valueHtml: '<div>Sum: 15</div>',
 		console: ['Hello from JavaScript!', 'Sum of numbers: 15'],
 		isFocused: false,
-		isPinned: false,
 		hasError: false,
-		isClosed: true, // Open cell example
-		isEditing: false
+		isClosed: true // Open cell example
 	},
 	{
 		id: 'cell-4',
@@ -53,10 +47,8 @@ const initialCells: Cell[] = [
 			'<div>Chart: {"type":"bar","data":[10,20,30,40,50],"labels":["A","B","C","D","E"]}</div>',
 		console: ['Data visualization example loaded'],
 		isFocused: false,
-		isPinned: true, // Pinned cell example
 		hasError: false,
-		isClosed: true, // Closed cell with pin and comment
-		isEditing: false
+		isClosed: true // Closed cell with comment
 	},
 	{
 		id: 'cell-5',
@@ -68,10 +60,8 @@ const initialCells: Cell[] = [
 			'<div class="error-demo"><h2>Error Example</h2><p>This cell demonstrates error handling</p></div>',
 		console: ['Error: This is a simulated error'],
 		isFocused: false,
-		isPinned: false,
 		hasError: true, // Has error
-		isClosed: true, // Open cell with error
-		isEditing: false
+		isClosed: true // Open cell with error
 	}
 ];
 
@@ -97,10 +87,8 @@ export function createDemoNotebook(): Notebook {
 			status: cellData.status,
 			valueHtml: cellData.valueHtml,
 			console: cellData.console,
-			isPinned: cellData.isPinned,
 			hasError: cellData.hasError,
-			isClosed: cellData.isClosed,
-			isEditing: cellData.isEditing
+			isClosed: cellData.isClosed
 		});
 	});
 

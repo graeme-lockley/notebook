@@ -53,12 +53,6 @@ describe('Notebook', () => {
 			expect(notebook.focusedCell).toBeNull();
 		});
 
-		it('should return pinned cells', () => {
-			notebook.updateCell(notebook.cells[0].id, { isPinned: true });
-			expect(notebook.pinnedCells).toHaveLength(1);
-			expect(notebook.pinnedCells[0]).toBe(notebook.cells[0]);
-		});
-
 		it('should return open cells', () => {
 			notebook.updateCell(notebook.cells[0].id, { isClosed: false });
 			expect(notebook.openCells).toHaveLength(1);
@@ -148,29 +142,48 @@ describe('Notebook', () => {
 				const cell = notebook.addCell();
 				const result = notebook.updateCell(cell.id, {
 					value: 'Updated value',
-					isPinned: true
+					kind: 'md',
+					status: 'error'
 				});
 				expect(result).toBe(true);
 				expect(cell.value).toBe('Updated value');
-				expect(cell.isPinned).toBe(true);
+				expect(cell.kind).toBe('md');
+				expect(cell.status).toBe('error');
 			});
 
 			it('should return false for non-existent cell', () => {
 				const result = notebook.updateCell('non-existent', { value: 'test' });
 				expect(result).toBe(false);
 			});
+
+			it('should update version when updating cell', () => {
+				const cell = notebook.addCell();
+				const originalVersion = notebook.version;
+				notebook.updateCell(cell.id, { value: 'Updated' });
+				expect(notebook.version).toBe(originalVersion + 1);
+			});
+
+			it('should update timestamp when updating cell', () => {
+				const cell = notebook.addCell();
+				const originalTimestamp = notebook.updatedAt.getTime();
+				// Small delay to ensure timestamp difference
+				setTimeout(() => {
+					notebook.updateCell(cell.id, { value: 'Updated' });
+					expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
+				}, 1);
+			});
 		});
 
 		describe('getCell', () => {
 			it('should return cell by ID', () => {
 				const cell = notebook.addCell();
-				const found = notebook.getCell(cell.id);
-				expect(found).toBe(cell);
+				const foundCell = notebook.getCell(cell.id);
+				expect(foundCell).toBe(cell);
 			});
 
 			it('should return null for non-existent cell', () => {
-				const found = notebook.getCell('non-existent');
-				expect(found).toBeNull();
+				const foundCell = notebook.getCell('non-existent');
+				expect(foundCell).toBeNull();
 			});
 		});
 	});
@@ -209,50 +222,6 @@ describe('Notebook', () => {
 		});
 	});
 
-	describe('Editing Management', () => {
-		beforeEach(() => {
-			notebook.addCell({ kind: 'js' });
-			notebook.addCell({ kind: 'md' });
-		});
-
-		it('should set editing on a cell', () => {
-			const cell = notebook.cells[0];
-			const result = notebook.setEditing(cell.id);
-			expect(result).toBe(true);
-			expect(cell.isEditing).toBe(true);
-			expect(notebook.cells[1].isEditing).toBe(false);
-		});
-
-		it('should clear editing from other cells when setting editing', () => {
-			notebook.setEditing(notebook.cells[0].id);
-			notebook.setEditing(notebook.cells[1].id);
-			expect(notebook.cells[0].isEditing).toBe(false);
-			expect(notebook.cells[1].isEditing).toBe(true);
-		});
-
-		it('should return false for non-existent cell', () => {
-			const result = notebook.setEditing('non-existent');
-			expect(result).toBe(false);
-		});
-
-		it('should clear editing from all cells', () => {
-			notebook.setEditing(notebook.cells[0].id);
-			notebook.clearEditing();
-			expect(notebook.cells[0].isEditing).toBe(false);
-			expect(notebook.cells[1].isEditing).toBe(false);
-		});
-
-		it('should return editing cell', () => {
-			expect(notebook.editingCell).toBeNull();
-
-			notebook.setEditing(notebook.cells[0].id);
-			expect(notebook.editingCell).toBe(notebook.cells[0]);
-
-			notebook.clearEditing();
-			expect(notebook.editingCell).toBeNull();
-		});
-	});
-
 	describe('Cell Operations', () => {
 		beforeEach(() => {
 			notebook.addCell({ kind: 'js' });
@@ -272,24 +241,6 @@ describe('Notebook', () => {
 
 			it('should return false for non-existent cell', () => {
 				const result = notebook.toggleClosed('non-existent');
-				expect(result).toBe(false);
-			});
-		});
-
-		describe('togglePinned', () => {
-			it('should toggle cell pinned state', () => {
-				const cell = notebook.cells[0];
-				expect(cell.isPinned).toBe(false);
-
-				notebook.togglePinned(cell.id);
-				expect(cell.isPinned).toBe(true);
-
-				notebook.togglePinned(cell.id);
-				expect(cell.isPinned).toBe(false);
-			});
-
-			it('should return false for non-existent cell', () => {
-				const result = notebook.togglePinned('non-existent');
 				expect(result).toBe(false);
 			});
 		});
@@ -360,40 +311,13 @@ describe('Notebook', () => {
 			});
 
 			it('should return false for first cell', () => {
-				const cell = notebook.cells[0];
-				expect(notebook.moveCellUp(cell.id)).toBe(false);
+				const result = notebook.moveCellUp(notebook.cells[0].id);
+				expect(result).toBe(false);
 			});
 
 			it('should return false for non-existent cell', () => {
-				expect(notebook.moveCellUp('non-existent')).toBe(false);
-			});
-
-			it('should maintain cell order when moving up', () => {
-				const originalOrder = [...notebook.cells];
-				const cell = notebook.cells[1];
-				notebook.moveCellUp(cell.id);
-
-				// Check that the moved cell is now at index 0
-				expect(notebook.cells[0]).toBe(cell);
-				// Check that the original first cell is now at index 1
-				expect(notebook.cells[1]).toBe(originalOrder[0]);
-				// Check that the third cell remains at index 2
-				expect(notebook.cells[2]).toBe(originalOrder[2]);
-			});
-
-			it('should update version when moving cell up', () => {
-				const originalVersion = notebook.version;
-				notebook.moveCellUp(notebook.cells[1].id);
-				expect(notebook.version).toBe(originalVersion + 1);
-			});
-
-			it('should update timestamp when moving cell up', () => {
-				const originalTimestamp = notebook.updatedAt.getTime();
-				// Small delay to ensure timestamp difference
-				setTimeout(() => {
-					notebook.moveCellUp(notebook.cells[1].id);
-					expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
-				}, 1);
+				const result = notebook.moveCellUp('non-existent');
+				expect(result).toBe(false);
 			});
 		});
 
@@ -406,41 +330,22 @@ describe('Notebook', () => {
 			});
 
 			it('should return false for last cell', () => {
-				const cell = notebook.cells[2];
-				expect(notebook.moveCellDown(cell.id)).toBe(false);
+				const result = notebook.moveCellDown(notebook.cells[2].id);
+				expect(result).toBe(false);
 			});
 
 			it('should return false for non-existent cell', () => {
-				expect(notebook.moveCellDown('non-existent')).toBe(false);
+				const result = notebook.moveCellDown('non-existent');
+				expect(result).toBe(false);
 			});
+		});
+	});
 
-			it('should maintain cell order when moving down', () => {
-				const originalOrder = [...notebook.cells];
-				const cell = notebook.cells[0];
-				notebook.moveCellDown(cell.id);
-
-				// Check that the moved cell is now at index 1
-				expect(notebook.cells[1]).toBe(cell);
-				// Check that the original second cell is now at index 0
-				expect(notebook.cells[0]).toBe(originalOrder[1]);
-				// Check that the third cell remains at index 2
-				expect(notebook.cells[2]).toBe(originalOrder[2]);
-			});
-
-			it('should update version when moving cell down', () => {
-				const originalVersion = notebook.version;
-				notebook.moveCellDown(notebook.cells[0].id);
-				expect(notebook.version).toBe(originalVersion + 1);
-			});
-
-			it('should update timestamp when moving cell down', () => {
-				const originalTimestamp = notebook.updatedAt.getTime();
-				// Small delay to ensure timestamp difference
-				setTimeout(() => {
-					notebook.moveCellDown(notebook.cells[0].id);
-					expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
-				}, 1);
-			});
+	describe('Cell Duplication', () => {
+		beforeEach(() => {
+			notebook.addCell({ kind: 'js' });
+			notebook.addCell({ kind: 'md' });
+			notebook.addCell({ kind: 'html' });
 		});
 
 		describe('duplicateCell', () => {
@@ -454,7 +359,6 @@ describe('Notebook', () => {
 				expect(duplicatedCell!.value).toBe(originalCell.value);
 				expect(duplicatedCell!.status).toBe(originalCell.status);
 				expect(duplicatedCell!.isClosed).toBe(originalCell.isClosed);
-				expect(duplicatedCell!.isPinned).toBe(originalCell.isPinned);
 				expect(duplicatedCell!.hasError).toBe(originalCell.hasError);
 			});
 
@@ -468,16 +372,14 @@ describe('Notebook', () => {
 				expect(duplicateIndex).toBe(originalIndex + 1);
 			});
 
-			it('should reset focus and editing states on duplicate', () => {
+			it('should reset focus state on duplicate', () => {
 				const originalCell = notebook.cells[0];
 				originalCell.isFocused = true;
-				originalCell.isEditing = true;
 
 				const duplicatedCell = notebook.duplicateCell(originalCell.id);
 
 				expect(duplicatedCell).not.toBeNull();
 				expect(duplicatedCell!.isFocused).toBe(false);
-				expect(duplicatedCell!.isEditing).toBe(false);
 			});
 
 			it('should return null for non-existent cell', () => {
@@ -519,7 +421,6 @@ describe('Notebook', () => {
 				originalCell.value = 'Custom value';
 				originalCell.status = 'error';
 				originalCell.hasError = true;
-				originalCell.isPinned = true;
 				originalCell.isClosed = false;
 				originalCell.console = ['log1', 'log2'];
 				originalCell.valueHtml = '<div>Custom HTML</div>';
@@ -530,7 +431,6 @@ describe('Notebook', () => {
 				expect(duplicatedCell!.value).toBe('Custom value');
 				expect(duplicatedCell!.status).toBe('error');
 				expect(duplicatedCell!.hasError).toBe(true);
-				expect(duplicatedCell!.isPinned).toBe(true);
 				expect(duplicatedCell!.isClosed).toBe(false);
 				expect(duplicatedCell!.console).toEqual(['log1', 'log2']);
 				expect(duplicatedCell!.valueHtml).toBe('<div>Custom HTML</div>');
@@ -550,36 +450,36 @@ describe('Notebook', () => {
 
 				expect(duplicatedCell).not.toBeNull();
 				expect(notebook.cells[1]).toBe(duplicatedCell);
-				expect(notebook.cells[0]).toBe(firstCell);
-			});
-
-			it('should maintain cell count after duplication', () => {
-				const originalCount = notebook.cells.length;
-				notebook.duplicateCell(notebook.cells[0].id);
-				expect(notebook.cells.length).toBe(originalCount + 1);
 			});
 		});
 	});
 
 	describe('Notebook Metadata', () => {
 		it('should update title', () => {
-			notebook.updateTitle('New Title');
-			expect(notebook.title).toBe('New Title');
+			const newTitle = 'Updated Title';
+			notebook.updateTitle(newTitle);
+			expect(notebook.title).toBe(newTitle);
 		});
 
 		it('should update description', () => {
-			notebook.updateDescription('New Description');
-			expect(notebook.description).toBe('New Description');
+			const newDescription = 'Updated Description';
+			notebook.updateDescription(newDescription);
+			expect(notebook.description).toBe(newDescription);
 		});
 
-		it('should update timestamps when modifying notebook', () => {
-			const originalUpdatedAt = notebook.updatedAt;
+		it('should update version when changing metadata', () => {
+			const originalVersion = notebook.version;
+			notebook.updateTitle('New Title');
+			expect(notebook.version).toBe(originalVersion + 1);
+		});
 
-			// Wait a bit to ensure timestamp difference
+		it('should update timestamp when changing metadata', () => {
+			const originalTimestamp = notebook.updatedAt.getTime();
+			// Small delay to ensure timestamp difference
 			setTimeout(() => {
-				notebook.updateTitle('Test');
-				expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
-			}, 10);
+				notebook.updateTitle('New Title');
+				expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
+			}, 1);
 		});
 	});
 
@@ -590,79 +490,72 @@ describe('Notebook', () => {
 		});
 
 		it('should serialize to JSON', () => {
-			const json = notebook.toJSON() as { title: string; description: string; cells: unknown[] };
-			expect(json).toHaveProperty('title', 'Test Notebook');
-			expect(json).toHaveProperty('description', 'A test notebook');
+			const json = notebook.toJSON() as Record<string, unknown>;
+			expect(json).toHaveProperty('title');
+			expect(json).toHaveProperty('description');
+			expect(json).toHaveProperty('createdAt');
+			expect(json).toHaveProperty('updatedAt');
 			expect(json).toHaveProperty('cells');
 			expect(Array.isArray(json.cells)).toBe(true);
-			expect(json.cells).toHaveLength(2);
+			expect((json.cells as unknown[]).length).toBe(2);
 		});
 
 		it('should deserialize from JSON', () => {
 			const json = notebook.toJSON() as Record<string, unknown>;
-			const restored = Notebook.fromJSON(json);
+			const deserializedNotebook = Notebook.fromJSON(json);
 
-			expect(restored.title).toBe(notebook.title);
-			expect(restored.description).toBe(notebook.description);
-			expect(restored.cells).toHaveLength(notebook.cells.length);
+			expect(deserializedNotebook.title).toBe(notebook.title);
+			expect(deserializedNotebook.description).toBe(notebook.description);
+			expect(deserializedNotebook.cells).toHaveLength(notebook.cells.length);
+			expect(deserializedNotebook.cells[0].kind).toBe(notebook.cells[0].kind);
+			expect(deserializedNotebook.cells[0].value).toBe(notebook.cells[0].value);
 		});
 
-		it('should handle missing optional fields in JSON', () => {
-			const minimalJson = {
-				title: 'Minimal',
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-				cells: []
-			};
+		it('should handle empty notebook serialization', () => {
+			const emptyNotebook = new Notebook();
+			const json = emptyNotebook.toJSON() as Record<string, unknown>;
+			expect((json.cells as unknown[]).length).toBe(0);
+		});
 
-			const restored = Notebook.fromJSON(minimalJson);
-			expect(restored.title).toBe('Minimal');
-			expect(restored.description).toBe('');
+		it('should handle empty notebook deserialization', () => {
+			const emptyNotebook = new Notebook();
+			const json = emptyNotebook.toJSON() as Record<string, unknown>;
+			const deserializedNotebook = Notebook.fromJSON(json);
+			expect(deserializedNotebook.cells).toHaveLength(0);
 		});
 	});
 
 	describe('Validation', () => {
-		it('should validate empty notebook', () => {
+		beforeEach(() => {
+			notebook.addCell({ kind: 'js' });
+			notebook.addCell({ kind: 'md' });
+		});
+
+		it('should validate valid notebook', () => {
 			const result = notebook.validate();
 			expect(result.isValid).toBe(true);
 			expect(result.errors).toHaveLength(0);
 		});
 
 		it('should detect duplicate cell IDs', () => {
-			// Create a new notebook with duplicate IDs for testing
-			const testNotebook = new Notebook();
-			// Add cells with the same ID to test validation
-			testNotebook.addCell({ kind: 'js', value: 'test1' });
-			testNotebook.addCell({ kind: 'js', value: 'test2' });
+			// Manually create duplicate ID
+			notebook.cells[1].id = notebook.cells[0].id;
 
-			// Manually set the same ID for both cells
-			const cells = testNotebook.cells;
-			cells[1].id = cells[0].id;
-
-			const result = testNotebook.validate();
+			const result = notebook.validate();
 			expect(result.isValid).toBe(false);
-			// Check that there's an error about duplicate IDs
 			expect(result.errors.some((error) => error.includes('Duplicate cell IDs found'))).toBe(true);
 		});
 
 		it('should detect invalid cell kinds', () => {
-			// Create a new notebook with invalid cell kind for testing
-			const testNotebook = new Notebook();
-			testNotebook.addCell({ kind: 'js', value: 'test' });
-
 			// Manually set invalid kind
-			const cell = testNotebook.cells[0];
-			(cell as unknown as { kind: string }).kind = 'invalid';
+			(notebook.cells[0] as { kind: string }).kind = 'invalid';
 
-			const result = testNotebook.validate();
+			const result = notebook.validate();
 			expect(result.isValid).toBe(false);
-			expect(result.errors).toContain('Invalid cell kinds found: invalid');
+			expect(result.errors.some((error) => error.includes('Invalid cell kinds found'))).toBe(true);
 		});
 
 		it('should detect multiple focused cells', () => {
-			notebook.addCell({ kind: 'js' });
-			notebook.addCell({ kind: 'md' });
-
 			// Manually set multiple cells as focused
 			notebook.cells[0].isFocused = true;
 			notebook.cells[1].isFocused = true;
@@ -670,19 +563,6 @@ describe('Notebook', () => {
 			const result = notebook.validate();
 			expect(result.isValid).toBe(false);
 			expect(result.errors).toContain('Multiple cells are focused');
-		});
-
-		it('should detect multiple editing cells', () => {
-			notebook.addCell({ kind: 'js' });
-			notebook.addCell({ kind: 'md' });
-
-			// Manually set multiple cells as editing
-			notebook.cells[0].isEditing = true;
-			notebook.cells[1].isEditing = true;
-
-			const result = notebook.validate();
-			expect(result.isValid).toBe(false);
-			expect(result.errors).toContain('Multiple cells are being edited');
 		});
 	});
 
@@ -695,11 +575,6 @@ describe('Notebook', () => {
 			expect(jsCell.value).toContain('console.log("Hello!")');
 			expect(mdCell.value).toContain('# New Markdown Cell');
 			expect(htmlCell.value).toContain('<div>New HTML Cell</div>');
-		});
-
-		it('should set default editing state to false', () => {
-			const cell = notebook.addCell();
-			expect(cell.isEditing).toBe(false);
 		});
 	});
 

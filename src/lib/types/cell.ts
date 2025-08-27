@@ -12,10 +12,8 @@ export interface Cell {
 	valueHtml: string | null;
 	console?: string[];
 	isFocused: boolean;
-	isPinned: boolean;
 	hasError: boolean;
 	isClosed: boolean;
-	isEditing: boolean;
 }
 
 export interface NotebookOptions {
@@ -77,20 +75,12 @@ export class Notebook {
 		return this._cells.find((cell) => cell.isFocused) || null;
 	}
 
-	get pinnedCells(): Cell[] {
-		return this._cells.filter((cell) => cell.isPinned);
-	}
-
 	get openCells(): Cell[] {
 		return this._cells.filter((cell) => !cell.isClosed);
 	}
 
 	get closedCells(): Cell[] {
 		return this._cells.filter((cell) => cell.isClosed);
-	}
-
-	get editingCell(): Cell | null {
-		return this._cells.find((cell) => cell.isEditing) || null;
 	}
 
 	// Cell management methods
@@ -111,10 +101,8 @@ export class Notebook {
 			valueHtml: null,
 			console: [],
 			isFocused: focus,
-			isPinned: false,
 			hasError: false,
-			isClosed: true, // New cells start closed
-			isEditing: false // New cells start not editing
+			isClosed: true // New cells start closed
 		};
 
 		if (relativeToId) {
@@ -188,47 +176,12 @@ export class Notebook {
 		this._version++;
 	}
 
-	// Editing management
-	setEditing(id: string): boolean {
-		const cell = this._cells.find((cell) => cell.id === id);
-		if (!cell) return false;
-
-		// Clear editing from all cells
-		this._cells.forEach((cell) => {
-			cell.isEditing = false;
-		});
-
-		// Set editing on target cell
-		cell.isEditing = true;
-		this._updatedAt = new Date();
-		this._version++;
-		return true;
-	}
-
-	clearEditing(): void {
-		this._cells.forEach((cell) => {
-			cell.isEditing = false;
-		});
-		this._updatedAt = new Date();
-		this._version++;
-	}
-
 	// Cell operations
 	toggleClosed(id: string): boolean {
 		const cell = this._cells.find((cell) => cell.id === id);
 		if (!cell) return false;
 
 		cell.isClosed = !cell.isClosed;
-		this._updatedAt = new Date();
-		this._version++;
-		return true;
-	}
-
-	togglePinned(id: string): boolean {
-		const cell = this._cells.find((cell) => cell.id === id);
-		if (!cell) return false;
-
-		cell.isPinned = !cell.isPinned;
 		this._updatedAt = new Date();
 		this._version++;
 		return true;
@@ -299,8 +252,7 @@ export class Notebook {
 		const duplicatedCell: Cell = {
 			...cell,
 			id: this.generateCellId(),
-			isFocused: false,
-			isEditing: false
+			isFocused: false
 		};
 
 		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
@@ -394,12 +346,6 @@ export class Notebook {
 		const focusedCells = this._cells.filter((cell) => cell.isFocused);
 		if (focusedCells.length > 1) {
 			errors.push('Multiple cells are focused');
-		}
-
-		// Check for multiple editing cells
-		const editingCells = this._cells.filter((cell) => cell.isEditing);
-		if (editingCells.length > 1) {
-			errors.push('Multiple cells are being edited');
 		}
 
 		return {
