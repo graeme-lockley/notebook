@@ -14,6 +14,9 @@ export interface NotebookStore {
 	updateCell: (id: string, updates: Partial<Omit<Cell, 'id'>>) => void;
 	setFocus: (id: string) => void;
 	toggleClosed: (id: string) => void;
+	moveCellUp: (id: string) => void;
+	moveCellDown: (id: string) => void;
+	duplicateCell: (id: string) => void;
 	updateTitle: (title: string) => void;
 	notebook: Notebook;
 }
@@ -71,6 +74,30 @@ export function createNotebookStore(notebook: Notebook): NotebookStore {
 		});
 	}
 
+	function moveCellUp(id: string) {
+		update(($notebook) => {
+			$notebook.moveCellUp(id);
+			currentNotebook = $notebook;
+			return $notebook;
+		});
+	}
+
+	function moveCellDown(id: string) {
+		update(($notebook) => {
+			$notebook.moveCellDown(id);
+			currentNotebook = $notebook;
+			return $notebook;
+		});
+	}
+
+	function duplicateCell(id: string) {
+		update(($notebook) => {
+			$notebook.duplicateCell(id);
+			currentNotebook = $notebook;
+			return $notebook;
+		});
+	}
+
 	function updateTitle(title: string) {
 		update(($notebook) => {
 			$notebook.updateTitle(title);
@@ -91,6 +118,9 @@ export function createNotebookStore(notebook: Notebook): NotebookStore {
 		updateCell,
 		setFocus,
 		toggleClosed,
+		moveCellUp,
+		moveCellDown,
+		duplicateCell,
 		updateTitle,
 		// Expose the current notebook value (SSR compatible)
 		get notebook() {

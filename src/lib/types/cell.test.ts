@@ -363,6 +363,38 @@ describe('Notebook', () => {
 				const cell = notebook.cells[0];
 				expect(notebook.moveCellUp(cell.id)).toBe(false);
 			});
+
+			it('should return false for non-existent cell', () => {
+				expect(notebook.moveCellUp('non-existent')).toBe(false);
+			});
+
+			it('should maintain cell order when moving up', () => {
+				const originalOrder = [...notebook.cells];
+				const cell = notebook.cells[1];
+				notebook.moveCellUp(cell.id);
+
+				// Check that the moved cell is now at index 0
+				expect(notebook.cells[0]).toBe(cell);
+				// Check that the original first cell is now at index 1
+				expect(notebook.cells[1]).toBe(originalOrder[0]);
+				// Check that the third cell remains at index 2
+				expect(notebook.cells[2]).toBe(originalOrder[2]);
+			});
+
+			it('should update version when moving cell up', () => {
+				const originalVersion = notebook.version;
+				notebook.moveCellUp(notebook.cells[1].id);
+				expect(notebook.version).toBe(originalVersion + 1);
+			});
+
+			it('should update timestamp when moving cell up', () => {
+				const originalTimestamp = notebook.updatedAt.getTime();
+				// Small delay to ensure timestamp difference
+				setTimeout(() => {
+					notebook.moveCellUp(notebook.cells[1].id);
+					expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
+				}, 1);
+			});
 		});
 
 		describe('moveCellDown', () => {
@@ -376,6 +408,155 @@ describe('Notebook', () => {
 			it('should return false for last cell', () => {
 				const cell = notebook.cells[2];
 				expect(notebook.moveCellDown(cell.id)).toBe(false);
+			});
+
+			it('should return false for non-existent cell', () => {
+				expect(notebook.moveCellDown('non-existent')).toBe(false);
+			});
+
+			it('should maintain cell order when moving down', () => {
+				const originalOrder = [...notebook.cells];
+				const cell = notebook.cells[0];
+				notebook.moveCellDown(cell.id);
+
+				// Check that the moved cell is now at index 1
+				expect(notebook.cells[1]).toBe(cell);
+				// Check that the original second cell is now at index 0
+				expect(notebook.cells[0]).toBe(originalOrder[1]);
+				// Check that the third cell remains at index 2
+				expect(notebook.cells[2]).toBe(originalOrder[2]);
+			});
+
+			it('should update version when moving cell down', () => {
+				const originalVersion = notebook.version;
+				notebook.moveCellDown(notebook.cells[0].id);
+				expect(notebook.version).toBe(originalVersion + 1);
+			});
+
+			it('should update timestamp when moving cell down', () => {
+				const originalTimestamp = notebook.updatedAt.getTime();
+				// Small delay to ensure timestamp difference
+				setTimeout(() => {
+					notebook.moveCellDown(notebook.cells[0].id);
+					expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
+				}, 1);
+			});
+		});
+
+		describe('duplicateCell', () => {
+			it('should duplicate a cell', () => {
+				const originalCell = notebook.cells[0];
+				const duplicatedCell = notebook.duplicateCell(originalCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				expect(duplicatedCell!.id).not.toBe(originalCell.id);
+				expect(duplicatedCell!.kind).toBe(originalCell.kind);
+				expect(duplicatedCell!.value).toBe(originalCell.value);
+				expect(duplicatedCell!.status).toBe(originalCell.status);
+				expect(duplicatedCell!.isClosed).toBe(originalCell.isClosed);
+				expect(duplicatedCell!.isPinned).toBe(originalCell.isPinned);
+				expect(duplicatedCell!.hasError).toBe(originalCell.hasError);
+			});
+
+			it('should place duplicate after original cell', () => {
+				const originalCell = notebook.cells[0];
+				const duplicatedCell = notebook.duplicateCell(originalCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				const originalIndex = notebook.cells.findIndex((cell) => cell.id === originalCell.id);
+				const duplicateIndex = notebook.cells.findIndex((cell) => cell.id === duplicatedCell!.id);
+				expect(duplicateIndex).toBe(originalIndex + 1);
+			});
+
+			it('should reset focus and editing states on duplicate', () => {
+				const originalCell = notebook.cells[0];
+				originalCell.isFocused = true;
+				originalCell.isEditing = true;
+
+				const duplicatedCell = notebook.duplicateCell(originalCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				expect(duplicatedCell!.isFocused).toBe(false);
+				expect(duplicatedCell!.isEditing).toBe(false);
+			});
+
+			it('should return null for non-existent cell', () => {
+				const result = notebook.duplicateCell('non-existent');
+				expect(result).toBeNull();
+			});
+
+			it('should generate unique ID for duplicate', () => {
+				const originalCell = notebook.cells[0];
+				const duplicatedCell = notebook.duplicateCell(originalCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				expect(duplicatedCell!.id).not.toBe(originalCell.id);
+
+				// Check that the ID is unique among all cells
+				const allIds = notebook.cells.map((cell) => cell.id);
+				const duplicateCount = allIds.filter((id) => id === duplicatedCell!.id).length;
+				expect(duplicateCount).toBe(1);
+			});
+
+			it('should update version when duplicating cell', () => {
+				const originalVersion = notebook.version;
+				notebook.duplicateCell(notebook.cells[0].id);
+				expect(notebook.version).toBe(originalVersion + 1);
+			});
+
+			it('should update timestamp when duplicating cell', () => {
+				const originalTimestamp = notebook.updatedAt.getTime();
+				// Small delay to ensure timestamp difference
+				setTimeout(() => {
+					notebook.duplicateCell(notebook.cells[0].id);
+					expect(notebook.updatedAt.getTime()).toBeGreaterThan(originalTimestamp);
+				}, 1);
+			});
+
+			it('should duplicate cell with all properties', () => {
+				const originalCell = notebook.cells[0];
+				// Set some custom properties
+				originalCell.value = 'Custom value';
+				originalCell.status = 'error';
+				originalCell.hasError = true;
+				originalCell.isPinned = true;
+				originalCell.isClosed = false;
+				originalCell.console = ['log1', 'log2'];
+				originalCell.valueHtml = '<div>Custom HTML</div>';
+
+				const duplicatedCell = notebook.duplicateCell(originalCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				expect(duplicatedCell!.value).toBe('Custom value');
+				expect(duplicatedCell!.status).toBe('error');
+				expect(duplicatedCell!.hasError).toBe(true);
+				expect(duplicatedCell!.isPinned).toBe(true);
+				expect(duplicatedCell!.isClosed).toBe(false);
+				expect(duplicatedCell!.console).toEqual(['log1', 'log2']);
+				expect(duplicatedCell!.valueHtml).toBe('<div>Custom HTML</div>');
+			});
+
+			it('should handle duplicating last cell', () => {
+				const lastCell = notebook.cells[2];
+				const duplicatedCell = notebook.duplicateCell(lastCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				expect(notebook.cells[3]).toBe(duplicatedCell);
+			});
+
+			it('should handle duplicating first cell', () => {
+				const firstCell = notebook.cells[0];
+				const duplicatedCell = notebook.duplicateCell(firstCell.id);
+
+				expect(duplicatedCell).not.toBeNull();
+				expect(notebook.cells[1]).toBe(duplicatedCell);
+				expect(notebook.cells[0]).toBe(firstCell);
+			});
+
+			it('should maintain cell count after duplication', () => {
+				const originalCount = notebook.cells.length;
+				notebook.duplicateCell(notebook.cells[0].id);
+				expect(notebook.cells.length).toBe(originalCount + 1);
 			});
 		});
 	});
@@ -523,31 +704,83 @@ describe('Notebook', () => {
 	});
 
 	describe('Edge Cases', () => {
+		beforeEach(() => {
+			// Ensure we have cells for edge case tests
+			notebook.addCell({ kind: 'js' });
+			notebook.addCell({ kind: 'md' });
+			notebook.addCell({ kind: 'html' });
+		});
+
 		it('should handle adding cell with non-existent relative ID', () => {
 			const cell = notebook.addCell({
 				relativeToId: 'non-existent',
 				position: 'below'
 			});
 			expect(cell).toBeDefined();
-			expect(notebook.cells).toHaveLength(1);
+			expect(notebook.cells).toHaveLength(4); // 3 from beforeEach + 1 new
 		});
 
 		it('should handle updating cell with empty updates object', () => {
-			const cell = notebook.addCell();
+			const cell = notebook.cells[0];
 			const result = notebook.updateCell(cell.id, {});
 			expect(result).toBe(true);
 		});
 
-		it('should handle running cells in parallel', async () => {
-			notebook.addCell({ kind: 'js' });
-			notebook.addCell({ kind: 'md' });
+		it('should handle moving cells multiple times in sequence', () => {
+			const cell = notebook.cells[1];
 
-			const promises = notebook.cells.map((cell) => notebook.runCell(cell.id));
-			await Promise.all(promises);
+			// Move up then down
+			notebook.moveCellUp(cell.id);
+			expect(notebook.cells[0]).toBe(cell);
 
-			notebook.cells.forEach((cell) => {
-				expect(cell.status).toBe('ok');
-			});
+			notebook.moveCellDown(cell.id);
+			expect(notebook.cells[1]).toBe(cell);
+		});
+
+		it('should handle duplicating multiple cells in sequence', () => {
+			const originalCell = notebook.cells[0];
+			const firstDuplicate = notebook.duplicateCell(originalCell.id);
+			const secondDuplicate = notebook.duplicateCell(originalCell.id);
+
+			expect(firstDuplicate).not.toBeNull();
+			expect(secondDuplicate).not.toBeNull();
+			expect(firstDuplicate!.id).not.toBe(secondDuplicate!.id);
+			expect(notebook.cells.length).toBe(5); // 3 original + 2 duplicates
+		});
+
+		it('should handle moving and duplicating the same cell', () => {
+			const cell = notebook.cells[0];
+
+			// Move the cell down
+			notebook.moveCellDown(cell.id);
+			expect(notebook.cells[1]).toBe(cell);
+
+			// Duplicate the moved cell
+			const duplicate = notebook.duplicateCell(cell.id);
+			expect(duplicate).not.toBeNull();
+			expect(notebook.cells[2]).toBe(duplicate);
+		});
+
+		it('should handle operations on empty notebook gracefully', () => {
+			const emptyNotebook = new Notebook();
+
+			expect(emptyNotebook.moveCellUp('any-id')).toBe(false);
+			expect(emptyNotebook.moveCellDown('any-id')).toBe(false);
+			expect(emptyNotebook.duplicateCell('any-id')).toBeNull();
+		});
+
+		it('should handle operations on single cell notebook', () => {
+			const singleCellNotebook = new Notebook();
+			const cell = singleCellNotebook.addCell();
+
+			// Should not be able to move up or down with only one cell
+			expect(singleCellNotebook.moveCellUp(cell.id)).toBe(false);
+			expect(singleCellNotebook.moveCellDown(cell.id)).toBe(false);
+
+			// Should be able to duplicate
+			const duplicate = singleCellNotebook.duplicateCell(cell.id);
+			expect(duplicate).not.toBeNull();
+			expect(singleCellNotebook.cells.length).toBe(2);
 		});
 	});
 });

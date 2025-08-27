@@ -4,7 +4,11 @@
 	import SourceCell from './SourceCell.svelte';
 	import type { Cell } from '$lib/types/cell';
 	import type {
+		DeleteCellEvent,
+		DuplicateCellEvent,
 		OnFocusEvent,
+		MoveCellDownEvent,
+		MoveCellUpEvent,
 		SourceKindChangeEvent,
 		SourceValueChangeEvent,
 		ToggleSourceViewEvent
@@ -26,6 +30,10 @@
 		OnFocus: OnFocusEvent;
 		SourceKindChange: SourceKindChangeEvent;
 		SourceValueChange: SourceValueChangeEvent;
+		DeleteCell: DeleteCellEvent;
+		MoveCellUp: MoveCellUpEvent;
+		MoveCellDown: MoveCellDownEvent;
+		DuplicateCell: DuplicateCellEvent;
 	}>();
 
 	function handleToggleSourceView(event: CustomEvent<ToggleSourceViewEvent>) {
@@ -43,6 +51,22 @@
 	function handleSourceValueChange(event: CustomEvent<SourceValueChangeEvent>) {
 		dispatch('SourceValueChange', event.detail);
 	}
+
+	function handleDeleteCell(event: CustomEvent<DeleteCellEvent>) {
+		dispatch('DeleteCell', event.detail);
+	}
+
+	function handleMoveCellUp(event: CustomEvent<MoveCellUpEvent>) {
+		dispatch('MoveCellUp', event.detail);
+	}
+
+	function handleMoveCellDown(event: CustomEvent<MoveCellDownEvent>) {
+		dispatch('MoveCellDown', event.detail);
+	}
+
+	function handleDuplicateCell(event: CustomEvent<DuplicateCellEvent>) {
+		dispatch('DuplicateCell', event.detail);
+	}
 </script>
 
 <div
@@ -52,7 +76,16 @@
 	onmouseenter={handleOnFocus}
 	onfocus={handleOnFocus}
 >
-	<RenderedCell {isClosed} {isFocused} {cell} on:ToggleSourceView={handleToggleSourceView} />
+	<RenderedCell
+		{isClosed}
+		{isFocused}
+		{cell}
+		on:ToggleSourceView={handleToggleSourceView}
+		on:DeleteCell={handleDeleteCell}
+		on:MoveCellUp={handleMoveCellUp}
+		on:MoveCellDown={handleMoveCellDown}
+		on:DuplicateCell={handleDuplicateCell}
+	/>
 
 	{#if !isClosed}
 		<SourceCell

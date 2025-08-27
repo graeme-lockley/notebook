@@ -6,6 +6,22 @@ export type CellCreatedEvent = {
 	cellKind: CellKind;
 };
 
+export type DeleteCellEvent = {
+	id: string;
+};
+
+export type DuplicateCellEvent = {
+	id: string;
+};
+
+export type MoveCellDownEvent = {
+	id: string;
+};
+
+export type MoveCellUpEvent = {
+	id: string;
+};
+
 export type SourceKindChangeEvent = {
 	id: string;
 	kind: CellKind;

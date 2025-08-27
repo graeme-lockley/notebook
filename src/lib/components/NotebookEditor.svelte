@@ -5,7 +5,11 @@
 		CellCreatedEvent,
 		OnFocusEvent,
 		SourceKindChangeEvent,
-		SourceValueChangeEvent
+		SourceValueChangeEvent,
+		DeleteCellEvent,
+		MoveCellUpEvent,
+		MoveCellDownEvent,
+		DuplicateCellEvent
 	} from './event-types';
 	import type { NotebookStore } from '$lib/stores/notebook';
 
@@ -35,6 +39,22 @@
 	function handleSourceValueChange(event: CustomEvent<SourceValueChangeEvent>) {
 		notebookStore.updateCell(event.detail.id, { value: event.detail.value });
 	}
+
+	function handleDeleteCell(event: CustomEvent<DeleteCellEvent>) {
+		notebookStore.removeCell(event.detail.id);
+	}
+
+	function handleMoveCellUp(event: CustomEvent<MoveCellUpEvent>) {
+		notebookStore.moveCellUp(event.detail.id);
+	}
+
+	function handleMoveCellDown(event: CustomEvent<MoveCellDownEvent>) {
+		notebookStore.moveCellDown(event.detail.id);
+	}
+
+	function handleDuplicateCell(event: CustomEvent<DuplicateCellEvent>) {
+		notebookStore.duplicateCell(event.detail.id);
+	}
 </script>
 
 <div class="notebook-editor">
@@ -53,6 +73,10 @@
 			on:OnFocus={handleOnFocus}
 			on:SourceKindChange={handleSourceKindChange}
 			on:SourceValueChange={handleSourceValueChange}
+			on:DeleteCell={handleDeleteCell}
+			on:MoveCellUp={handleMoveCellUp}
+			on:MoveCellDown={handleMoveCellDown}
+			on:DuplicateCell={handleDuplicateCell}
 		/>
 	{/each}
 

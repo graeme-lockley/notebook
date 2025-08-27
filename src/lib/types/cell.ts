@@ -260,6 +260,8 @@ export class Notebook {
 
 	async runAllCells(): Promise<void> {
 		await Promise.all(this._cells.map((cell) => this.runCell(cell.id)));
+		// Add a small delay to ensure all setTimeout callbacks have completed
+		await new Promise((resolve) => setTimeout(resolve, 20));
 	}
 
 	// Cell reordering
@@ -288,6 +290,25 @@ export class Notebook {
 		if (currentIndex === -1 || currentIndex >= this._cells.length - 1) return false;
 
 		return this.moveCell(id, currentIndex + 1);
+	}
+
+	duplicateCell(id: string): Cell | null {
+		const cell = this._cells.find((cell) => cell.id === id);
+		if (!cell) return null;
+
+		const duplicatedCell: Cell = {
+			...cell,
+			id: this.generateCellId(),
+			isFocused: false,
+			isEditing: false
+		};
+
+		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
+		this._cells.splice(currentIndex + 1, 0, duplicatedCell);
+
+		this._updatedAt = new Date();
+		this._version++;
+		return duplicatedCell;
 	}
 
 	// Notebook metadata
