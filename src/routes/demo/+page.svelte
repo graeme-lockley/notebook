@@ -4,25 +4,38 @@
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
 	import { createNotebookStore, type NotebookStore } from '$lib/stores/notebook';
 	import { createDemoNotebook } from './cells-data';
+	import { onMount } from 'svelte';
 
-	// Create notebook and wrap it in a reactive store
-	const notebook = createDemoNotebook();
-	const notebookStore: NotebookStore = createNotebookStore(notebook);
+	let notebookStore: NotebookStore | undefined;
+
+	onMount(async () => {
+		// Create notebook and wrap it in a reactive store
+		const notebook = await createDemoNotebook();
+		notebookStore = createNotebookStore(notebook);
+	});
 
 	function handleTitleChange(event: CustomEvent) {
-		const { title } = event.detail;
-		notebookStore.updateTitle(title);
+		if (notebookStore) {
+			const { title } = event.detail;
+			notebookStore.updateTitle(title);
+		}
 	}
 </script>
 
 <div class="demo-page">
-	<TopBar title={notebookStore.notebook.title} on:titleChange={handleTitleChange} />
+	{#if notebookStore}
+		<TopBar title={notebookStore.notebook.title} on:titleChange={handleTitleChange} />
 
-	<main class="demo-main">
-		<div class="demo-container">
-			<NotebookEditor {notebookStore} />
+		<main class="demo-main">
+			<div class="demo-container">
+				<NotebookEditor {notebookStore} />
+			</div>
+		</main>
+	{:else}
+		<div style="padding: 2rem; text-align: center;">
+			<p>Loading...</p>
 		</div>
-	</main>
+	{/if}
 
 	<FooterBar />
 </div>

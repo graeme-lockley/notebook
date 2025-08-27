@@ -1,116 +1,96 @@
 import { writable, derived, type Readable } from 'svelte/store';
-import type { Notebook, Cell, AddCellOptions } from '$lib/types/cell';
+import type { ReactiveNotebook, ReactiveCell, AddCellOptions } from '$lib/types/cell';
 
 // Define the store interface - export it properly
 export interface NotebookStore {
-	subscribe: Readable<Notebook>['subscribe'];
-	set: (value: Notebook) => void;
-	update: (fn: (notebook: Notebook) => Notebook) => void;
-	cells: Readable<readonly Cell[]>;
-	focusedCell: Readable<Cell | null>;
+	subscribe: Readable<ReactiveNotebook>['subscribe'];
+	set: (value: ReactiveNotebook) => void;
+	update: (fn: (notebook: ReactiveNotebook) => ReactiveNotebook) => void;
+	cells: Readable<readonly ReactiveCell[]>;
+	focusedCell: Readable<ReactiveCell | null>;
 	version: Readable<number>;
-	addCell: (options?: AddCellOptions) => void;
-	removeCell: (id: string) => void;
-	updateCell: (id: string, updates: Partial<Omit<Cell, 'id'>>) => void;
+	addCell: (options?: AddCellOptions) => Promise<void>;
+	removeCell: (id: string) => Promise<void>;
+	updateCell: (id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) => Promise<void>;
 	setFocus: (id: string) => void;
 	toggleClosed: (id: string) => void;
 	moveCellUp: (id: string) => void;
 	moveCellDown: (id: string) => void;
-	duplicateCell: (id: string) => void;
+	duplicateCell: (id: string) => Promise<void>;
 	updateTitle: (title: string) => void;
-	notebook: Notebook;
+	notebook: ReactiveNotebook;
 }
 
 // Create a reactive notebook store
-export function createNotebookStore(notebook: Notebook): NotebookStore {
+export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 	const { subscribe, set, update } = writable(notebook);
 
 	// Keep a reference to the current notebook value for SSR compatibility
-	let currentNotebook = notebook;
+	const currentNotebook = notebook;
 
-	// Create derived stores for reactive properties
-	const cells = derived({ subscribe }, ($notebook) => $notebook.cells);
+	// Create a separate writable store for cells to ensure reactivity
+	const { subscribe: cellsSubscribe, set: setCells } = writable(notebook.cells);
 	const focusedCell = derived({ subscribe }, ($notebook) => $notebook.focusedCell);
 	const version = derived({ subscribe }, ($notebook) => $notebook.version || 0);
 
+	// Update cells store whenever notebook changes
+	subscribe(($notebook) => {
+		setCells($notebook.cells);
+	});
+
 	// Wrapper methods that trigger reactivity
-	function addCell(options: AddCellOptions = {}) {
-		update(($notebook) => {
-			$notebook.addCell(options);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+	async function addCell(options: AddCellOptions = {}) {
+		await currentNotebook.addCell(options);
+		set(currentNotebook);
 	}
 
-	function removeCell(id: string) {
-		update(($notebook) => {
-			$notebook.removeCell(id);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+	async function removeCell(id: string) {
+		await currentNotebook.removeCell(id);
+		set(currentNotebook);
 	}
 
-	function updateCell(id: string, updates: Partial<Omit<Cell, 'id'>>) {
-		update(($notebook) => {
-			$notebook.updateCell(id, updates);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+	async function updateCell(id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) {
+		await currentNotebook.updateCell(id, updates);
+		// Force reactivity by creating a new array reference
+		setCells([...currentNotebook.cells]);
+		set(currentNotebook);
 	}
 
 	function setFocus(id: string) {
-		update(($notebook) => {
-			$notebook.setFocus(id);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+		currentNotebook.setFocus(id);
+		set(currentNotebook);
 	}
 
 	function toggleClosed(id: string) {
-		update(($notebook) => {
-			$notebook.toggleClosed(id);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+		currentNotebook.toggleClosed(id);
+		set(currentNotebook);
 	}
 
 	function moveCellUp(id: string) {
-		update(($notebook) => {
-			$notebook.moveCellUp(id);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+		currentNotebook.moveCellUp(id);
+		set(currentNotebook);
 	}
 
 	function moveCellDown(id: string) {
-		update(($notebook) => {
-			$notebook.moveCellDown(id);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+		currentNotebook.moveCellDown(id);
+		set(currentNotebook);
 	}
 
-	function duplicateCell(id: string) {
-		update(($notebook) => {
-			$notebook.duplicateCell(id);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+	async function duplicateCell(id: string) {
+		await currentNotebook.duplicateCell(id);
+		set(currentNotebook);
 	}
 
 	function updateTitle(title: string) {
-		update(($notebook) => {
-			$notebook.updateTitle(title);
-			currentNotebook = $notebook;
-			return $notebook;
-		});
+		currentNotebook.updateTitle(title);
+		set(currentNotebook);
 	}
 
 	const store: NotebookStore = {
 		subscribe,
 		set,
 		update,
-		cells,
+		cells: { subscribe: cellsSubscribe },
 		focusedCell,
 		version,
 		addCell,

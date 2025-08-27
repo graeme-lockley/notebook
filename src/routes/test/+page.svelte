@@ -1,73 +1,95 @@
 <script lang="ts">
-	import { Notebook } from '$lib/types/cell';
+	import { ReactiveNotebook } from '$lib/types/cell';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
 	import { createNotebookStore, type NotebookStore } from '$lib/stores/notebook';
+	import { onMount } from 'svelte';
 
-	// Create a test notebook
-	const notebook = new Notebook({
-		title: 'Reactivity Test',
-		description: 'Testing notebook reactivity'
+	let notebookStore = $state<NotebookStore | undefined>(undefined);
+
+	onMount(async () => {
+		// Create a test notebook
+		const notebook = new ReactiveNotebook({
+			title: 'Reactivity Test',
+			description: 'Testing notebook reactivity'
+		});
+		notebookStore = createNotebookStore(notebook);
 	});
-	const notebookStore: NotebookStore = createNotebookStore(notebook);
 
 	// Track changes for demonstration
 	let changeCount = $state(0);
 
-	function addJavaScriptCell() {
-		notebookStore.addCell({
-			kind: 'js',
-			value: `// Cell ${$notebookStore.cells.length + 1}\nconsole.log("Hello from cell ${$notebookStore.cells.length + 1}!");\n\n\`Cell ${$notebookStore.cells.length + 1} executed\``,
-			focus: true
-		});
-		changeCount++;
-	}
-
-	function addMarkdownCell() {
-		notebookStore.addCell({
-			kind: 'md',
-			value: `# Cell ${$notebookStore.cells.length + 1}\n\nThis is a **markdown** cell added at ${new Date().toLocaleTimeString()}.`,
-			focus: true
-		});
-		changeCount++;
-	}
-
-	function addHTMLCell() {
-		notebookStore.addCell({
-			kind: 'html',
-			value: `<div style="padding: 1rem; background: #f0f0f0; border-radius: 4px;">\n  <h3>Cell ${$notebookStore.cells.length + 1}</h3>\n  <p>This is an HTML cell added at ${new Date().toLocaleTimeString()}.</p>\n</div>`,
-			focus: true
-		});
-		changeCount++;
-	}
-
-	function clearCells() {
-		while ($notebookStore.cells.length > 0) {
-			notebookStore.removeCell($notebookStore.cells[0].id);
+	async function addJavaScriptCell() {
+		if (notebookStore && $notebookStore) {
+			await notebookStore.addCell({
+				kind: 'js',
+				value: `// Cell ${$notebookStore.cells.length + 1}\nconsole.log("Hello from cell ${$notebookStore.cells.length + 1}!");\n\n\`Cell ${$notebookStore.cells.length + 1} executed\``,
+				focus: true
+			});
+			changeCount++;
 		}
-		changeCount++;
+	}
+
+	async function addMarkdownCell() {
+		if (notebookStore && $notebookStore) {
+			await notebookStore.addCell({
+				kind: 'md',
+				value: `# Cell ${$notebookStore.cells.length + 1}\n\nThis is a **markdown** cell added at ${new Date().toLocaleTimeString()}.`,
+				focus: true
+			});
+			changeCount++;
+		}
+	}
+
+	async function addHTMLCell() {
+		if (notebookStore && $notebookStore) {
+			await notebookStore.addCell({
+				kind: 'html',
+				value: `<div style="padding: 1rem; background: #f0f0f0; border-radius: 4px;">\n  <h3>Cell ${$notebookStore.cells.length + 1}</h3>\n  <p>This is an HTML cell added at ${new Date().toLocaleTimeString()}.</p>\n</div>`,
+				focus: true
+			});
+			changeCount++;
+		}
+	}
+
+	async function clearCells() {
+		if (notebookStore && $notebookStore) {
+			while ($notebookStore.cells.length > 0) {
+				await notebookStore.removeCell($notebookStore.cells[0].id);
+			}
+			changeCount++;
+		}
 	}
 </script>
 
 <div class="test-page">
-	<header class="test-header">
-		<h1>Notebook Reactivity Test</h1>
-		<div class="test-stats">
-			<p><strong>Notebook Version:</strong> {$notebookStore.version}</p>
-			<p><strong>Number of Cells:</strong> {$notebookStore.cells.length}</p>
-			<p><strong>Change Count:</strong> {changeCount}</p>
-			<p><strong>Last Updated:</strong> {notebookStore.notebook.updatedAt.toLocaleTimeString()}</p>
-		</div>
-		<div class="test-actions">
-			<button onclick={addJavaScriptCell} class="test-button js">Add JS Cell</button>
-			<button onclick={addMarkdownCell} class="test-button md">Add MD Cell</button>
-			<button onclick={addHTMLCell} class="test-button html">Add HTML Cell</button>
-			<button onclick={clearCells} class="test-button clear">Clear All</button>
-		</div>
-	</header>
+	{#if notebookStore && $notebookStore}
+		<header class="test-header">
+			<h1>Notebook Reactivity Test</h1>
+			<div class="test-stats">
+				<p><strong>Notebook Version:</strong> {$notebookStore.version}</p>
+				<p><strong>Number of Cells:</strong> {$notebookStore.cells.length}</p>
+				<p><strong>Change Count:</strong> {changeCount}</p>
+				<p>
+					<strong>Last Updated:</strong>
+					{notebookStore.notebook.updatedAt.toLocaleTimeString()}
+				</p>
+			</div>
+			<div class="test-actions">
+				<button onclick={addJavaScriptCell} class="test-button js">Add JS Cell</button>
+				<button onclick={addMarkdownCell} class="test-button md">Add MD Cell</button>
+				<button onclick={addHTMLCell} class="test-button html">Add HTML Cell</button>
+				<button onclick={clearCells} class="test-button clear">Clear All</button>
+			</div>
+		</header>
 
-	<main class="test-main">
-		<NotebookEditor {notebookStore} />
-	</main>
+		<main class="test-main">
+			<NotebookEditor {notebookStore} />
+		</main>
+	{:else}
+		<div style="padding: 2rem; text-align: center;">
+			<p>Loading...</p>
+		</div>
+	{/if}
 </div>
 
 <style>
