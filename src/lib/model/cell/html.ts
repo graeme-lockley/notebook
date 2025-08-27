@@ -17,17 +17,11 @@ export async function executeHtml(cell: ReactiveCell): Promise<void> {
 			return;
 		}
 
-		console.log('Expressions:', expressions, 'processedContent:', processedContent);
-
 		// Create a JavaScript cell that evaluates the expressions
 		const jsCode = createExpressionEvaluator(expressions, processedContent);
 
-		console.log('jsCode:', jsCode);
-
 		// Parse and execute the generated JavaScript
 		const parsed = parseCell(jsCode);
-
-		console.log('parsed:', parsed);
 
 		cell.variable = cell.runtime.module(parsed);
 
@@ -46,7 +40,6 @@ export async function executeHtml(cell: ReactiveCell): Promise<void> {
 			cell.handleError(error);
 		});
 	} catch (error) {
-		console.log('error:', error);
 		cell.handleError(error as Error);
 	}
 }

@@ -14,7 +14,8 @@ declare module '@observablehq/runtime' {
 }
 
 declare module '@observablehq/parser' {
-	export function parseCell(code: string): unknown;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	export function parseCell(code: string): any;
 }
 
 declare module '@observablehq/stdlib' {
