@@ -11,20 +11,12 @@
 	// Create a reactive wrapper for the cell
 	let cellData = $derived({
 		id: cell.id,
+		kind: cell.kind,
 		status: cell.status,
 		result: cell.result,
 		value: cell.result?.value,
 		html: cell.result?.html || null
 	});
-
-	function sanitizeHtml(html: string): string {
-		// Basic HTML sanitization - in production, use DOMPurify
-		return html
-			.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-			.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-			.replace(/javascript:/gi, '')
-			.replace(/on\w+\s*=/gi, '');
-	}
 </script>
 
 {#if cellData.status === 'pending'}
@@ -42,11 +34,11 @@
 	</div>
 {:else if cellData.status === 'ok'}
 	{#if cellData.value !== undefined && cellData.value !== null}
-		<ObservableValueRenderer value={cellData.value} />
+		<ObservableValueRenderer value={cellData.value} kind={cellData.kind} />
 	{:else if cellData.html}
 		<div class="html-output">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html sanitizeHtml(cellData.html)}
+			{@html cellData.html}
 		</div>
 	{:else}
 		<div class="no-output">

@@ -64,6 +64,13 @@
 		}
 	});
 
+	function handleSourceValueChange() {
+		if (newValue !== value) {
+			value = newValue;
+			dispatch('SourceValueChange', { id, value: newValue });
+		}
+	}
+
 	// Create editor state
 	function createEditorState() {
 		return EditorState.create({
@@ -77,21 +84,21 @@
 					{
 						key: 'Ctrl-Enter',
 						run: () => {
-							dispatch('run', { id });
+							handleSourceValueChange();
 							return true;
 						}
 					},
 					{
 						key: 'Cmd-Enter',
 						run: () => {
-							dispatch('run', { id });
+							handleSourceValueChange();
 							return true;
 						}
 					},
 					{
 						key: 'Shift-Enter',
 						run: () => {
-							dispatch('run', { id });
+							handleSourceValueChange();
 							return true;
 						}
 					},
@@ -128,9 +135,8 @@
 					}
 				}),
 				EditorView.focusChangeEffect.of((state, focused) => {
-					if (!focused && newValue !== value) {
-						value = newValue;
-						dispatch('SourceValueChange', { id, value: newValue });
+					if (!focused) {
+						handleSourceValueChange();
 					}
 
 					return null;

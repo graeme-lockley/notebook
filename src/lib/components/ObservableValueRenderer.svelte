@@ -2,9 +2,15 @@
 	import { onDestroy } from 'svelte';
 	import { plot } from '@observablehq/plot';
 	import katex from '@observablehq/katex';
+	import type { CellKind } from '$lib/types/cell';
 
-	let { value, className = '' } = $props<{
+	let {
+		value,
+		kind,
+		className = ''
+	} = $props<{
 		value: unknown;
+		kind: CellKind;
 		className?: string;
 	}>();
 	let container: HTMLElement;
@@ -46,7 +52,9 @@
 		}
 
 		try {
-			if (isPlot(value)) {
+			if (kind === 'html' && isString(value)) {
+				renderStringHTMLElement(value);
+			} else if (isPlot(value)) {
 				await renderPlot(value);
 			} else if (isHTMLElement(value)) {
 				renderHTMLElement(value);
@@ -77,6 +85,16 @@
 			console.error('Error rendering plot:', error);
 			renderError(error);
 		}
+	}
+
+	// Render HTML Element
+	function renderStringHTMLElement(element: string) {
+		const div = document.createElement('div');
+		div.innerHTML = element;
+
+		// eslint-disable-next-line svelte/no-dom-manipulating
+		container.appendChild(div);
+		renderedElement = div;
 	}
 
 	// Render HTML Element
