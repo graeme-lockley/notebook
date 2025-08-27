@@ -4,7 +4,7 @@
 	import RenderedPopupGutter from './RenderedPopupGutter.svelte';
 	import RenderedContent from './RenderedContent.svelte';
 
-	import type { Cell } from '$lib/types/cell';
+	import type { Cell } from '$lib/model/cell';
 	import type {
 		ToggleSourceViewEvent,
 		DeleteCellEvent,

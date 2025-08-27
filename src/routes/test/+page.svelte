@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ReactiveNotebook } from '$lib/types/cell';
+	import { ReactiveNotebook } from '$lib/model/cell';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
 	import { createNotebookStore, type NotebookStore } from '$lib/stores/notebook';
 	import { onMount } from 'svelte';

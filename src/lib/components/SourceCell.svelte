@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { Cell } from '$lib/types/cell';
+	import type { Cell } from '$lib/model/cell';
 	import SourceContent from './SourceContent.svelte';
 	import SourcePopupGutter from './SourcePopupGutter.svelte';
 	import type { SourceValueChangeEvent, SourceKindChangeEvent } from './event-types';

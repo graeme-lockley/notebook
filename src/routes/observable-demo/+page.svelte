@@ -3,7 +3,7 @@
 	import FooterBar from '$lib/components/FooterBar.svelte';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
 	import { createNotebookStore, type NotebookStore } from '$lib/stores/notebook';
-	import { ReactiveNotebook } from '$lib/types/cell';
+	import { ReactiveNotebook } from '$lib/model/cell';
 	import { onMount } from 'svelte';
 
 	let notebookStore: NotebookStore | undefined;

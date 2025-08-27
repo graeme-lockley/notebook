@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Cell } from '$lib/types/cell';
+	import type { Cell } from '$lib/model/cell';
 	import ObservableValueRenderer from './ObservableValueRenderer.svelte';
 
 	interface Props {

@@ -1,4 +1,4 @@
-import { ReactiveNotebook } from '$lib/types/cell';
+import { ReactiveNotebook } from '$lib/model/cell';
 
 // Initial cells data with closed/open state
 const initialCells: Array<{

@@ -1,4 +1,4 @@
-import type { CellKind } from '$lib/types/cell';
+import type { CellKind } from '$lib/model/cell';
 
 export type CellCreatedEvent = {
 	cellBeforeId: string | undefined;

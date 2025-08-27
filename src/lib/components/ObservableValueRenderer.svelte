@@ -3,7 +3,7 @@
 	import { plot } from '@observablehq/plot';
 	import katex from '@observablehq/katex';
 	import { marked } from 'marked';
-	import type { CellKind } from '$lib/types/cell';
+	import type { CellKind } from '$lib/model/cell';
 
 	let {
 		value,
