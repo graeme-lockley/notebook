@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { ReactiveCell } from '$lib/model/cell';
 	import { onDestroy, onMount } from 'svelte';
-	import ObservableValueRenderer from './ObservableValueRenderer.svelte';
+	import ObservableHTMLRenderer from './ObservableHTMLRenderer.svelte';
+	import ObservableMarkdownRenderer from './ObservableMarkdownRenderer.svelte';
+	import ObservableJavascriptRenderer from './ObservableJavascriptRenderer.svelte';
 	import type { ObservableValue } from '../../runtime';
 
 	interface Props {
@@ -62,8 +64,18 @@
 			{result || 'Unknown error (2)'}
 		</div>
 	</div>
-{:else}
-	<ObservableValueRenderer value={result} kind={cell.kind} />
+{:else if cell.kind === 'html'}
+	<div>
+		<ObservableHTMLRenderer value={result} />
+	</div>
+{:else if cell.kind === 'md'}
+	<div>
+		<ObservableMarkdownRenderer value={result} />
+	</div>
+{:else if cell.kind === 'js'}
+	<div>
+		<ObservableJavascriptRenderer {cell} />
+	</div>
 {/if}
 
 <style>

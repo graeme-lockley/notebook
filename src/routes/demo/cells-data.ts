@@ -40,6 +40,52 @@ const initialCells: Array<{
 		isClosed: true
 	},
 	{
+		id: 'cell-4',
+		kind: 'js',
+		value: `// Test object for ObservableHQ Inspector
+userData = {
+  let v = {
+    name: "John Doe",
+    age: 30,
+    email: "john.doe@example.com",
+    isActive: true,
+    preferences: {
+      theme: "dark",
+		language: "en",
+		notifications: true
+	},
+	hobbies: ["coding", "reading", "gaming", "hiking"],
+	stats: {
+		posts: 42,
+		followers: 1234,
+		following: 567
+	}
+  };
+
+  return v;
+}`,
+		valueError: null,
+		isFocused: false,
+		hasError: false,
+		isClosed: true
+	},
+	{
+		id: 'cell-5',
+		kind: 'js',
+		value: `// Test array for ObservableHQ Inspector
+dataArray = [
+  { id: 1, name: "Alice", score: 95, active: true },
+  { id: 2, name: "Bob", score: 87, active: false },
+  { id: 3, name: "Charlie", score: 92, active: true },
+  { id: 4, name: "Diana", score: 78, active: true },
+  { id: 5, name: "Eve", score: 88, active: false }
+]`,
+		valueError: null,
+		isFocused: false,
+		hasError: false,
+		isClosed: true
+	},
+	{
 		id: 'cell-6',
 		kind: 'js',
 		value: 'x = 100',
@@ -55,8 +101,8 @@ const initialCells: Array<{
  */
 export async function createDemoNotebook(): Promise<ReactiveNotebook> {
 	const notebook = new ReactiveNotebook({
-		title: 'ObservableHQ Clone - Closed & Open Cell Demo',
-		description: 'A demonstration of the ObservableHQ clone with various cell types and states'
+		title: 'ObservableHQ Clone - Inspector Demo',
+		description: 'A demonstration of the ObservableHQ clone with inspector functionality'
 	});
 
 	// Add demo cells to the notebook

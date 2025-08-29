@@ -63,3 +63,13 @@ declare module '@observablehq/inputs' {
 	export const radio: (options?: unknown) => HTMLElement;
 	export const textarea: (options?: unknown) => HTMLElement;
 }
+
+declare module '@observablehq/inspector' {
+	export class Inspector {
+		constructor(node: HTMLElement);
+		pending(): void;
+		fulfilled(value: unknown): void;
+		rejected(error: unknown): void;
+		static into(container: HTMLElement | string): (value: unknown) => void;
+	}
+}

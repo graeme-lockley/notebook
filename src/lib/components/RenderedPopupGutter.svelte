@@ -87,5 +87,11 @@
 		/>
 	{/if}
 {:else}
-	<div></div>
+	<div class="height"></div>
 {/if}
+
+<style>
+	.height {
+		height: 20px;
+	}
+</style>
