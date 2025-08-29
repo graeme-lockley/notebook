@@ -73,16 +73,6 @@
 	});
 </script>
 
-<div bind:this={container} class="fred">
+<div bind:this={container}>
 	<!-- Observable Inspector will manage content here -->
 </div>
-
-<style>
-	.fred {
-		background-color: azure;
-		width: 800px;
-		white-space: pre-wrap;
-		overflow: hidden;
-		word-break: none;
-	}
-</style>
