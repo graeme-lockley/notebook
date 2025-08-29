@@ -141,6 +141,11 @@ export class ReactiveCell implements Cell {
 		const variable = this.variables.get(newName);
 
 		if (variable === undefined) {
+			if (this.variables.size > 0) {
+				this.variables.forEach((variable) => variable.delete());
+				this.variables.clear();
+			}
+
 			const newVariable = this.module.variable(this.observers);
 			newVariable.define(newName, dependencies, Eval(`(${dependencies.join(', ')}) => ${body}`));
 			this.variables.set(newName, newVariable);
@@ -407,7 +412,7 @@ export class ReactiveNotebook {
 	private getDefaultValue(kind: CellKind): string {
 		switch (kind) {
 			case 'js':
-				return '// New JavaScript cell\nconsole.log("Hello!");';
+				return 'Math.PI';
 			case 'md':
 				return '# New Markdown Cell\n\nStart typing here...';
 			case 'html':
