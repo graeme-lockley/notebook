@@ -59,7 +59,10 @@ export async function makeReactive(cell: ReactiveCell): Promise<void> {
 		let dependencies: Array<string> = [];
 		for (const expr of expressions) {
 			const pr = parse(expr);
-			if (pr.type === 'assignment' && pr.name !== null) {
+			if (pr.type === 'exception') {
+				cell.handleError(pr.exception);
+				return;
+			} else if (pr.type === 'assignment' && pr.name !== null) {
 				dependencies = [...dependencies, ...pr.dependencies];
 			} else {
 				cell.handleError(Error('Invalid expression: ' + pr.type));
@@ -71,7 +74,8 @@ export async function makeReactive(cell: ReactiveCell): Promise<void> {
 
 		cell.assignVariable(undefined, dependencies, evaluator);
 	} catch (error) {
-		cell.handleError(error as Error);
+		console.log('Error: ', error);
+		cell.handleError(error);
 	}
 }
 
