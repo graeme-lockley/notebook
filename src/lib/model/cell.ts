@@ -1,6 +1,11 @@
-// Cell type definitions for ObservableHQ clone
-import { Runtime } from '@observablehq/runtime';
-import type { ObservableVariable } from '@observablehq/runtime';
+import {
+	createRuntime,
+	type IRuntime,
+	type IModule,
+	type Observer,
+	type ObservableValue,
+	type IVariable
+} from '../../runtime';
 
 import { executeHtml } from './cell/html';
 import { executeJavaScript } from './cell/javascript';
@@ -10,21 +15,13 @@ export type CellKind = 'js' | 'md' | 'html';
 
 export type CellStatus = 'ok' | 'error' | 'pending';
 
-export interface CellValue {
-	value: unknown;
-	error: Error | null;
-	html?: string | null;
-	console?: string[];
-}
-
 export interface BaseCell {
 	id: string;
 	kind: CellKind;
 	value: string;
-	status: CellStatus;
-	result: CellValue; // Replace valueHtml with result
+	valueError: Error | null;
+	variables: Map<string, IVariable>;
 	isFocused: boolean;
-	hasError: boolean;
 	isClosed: boolean;
 }
 
@@ -32,9 +29,6 @@ export interface Cell extends BaseCell {
 	// Runtime methods
 	execute(): Promise<void>;
 	dispose(): void;
-	getValue(): unknown;
-	getError(): Error | null;
-	getHtml(): string | null;
 }
 
 export interface NotebookOptions {
@@ -52,86 +46,74 @@ export interface AddCellOptions {
 	focus?: boolean;
 }
 
+export class Observers implements Observer {
+	_lastValue: ObservableValue | null = null;
+	_observers: Map<number, Observer> = new Map();
+
+	addObserver(observer: Observer): number {
+		const id = Math.random();
+		this._observers.set(id, observer);
+
+		if (this._lastValue != null) {
+			observer.fulfilled(this._lastValue);
+		}
+
+		return id;
+	}
+
+	removeObserver(id: number): void {
+		this._observers.delete(id);
+	}
+
+	clear(): void {
+		this._observers.clear();
+	}
+
+	fulfilled(value: ObservableValue): void {
+		this._lastValue = value;
+		this._observers.forEach((observer) => observer.fulfilled(value));
+	}
+
+	pending(): void {
+		this._observers.forEach((observer) => observer.pending());
+	}
+
+	rejected(value?: ObservableValue): void {
+		this._observers.forEach((observer) => observer.rejected(value));
+	}
+}
+
 export class ReactiveCell implements Cell {
 	id: string;
 	kind: CellKind;
 	value: string;
-	status: CellStatus = 'pending';
-	result: CellValue = { value: null, error: null, html: null, console: [] };
+	valueError: Error | null = null;
 	isFocused: boolean = false;
-	hasError: boolean = false;
+	variables: Map<string, IVariable> = new Map();
 	isClosed: boolean = true;
-	runtime: Runtime;
-	variable: ObservableVariable | null = null;
+	module: IModule;
+	observers: Observers = new Observers();
 	notebook: ReactiveNotebook;
-
-	private observers: Set<(cell: ReactiveCell) => void> = new Set();
-	private dependencies: Set<string> = new Set(); // Track cell IDs this cell depends on
-	private dependents: Set<string> = new Set(); // Track cell IDs that depend on this cell
 
 	constructor(
 		id: string,
 		kind: CellKind,
 		value: string,
-		runtime: Runtime,
+		module: IModule,
 		notebook: ReactiveNotebook
 	) {
 		this.id = id;
 		this.kind = kind;
 		this.value = value;
-		this.runtime = runtime;
+		this.module = module;
 		this.notebook = notebook;
-	}
-
-	// Add observer for value changes
-	addObserver(observer: (cell: ReactiveCell) => void) {
-		this.observers.add(observer);
-	}
-
-	removeObserver(observer: (cell: ReactiveCell) => void) {
-		this.observers.delete(observer);
-	}
-
-	// Dependency management
-	addDependency(cellId: string) {
-		this.dependencies.add(cellId);
-	}
-
-	removeDependency(cellId: string) {
-		this.dependencies.delete(cellId);
-	}
-
-	addDependent(cellId: string) {
-		this.dependents.add(cellId);
-	}
-
-	removeDependent(cellId: string) {
-		this.dependents.delete(cellId);
-	}
-
-	// Trigger cascading updates to dependent cells
-	async triggerCascadingUpdate(): Promise<void> {
-		for (const dependentId of this.dependents) {
-			const dependentCell = this.notebook.getCell(dependentId);
-			if (dependentCell) {
-				await dependentCell.execute();
-			}
-		}
 	}
 
 	// Execute the cell
 	async execute(): Promise<void> {
 		try {
-			this.status = 'pending';
-			this.notifyObservers();
-
-			// Dispose of previous variable if it exists
-			if (this.variable) {
-				this.variable.delete();
-				this.variable = null;
-			}
-
 			// Parse and execute based on cell kind
+			this.valueError = null;
 			if (this.kind === 'js') {
 				await executeJavaScript(this);
 			} else if (this.kind === 'md') {
@@ -139,60 +121,36 @@ export class ReactiveCell implements Cell {
 			} else if (this.kind === 'html') {
 				await executeHtml(this);
 			}
-
-			// Trigger cascading updates to dependent cells
-			await this.triggerCascadingUpdate();
 		} catch (error) {
 			this.handleError(error as Error);
 		}
 	}
 
 	handleError(error: unknown): void {
-		this.result.error = error instanceof Error ? error : new Error(String(error));
-		this.result.value = null;
-		this.status = 'error';
-		this.hasError = true;
-		this.notifyObservers();
-	}
-
-	// Getters for reactive values
-	getValue(): unknown {
-		return this.result.value;
-	}
-
-	getError(): Error | null {
-		return this.result.error;
-	}
-
-	getHtml(): string | null {
-		return this.result.html || null;
-	}
-
-	// Update cell content
-	async updateContent(newValue: string): Promise<void> {
-		this.value = newValue;
-		await this.execute();
+		this.valueError =
+			error instanceof Error ? error : new Error(typeof error === 'string' ? error : String(error));
 	}
 
 	// Dispose of runtime resources
 	dispose(): void {
-		if (this.variable) {
-			this.variable.delete();
-			this.variable = null;
-		}
 		this.observers.clear();
 	}
 
-	notifyObservers(): void {
-		this.observers.forEach((observer) => {
-			try {
-				observer(this);
-			} catch (e) {
-				console.error('Observer error:', e);
-			}
-		});
+	assignVariable(name: string | undefined, dependencies: Array<string>, body: string): void {
+		const newName = name || this.id;
+		const variable = this.variables.get(newName);
+
+		if (variable === undefined) {
+			const newVariable = this.module.variable(this.observers);
+			newVariable.define(newName, dependencies, Eval(`(${dependencies.join(', ')}) => ${body}`));
+			this.variables.set(newName, newVariable);
+		} else {
+			variable.define(newName, dependencies, Eval(`(${dependencies.join(', ')}) => ${body}`));
+		}
 	}
 }
+
+const Eval = eval;
 
 export class ReactiveNotebook {
 	private _cells: ReactiveCell[] = [];
@@ -201,9 +159,8 @@ export class ReactiveNotebook {
 	private _createdAt: Date;
 	private _updatedAt: Date;
 	private _version = 0;
-	private runtime: Runtime;
-	private observers: Set<(notebook: ReactiveNotebook) => void> = new Set();
-	private sharedContext: Record<string, unknown> = {}; // Shared variables between cells
+	private runtime: IRuntime;
+	private module: IModule;
 
 	constructor(options: NotebookOptions = {}) {
 		this._title = options.title || 'Untitled Notebook';
@@ -212,26 +169,8 @@ export class ReactiveNotebook {
 		this._updatedAt = options.updatedAt || new Date();
 
 		// Initialize Observable runtime with standard library
-		this.runtime = new Runtime(import('@observablehq/stdlib'));
-	}
-
-	// Add observer for notebook changes
-	addObserver(observer: (notebook: ReactiveNotebook) => void) {
-		this.observers.add(observer);
-	}
-
-	removeObserver(observer: (notebook: ReactiveNotebook) => void) {
-		this.observers.delete(observer);
-	}
-
-	private notifyObservers(): void {
-		this.observers.forEach((observer) => {
-			try {
-				observer(this);
-			} catch (e) {
-				console.error('Observer error:', e);
-			}
-		});
+		this.runtime = createRuntime();
+		this.module = this.runtime.module();
 	}
 
 	// Getters
@@ -271,19 +210,6 @@ export class ReactiveNotebook {
 		return this._cells.filter((cell) => cell.isClosed);
 	}
 
-	// Shared context management
-	getSharedContext(): Record<string, unknown> {
-		return { ...this.sharedContext };
-	}
-
-	setSharedVariable(name: string, value: unknown) {
-		this.sharedContext[name] = value;
-	}
-
-	clearSharedContext() {
-		this.sharedContext = {};
-	}
-
 	// Cell management methods
 	async addCell(options: AddCellOptions = {}): Promise<ReactiveCell> {
 		const {
@@ -294,12 +220,7 @@ export class ReactiveNotebook {
 			focus = false
 		} = options;
 
-		const newCell = new ReactiveCell(this.generateCellId(), kind, value, this.runtime, this);
-
-		// Set up cell observer
-		newCell.addObserver(() => {
-			this.notifyObservers();
-		});
+		const newCell = new ReactiveCell(this.generateCellId(), kind, value, this.module, this);
 
 		if (relativeToId) {
 			const refIndex = this._cells.findIndex((cell) => cell.id === relativeToId);
@@ -323,7 +244,6 @@ export class ReactiveNotebook {
 
 		this._updatedAt = new Date();
 		this._version++;
-		this.notifyObservers();
 
 		return newCell;
 	}
@@ -356,7 +276,7 @@ export class ReactiveNotebook {
 
 		this._updatedAt = new Date();
 		this._version++;
-		this.notifyObservers();
+
 		return true;
 	}
 
@@ -447,17 +367,12 @@ export class ReactiveNotebook {
 			this.generateCellId(),
 			cell.kind,
 			cell.value,
-			this.runtime,
+			this.module,
 			this
 		);
 
 		// Copy properties
 		duplicatedCell.isClosed = cell.isClosed;
-
-		// Set up observer
-		duplicatedCell.addObserver(() => {
-			this.notifyObservers();
-		});
 
 		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
 		this._cells.splice(currentIndex + 1, 0, duplicatedCell);
@@ -467,7 +382,7 @@ export class ReactiveNotebook {
 
 		this._updatedAt = new Date();
 		this._version++;
-		this.notifyObservers();
+
 		return duplicatedCell;
 	}
 
@@ -567,6 +482,5 @@ export class ReactiveNotebook {
 	dispose(): void {
 		this._cells.forEach((cell) => cell.dispose());
 		this._cells = [];
-		this.observers.clear();
 	}
 }

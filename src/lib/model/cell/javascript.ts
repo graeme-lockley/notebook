@@ -1,23 +1,22 @@
 import type { ReactiveCell } from '../cell';
+import { parse } from '../../parser';
 
 export async function executeJavaScript(cell: ReactiveCell): Promise<void> {
-	try {
-		// For now, let's use a simple eval approach to get basic functionality working
-		// We'll implement proper shared context later
-		const result = eval(cell.value);
+	const pr = parse(cell.value);
 
-		// Store the result
-		cell.result.value = result;
-		cell.result.error = null;
-		cell.status = 'ok';
-		cell.hasError = false;
+	if (pr.type === 'exception') {
+		cell.handleError(pr.exception);
+		return;
+	} else if (pr.type === 'assignment') {
+		const name = pr.name || cell.id;
 
-		// Update shared context with any variables defined in this cell
-		// For now, we'll store the result with the cell ID as the key
-		cell.notebook.setSharedVariable(cell.id, result);
-
-		cell.notifyObservers();
-	} catch (error) {
-		cell.handleError(error as Error);
+		cell.assignVariable(name, pr.dependencies, pr.body);
+	} else if (pr.type === 'import') {
+		console.log('import', pr);
+		cell.handleError(Error('Unsupported statement: ' + pr.type));
+		return;
+	} else {
+		cell.handleError(Error('Unknown statement: ' + pr));
+		return;
 	}
 }

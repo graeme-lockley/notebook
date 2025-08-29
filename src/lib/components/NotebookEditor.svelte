@@ -58,7 +58,7 @@
 </script>
 
 <div class="notebook-editor">
-	{#each $notebookStore.cells as cell, index (cell.id + '_' + JSON.stringify(cell.result))}
+	{#each $notebookStore.cells as cell, index (cell.id)}
 		<AddCellBetween
 			cellBeforeId={index > 0 ? $notebookStore.cells[index - 1].id : undefined}
 			cellAfterId={cell.id}

@@ -1,3 +1,6 @@
+import type { ReactiveCell } from '../cell';
+import { parse } from '../../parser';
+
 // Extract JavaScript expressions from markdown/HTML
 export function extractExpressions(content: string): {
 	processedContent: string;
@@ -35,13 +38,42 @@ export function createExpressionEvaluator(expressions: string[], template: strin
 		})
 		.join('\n');
 
-	return `
+	return `{
 ${expressionVars}
 
 // Interpolate expressions into template
-const result = \`${template.replace(/__EXPR_(\d+)__/g, '${__EXPR_$1__}')}\`;
+const result = \`${template.replace(/`/g, '\\`').replace(/__EXPR_(\d+)__/g, '${__EXPR_$1__}')}\`;
 
 // Return the result
-result;
-`;
+return result;
+}`;
 }
+
+export async function makeReactive(cell: ReactiveCell): Promise<void> {
+	try {
+		// Extract embedded JavaScript expressions from HTML
+		const { processedContent, expressions } = extractExpressions(cell.value);
+
+		const evaluator = createExpressionEvaluator(expressions, processedContent);
+
+		let dependencies: Array<string> = [];
+		for (const expr of expressions) {
+			const pr = parse(expr);
+			if (pr.type === 'assignment' && pr.name !== null) {
+				dependencies = [...dependencies, ...pr.dependencies];
+			} else {
+				cell.handleError(Error('Invalid expression: ' + pr.type));
+				return;
+			}
+		}
+
+		dependencies = uniqueElementsInStringArray(dependencies);
+
+		cell.assignVariable(undefined, dependencies, evaluator);
+	} catch (error) {
+		cell.handleError(error as Error);
+	}
+}
+
+const uniqueElementsInStringArray = (inp: Array<string>): Array<string> =>
+	Array.from(new Set<string>(inp));

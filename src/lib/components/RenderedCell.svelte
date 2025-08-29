@@ -4,7 +4,8 @@
 	import RenderedPopupGutter from './RenderedPopupGutter.svelte';
 	import RenderedContent from './RenderedContent.svelte';
 
-	import type { Cell } from '$lib/model/cell';
+	import type { ReactiveCell } from '$lib/model/cell';
+
 	import type {
 		ToggleSourceViewEvent,
 		DeleteCellEvent,
@@ -16,7 +17,7 @@
 	interface Props {
 		isClosed: boolean;
 		isFocused: boolean;
-		cell: Cell;
+		cell: ReactiveCell;
 	}
 
 	let { isClosed, isFocused, cell }: Props = $props();

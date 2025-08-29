@@ -22,6 +22,19 @@ declare module '@observablehq/stdlib' {
 	// Standard library exports - this is a placeholder
 	// The actual stdlib provides many functions, but we'll declare them as unknown for now
 	export const stdlib: unknown;
+
+	// AbstractFile class for file handling
+	export abstract class AbstractFile {
+		name: string;
+
+		constructor(name: string, url: string);
+		abstract url(): string;
+	}
+
+	// Library class for runtime library
+	export class Library {
+		constructor();
+	}
 }
 
 declare module '@observablehq/plot' {
