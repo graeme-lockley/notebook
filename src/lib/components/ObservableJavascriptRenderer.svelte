@@ -49,7 +49,8 @@
 			observerID = cell.observers.addObserver({
 				fulfilled(value: ObservableValue): void {
 					if (inspector) {
-						inspector.fulfilled(unwrapSvelteProxy(value));
+						const names = cell.names().join(', ');
+						inspector.fulfilled(unwrapSvelteProxy(value), names.length > 0 ? names : undefined);
 					}
 				},
 				pending(): void {
@@ -59,7 +60,11 @@
 				},
 				rejected(value?: ObservableValue): void {
 					if (inspector) {
-						inspector.rejected(value === null ? null : unwrapSvelteProxy(value));
+						const names = cell.names().join(', ');
+						inspector.rejected(
+							value === null ? null : unwrapSvelteProxy(value),
+							names.length > 0 ? names : undefined
+						);
 					}
 				}
 			});

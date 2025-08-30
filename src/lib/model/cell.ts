@@ -83,6 +83,8 @@ export class Observers implements Observer {
 	}
 }
 
+const CELL_ID_PREFIX = 'cell-';
+
 export class ReactiveCell implements Cell {
 	id: string;
 	kind: CellKind;
@@ -152,6 +154,10 @@ export class ReactiveCell implements Cell {
 		} else {
 			variable.define(newName, dependencies, Eval(`(${dependencies.join(', ')}) => ${body}`));
 		}
+	}
+
+	names(): string[] {
+		return Array.from(this.variables.keys()).filter((n) => !n.startsWith(CELL_ID_PREFIX));
 	}
 }
 
@@ -406,7 +412,7 @@ export class ReactiveNotebook {
 
 	// Utility methods
 	private generateCellId(): string {
-		return `cell-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+		return `${CELL_ID_PREFIX}${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 	}
 
 	private getDefaultValue(kind: CellKind): string {

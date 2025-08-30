@@ -68,8 +68,8 @@ declare module '@observablehq/inspector' {
 	export class Inspector {
 		constructor(node: HTMLElement);
 		pending(): void;
-		fulfilled(value: unknown): void;
-		rejected(error: unknown): void;
+		fulfilled(value: unknown, name?: string): void;
+		rejected(error: unknown, name?: string): void;
 		static into(container: HTMLElement | string): (value: unknown) => void;
 	}
 }
