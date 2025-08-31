@@ -11,6 +11,7 @@ export interface AssignmentStatement {
 	name?: string;
 	dependencies: Array<string>;
 	body: string;
+	viewof: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,13 +38,20 @@ export const parse = (code: string): ParseResult => {
 			const urn: string = ast.body.source.value;
 
 			return { type: 'import', names, urn };
+		} else if (ast?.id?.type === 'ViewExpression') {
+			const name = ast?.id?.id?.type === 'Identifier' ? ast?.id?.id?.name : undefined;
+			const referencedNames = ast.references.map((dep: { name: string }) => dep.name);
+			const dependencies = uniqueElementsInStringArray(referencedNames);
+			const body = code.slice(ast.body.start, ast.body.end);
+
+			return { type: 'assignment', name, dependencies, body, viewof: true };
 		} else {
 			const name = ast.id !== null && ast.id.type === 'Identifier' ? ast.id.name : undefined;
 			const referencedNames = ast.references.map((dep: { name: string }) => dep.name);
 			const dependencies = uniqueElementsInStringArray(referencedNames);
 			const body = code.slice(ast.body.start, ast.body.end);
 
-			return { type: 'assignment', name, dependencies, body };
+			return { type: 'assignment', name, dependencies, body, viewof: false };
 		}
 	} catch (e) {
 		return { type: 'exception', exception: e };

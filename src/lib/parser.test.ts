@@ -24,6 +24,7 @@ describe('Parser', () => {
 			expect(ast.name).toEqual('x');
 			expect(ast.dependencies).toEqual(['y']);
 			expect(ast.body).toEqual('y + 2');
+			expect(ast.viewof).toBe(false);
 		});
 
 		it('Block', () => {
@@ -33,6 +34,21 @@ describe('Parser', () => {
 			expect(ast.name).toEqual('x');
 			expect(ast.dependencies).toEqual(['y']);
 			expect(ast.body).toEqual('{ const z = y + 2; return z + 1; }');
+			expect(ast.viewof).toBe(false);
+		});
+
+		it('Viewof', () => {
+			const ast = parse(
+				'viewof flavor = Inputs.radio(["salty", "sweet", "bitter", "sour", "umami"], {label: "Flavor"})'
+			) as AssignmentStatement;
+
+			expect(ast.type).toEqual('assignment');
+			expect(ast.name).toEqual('flavor');
+			expect(ast.dependencies).toEqual(['Inputs']);
+			expect(ast.body).toEqual(
+				'Inputs.radio(["salty", "sweet", "bitter", "sour", "umami"], {label: "Flavor"})'
+			);
+			expect(ast.viewof).toBe(true);
 		});
 	});
 
