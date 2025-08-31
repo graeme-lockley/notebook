@@ -27,8 +27,6 @@
 				fulfilled(value: ObservableValue): void {
 					if (value instanceof SVGElement) {
 						renderedContent = value.outerHTML;
-					} else if (value instanceof HTMLElement) {
-						renderedContent = value.outerHTML;
 					} else if (inspector) {
 						inspector.fulfilled($state.snapshot(value), names());
 					}
