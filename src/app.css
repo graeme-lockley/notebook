@@ -16,6 +16,19 @@
 	padding: 0;
 }
 
+ul,
+ol {
+	list-style: disc;
+	margin-left: 1.5em;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+li {
+	list-style: inherit;
+	margin-bottom: 0.25em;
+}
+
 html {
 	line-height: 1.15;
 	-webkit-text-size-adjust: 100%;
