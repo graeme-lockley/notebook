@@ -12,36 +12,6 @@
 	let container: HTMLElement;
 	let inspector: Inspector | undefined = $state(undefined);
 
-	// Helper function to unwrap Svelte proxies
-	function unwrapSvelteProxy(value: ObservableValue): ObservableValue {
-		// If it's a proxy, try to get the underlying value
-		if (value && typeof value === 'object' && 'target' in value) {
-			// Check if it's a Svelte proxy by looking for the target property
-			const proxyValue = value as { target?: unknown };
-			if (proxyValue.target) {
-				// Recursively unwrap nested proxies
-				return unwrapSvelteProxy(proxyValue.target);
-			}
-		}
-
-		// If it's an array, unwrap each element
-		if (Array.isArray(value)) {
-			return value.map(unwrapSvelteProxy);
-		}
-
-		// If it's an object, unwrap each property
-		if (value && typeof value === 'object' && !Array.isArray(value)) {
-			const unwrapped: Record<string, unknown> = {};
-			for (const [key, val] of Object.entries(value)) {
-				unwrapped[key] = unwrapSvelteProxy(val);
-			}
-			return unwrapped;
-		}
-
-		// Return primitive values as-is
-		return value;
-	}
-
 	onMount(() => {
 		if (container) {
 			inspector = new Inspector(container);
@@ -50,7 +20,7 @@
 				fulfilled(value: ObservableValue): void {
 					if (inspector) {
 						const names = cell.names().join(', ');
-						inspector.fulfilled(unwrapSvelteProxy(value), names.length > 0 ? names : undefined);
+						inspector.fulfilled($state.snapshot(value), names.length > 0 ? names : undefined);
 					}
 				},
 				pending(): void {
@@ -62,7 +32,7 @@
 					if (inspector) {
 						const names = cell.names().join(', ');
 						inspector.rejected(
-							value === null ? null : unwrapSvelteProxy(value),
+							value === null ? null : $state.snapshot(value),
 							names.length > 0 ? names : undefined
 						);
 					}
