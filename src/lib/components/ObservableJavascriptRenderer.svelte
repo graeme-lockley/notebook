@@ -11,6 +11,7 @@
 	let observerID: number | undefined = $state(undefined);
 	let container: HTMLElement;
 	let inspector: Inspector | undefined = $state(undefined);
+	let renderedContent: string = $state('');
 
 	function names(): string | undefined {
 		const n = cell.names().join(', ');
@@ -24,7 +25,11 @@
 
 			observerID = cell.observers.addObserver({
 				fulfilled(value: ObservableValue): void {
-					if (inspector) {
+					if (value instanceof SVGElement) {
+						renderedContent = value.outerHTML;
+					} else if (value instanceof HTMLElement) {
+						renderedContent = value.outerHTML;
+					} else if (inspector) {
 						inspector.fulfilled($state.snapshot(value), names());
 					}
 				},
@@ -50,5 +55,8 @@
 </script>
 
 <div bind:this={container}>
-	<!-- Observable Inspector will manage content here -->
+	{#if renderedContent}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html renderedContent}
+	{/if}
 </div>
