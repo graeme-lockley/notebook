@@ -12,6 +12,12 @@
 	let container: HTMLElement;
 	let inspector: Inspector | undefined = $state(undefined);
 
+	function names(): string | undefined {
+		const n = cell.names().join(', ');
+
+		return n.length > 0 ? n : undefined;
+	}
+
 	onMount(() => {
 		if (container) {
 			inspector = new Inspector(container);
@@ -19,8 +25,7 @@
 			observerID = cell.observers.addObserver({
 				fulfilled(value: ObservableValue): void {
 					if (inspector) {
-						const names = cell.names().join(', ');
-						inspector.fulfilled($state.snapshot(value), names.length > 0 ? names : undefined);
+						inspector.fulfilled($state.snapshot(value), names());
 					}
 				},
 				pending(): void {
@@ -30,11 +35,7 @@
 				},
 				rejected(value?: ObservableValue): void {
 					if (inspector) {
-						const names = cell.names().join(', ');
-						inspector.rejected(
-							value === null ? null : $state.snapshot(value),
-							names.length > 0 ? names : undefined
-						);
+						inspector.rejected(value === null ? null : $state.snapshot(value), names());
 					}
 				}
 			});
