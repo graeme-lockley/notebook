@@ -141,27 +141,40 @@ export class ReactiveCell implements Cell {
 	assignVariables(
 		variables: Array<{ name: string | undefined; dependencies: Array<string>; body: string }>
 	): void {
-		const v = variables[0];
-
-		const newName = v.name || this.id;
-		const variable = this.variables.get(newName);
-
-		if (variable === undefined) {
-			if (this.variables.size > 0) {
-				this.variables.forEach((variable) => variable.delete());
-				this.variables.clear();
+		variables.forEach((variable, idx) => {
+			if (variable.name === undefined) {
+				variable.name = this.id + '_' + idx;
 			}
+		});
 
-			const newVariable = this.module.variable(this.observers);
-			newVariable.define(
-				newName,
-				v.dependencies,
-				Eval(`(${v.dependencies.join(', ')}) => ${v.body}`)
-			);
-			this.variables.set(newName, newVariable);
-		} else {
-			variable.define(newName, v.dependencies, Eval(`(${v.dependencies.join(', ')}) => ${v.body}`));
+		const newNames = new Set(variables.map((variable) => variable.name));
+		for (const name of this.variables.keys()) {
+			if (!newNames.has(name)) {
+				this.variables.get(name)?.delete();
+				this.variables.delete(name);
+			}
 		}
+
+		variables.forEach((v) => {
+			const newName = v.name || this.id;
+			const variable = this.variables.get(newName);
+
+			if (variable === undefined) {
+				const newVariable = this.module.variable(this.observers);
+				newVariable.define(
+					newName,
+					v.dependencies,
+					Eval(`(${v.dependencies.join(', ')}) => ${v.body}`)
+				);
+				this.variables.set(newName, newVariable);
+			} else {
+				variable.define(
+					newName,
+					v.dependencies,
+					Eval(`(${v.dependencies.join(', ')}) => ${v.body}`)
+				);
+			}
+		});
 	}
 
 	names(): string[] {
