@@ -83,7 +83,7 @@ export class Observers implements Observer {
 	}
 }
 
-const CELL_ID_PREFIX = 'cell-';
+const CELL_ID_PREFIX = '__v';
 
 export class ReactiveCell implements Cell {
 	id: string;
@@ -412,7 +412,7 @@ export class ReactiveNotebook {
 
 	// Utility methods
 	private generateCellId(): string {
-		return `${CELL_ID_PREFIX}${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+		return `${CELL_ID_PREFIX}${Math.random().toString(36).substring(2, 15)}`;
 	}
 
 	private getDefaultValue(kind: CellKind): string {
