@@ -72,7 +72,7 @@ export async function makeReactive(cell: ReactiveCell): Promise<void> {
 
 		dependencies = uniqueElementsInStringArray(dependencies);
 
-		cell.assignVariable(undefined, dependencies, evaluator);
+		cell.assignVariables([{ name: undefined, dependencies, body: evaluator }]);
 	} catch (error) {
 		console.log('Error: ', error);
 		cell.handleError(error);

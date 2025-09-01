@@ -138,8 +138,12 @@ export class ReactiveCell implements Cell {
 		this.observers.clear();
 	}
 
-	assignVariable(name: string | undefined, dependencies: Array<string>, body: string): void {
-		const newName = name || this.id;
+	assignVariables(
+		variables: Array<{ name: string | undefined; dependencies: Array<string>; body: string }>
+	): void {
+		const v = variables[0];
+
+		const newName = v.name || this.id;
 		const variable = this.variables.get(newName);
 
 		if (variable === undefined) {
@@ -149,10 +153,14 @@ export class ReactiveCell implements Cell {
 			}
 
 			const newVariable = this.module.variable(this.observers);
-			newVariable.define(newName, dependencies, Eval(`(${dependencies.join(', ')}) => ${body}`));
+			newVariable.define(
+				newName,
+				v.dependencies,
+				Eval(`(${v.dependencies.join(', ')}) => ${v.body}`)
+			);
 			this.variables.set(newName, newVariable);
 		} else {
-			variable.define(newName, dependencies, Eval(`(${dependencies.join(', ')}) => ${body}`));
+			variable.define(newName, v.dependencies, Eval(`(${v.dependencies.join(', ')}) => ${v.body}`));
 		}
 	}
 

@@ -10,7 +10,7 @@ export async function executeJavaScript(cell: ReactiveCell): Promise<void> {
 	} else if (pr.type === 'assignment') {
 		const name = pr.name || cell.id;
 
-		cell.assignVariable(name, pr.dependencies, pr.body);
+		cell.assignVariables([{ name, dependencies: pr.dependencies, body: pr.body }]);
 	} else if (pr.type === 'import') {
 		console.log('import', pr);
 		cell.handleError(Error('Unsupported statement: ' + pr.type));
