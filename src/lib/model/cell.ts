@@ -100,6 +100,7 @@ export class ReactiveCell implements Cell {
 	isClosed: boolean = true;
 	module: IModule;
 	notebook: ReactiveNotebook;
+	private _cachedDefaultObservers: Observers | null = null;
 
 	constructor(
 		id: string,
@@ -143,11 +144,16 @@ export class ReactiveCell implements Cell {
 			binding.observers.clear();
 			binding.variable.delete();
 		});
+		// Clear cache
+		this._cachedDefaultObservers = null;
 	}
 
 	assignVariables(
 		variables: Array<{ name: string | undefined; dependencies: Array<string>; body: string }>
 	): void {
+		// Invalidate cache when variables change
+		this._cachedDefaultObservers = null;
+
 		variables.forEach((variable, idx) => {
 			if (variable.name === undefined) {
 				variable.name = this.id + '_' + idx;
@@ -192,11 +198,27 @@ export class ReactiveCell implements Cell {
 	}
 
 	defaultObservers(): Observers {
-		if (this.variables.size == 1) {
-			return this.variables.values().next()!.value!.observers;
-		} else {
-			return this.variables.get(this.id)!.observers;
+		// Return cached value if available
+		if (this._cachedDefaultObservers) {
+			return this._cachedDefaultObservers;
 		}
+
+		// Compute and cache the result
+		if (this.variables.size === 1) {
+			const firstBinding = this.variables.values().next().value;
+			if (!firstBinding) {
+				throw new Error('No variable binding found in single-variable cell');
+			}
+			this._cachedDefaultObservers = firstBinding.observers;
+		} else {
+			const binding = this.variables.get(this.id);
+			if (!binding) {
+				throw new Error(`No variable binding found for cell ${this.id}`);
+			}
+			this._cachedDefaultObservers = binding.observers;
+		}
+
+		return this._cachedDefaultObservers;
 	}
 }
 
