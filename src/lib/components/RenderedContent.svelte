@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { ReactiveCell } from '$lib/model/cell';
-	import { onDestroy, onMount } from 'svelte';
+	import type { Observers, ReactiveCell } from '$lib/model/cell';
+	import { onDestroy } from 'svelte';
 	import ObservableHTMLRenderer from './ObservableHTMLRenderer.svelte';
 	import ObservableMarkdownRenderer from './ObservableMarkdownRenderer.svelte';
 	import ObservableJavascriptRenderer from './ObservableJavascriptRenderer.svelte';
@@ -13,13 +13,21 @@
 	let { cell }: Props = $props();
 
 	let observerID: number | undefined = $state(undefined);
+	let observers: Observers | undefined = $state(undefined);
 
 	let status = $state('pending');
 	let result = $state(null);
 
-	onMount(() => {
-		if (observerID === undefined) {
-			observerID = cell.defaultObservers().addObserver({
+	$effect(() => {
+		const defaultObservers = cell.defaultObservers();
+		if (defaultObservers !== observers) {
+			if (observerID != null) {
+				observers!.removeObserver(observerID);
+				observerID = undefined;
+			}
+			observers = defaultObservers;
+
+			observerID = observers!.addObserver({
 				fulfilled: (value: ObservableValue): void => {
 					status = 'ok';
 					result = value;
@@ -38,7 +46,8 @@
 
 	onDestroy(() => {
 		if (observerID != null) {
-			cell.defaultObservers().removeObserver(observerID);
+			observers!.removeObserver(observerID);
+			observerID = undefined;
 		}
 	});
 </script>
