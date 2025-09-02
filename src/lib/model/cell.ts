@@ -15,12 +15,17 @@ export type CellKind = 'js' | 'md' | 'html';
 
 export type CellStatus = 'ok' | 'error' | 'pending';
 
+export type VariableBinding = {
+	observers: Observers;
+	variable: IVariable;
+};
+
 export interface BaseCell {
 	id: string;
 	kind: CellKind;
 	value: string;
 	valueError: Error | null;
-	variables: Map<string, IVariable>;
+	variables: Map<string, VariableBinding>;
 	isFocused: boolean;
 	isClosed: boolean;
 }
@@ -91,10 +96,9 @@ export class ReactiveCell implements Cell {
 	value: string;
 	valueError: Error | null = null;
 	isFocused: boolean = false;
-	variables: Map<string, IVariable> = new Map();
+	variables: Map<string, VariableBinding> = new Map();
 	isClosed: boolean = true;
 	module: IModule;
-	observers: Observers = new Observers();
 	notebook: ReactiveNotebook;
 
 	constructor(
@@ -135,7 +139,10 @@ export class ReactiveCell implements Cell {
 
 	// Dispose of runtime resources
 	dispose(): void {
-		this.observers.clear();
+		this.variables.forEach((binding) => {
+			binding.observers.clear();
+			binding.variable.delete();
+		});
 	}
 
 	assignVariables(
@@ -150,25 +157,28 @@ export class ReactiveCell implements Cell {
 		const newNames = new Set(variables.map((variable) => variable.name));
 		for (const name of this.variables.keys()) {
 			if (!newNames.has(name)) {
-				this.variables.get(name)?.delete();
+				const binding = this.variables.get(name)!;
+				binding.observers.clear();
+				binding.variable.delete();
 				this.variables.delete(name);
 			}
 		}
 
 		variables.forEach((v) => {
 			const newName = v.name || this.id;
-			const variable = this.variables.get(newName);
+			const binding = this.variables.get(newName);
 
-			if (variable === undefined) {
-				const newVariable = this.module.variable(this.observers);
+			if (binding === undefined) {
+				const newObservers = new Observers();
+				const newVariable = this.module.variable(newObservers);
 				newVariable.define(
 					newName,
 					v.dependencies,
 					Eval(`(${v.dependencies.join(', ')}) => ${v.body}`)
 				);
-				this.variables.set(newName, newVariable);
+				this.variables.set(newName, { observers: newObservers, variable: newVariable });
 			} else {
-				variable.define(
+				binding.variable.define(
 					newName,
 					v.dependencies,
 					Eval(`(${v.dependencies.join(', ')}) => ${v.body}`)
@@ -179,6 +189,14 @@ export class ReactiveCell implements Cell {
 
 	names(): string[] {
 		return Array.from(this.variables.keys()).filter((n) => !n.startsWith(CELL_ID_PREFIX));
+	}
+
+	defaultObservers(): Observers {
+		if (this.variables.size == 1) {
+			return this.variables.values().next()!.value!.observers;
+		} else {
+			return this.variables.get(this.id)!.observers;
+		}
 	}
 }
 

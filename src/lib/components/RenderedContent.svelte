@@ -19,7 +19,7 @@
 
 	onMount(() => {
 		if (observerID === undefined) {
-			observerID = cell.observers.addObserver({
+			observerID = cell.defaultObservers().addObserver({
 				fulfilled: (value: ObservableValue): void => {
 					status = 'ok';
 					result = value;
@@ -38,7 +38,7 @@
 
 	onDestroy(() => {
 		if (observerID != null) {
-			cell.observers.removeObserver(observerID);
+			cell.defaultObservers().removeObserver(observerID);
 		}
 	});
 </script>

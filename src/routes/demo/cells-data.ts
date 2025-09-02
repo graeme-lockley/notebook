@@ -40,6 +40,24 @@ const initialCells: Array<{
 		isClosed: true
 	},
 	{
+		id: 'cell-3.1',
+		kind: 'js',
+		value: 'viewof n = Inputs.range([0, 255], {step: 1, label: "Favorite number"})',
+		valueError: null,
+		isFocused: false,
+		hasError: false,
+		isClosed: true
+	},
+	{
+		id: 'cell-3.2',
+		kind: 'js',
+		value: 'n',
+		valueError: null,
+		isFocused: false,
+		hasError: false,
+		isClosed: true
+	},
+	{
 		id: 'cell-4',
 		kind: 'js',
 		value: `// Test object for ObservableHQ Inspector

@@ -23,7 +23,7 @@
 		if (container) {
 			inspector = new Inspector(container);
 
-			observerID = cell.observers.addObserver({
+			observerID = cell.defaultObservers().addObserver({
 				fulfilled(value: ObservableValue): void {
 					if (value instanceof SVGElement) {
 						renderedContent = value.outerHTML;
@@ -47,7 +47,7 @@
 
 	onDestroy(() => {
 		if (observerID !== undefined) {
-			cell.observers.removeObserver(observerID);
+			cell.defaultObservers().removeObserver(observerID);
 		}
 	});
 </script>
