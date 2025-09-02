@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { Globe, Copy, Download } from 'lucide-svelte';
+	import { Globe, Copy, Download, Search, Plus } from 'lucide-svelte';
 
 	let { title = 'Untitled Notebook', lastEdited = new Date(), version = '1.0.0' } = $props();
 
 	const dispatch = createEventDispatcher<{
 		titleChange: string;
+		search: void;
+		newNotebook: void;
 		share: void;
 		duplicate: void;
 		download: void;
@@ -40,6 +42,14 @@
 			month: 'short',
 			day: 'numeric'
 		});
+	}
+
+	function handleSearch() {
+		dispatch('search');
+	}
+
+	function handleNewNotebook() {
+		dispatch('newNotebook');
 	}
 
 	function handleShare() {
@@ -88,6 +98,24 @@
 
 	<!-- Actions Area -->
 	<div class="topbar-actions">
+		<button
+			onclick={handleSearch}
+			data-testid="search-button"
+			class="action-button action-button-icon"
+			title="Search notebooks"
+		>
+			<Search size={14} />
+		</button>
+
+		<button
+			onclick={handleNewNotebook}
+			data-testid="new-notebook-button"
+			class="action-button action-button-icon"
+			title="Create new notebook"
+		>
+			<Plus size={14} />
+		</button>
+
 		<button
 			onclick={handleShare}
 			data-testid="share-button"
