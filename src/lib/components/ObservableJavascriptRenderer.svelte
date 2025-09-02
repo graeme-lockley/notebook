@@ -28,7 +28,7 @@
 					if (value instanceof SVGElement) {
 						renderedContent = value.outerHTML;
 					} else if (inspector) {
-						inspector.fulfilled($state.snapshot(value), names());
+						inspector.fulfilled(value, names());
 					}
 				},
 				pending(): void {
@@ -38,7 +38,7 @@
 				},
 				rejected(value?: ObservableValue): void {
 					if (inspector) {
-						inspector.rejected(value === null ? null : $state.snapshot(value), names());
+						inspector.rejected(value === null ? null : value, names());
 					}
 				}
 			});
