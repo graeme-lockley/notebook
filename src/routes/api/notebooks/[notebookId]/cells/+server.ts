@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import type { LibraryService } from '$lib/server/ports/services/notebook.service';
 
 export async function POST({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -13,18 +14,8 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 		const body = await request.json();
 		const { kind, value, position } = body;
 
-		// Validate required fields
-		if (!kind || !value || position === undefined) {
-			return json({ error: 'kind, value, and position are required' }, { status: 400 });
-		}
-
-		// Validate cell kind
-		if (!['js', 'md', 'html'].includes(kind)) {
-			return json({ error: 'Invalid cell kind. Must be js, md, or html' }, { status: 400 });
-		}
-
 		// Access the injected libraryService
-		const { libraryService } = locals;
+		const libraryService: LibraryService = locals.libraryService;
 
 		// Get the notebook service
 		const notebookService = await libraryService.getNotebookService(notebookId);

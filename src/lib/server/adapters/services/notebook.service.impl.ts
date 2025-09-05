@@ -337,6 +337,16 @@ export class NotebookServiceImpl implements NotebookService {
 
 	async addCell(kind: 'js' | 'md' | 'html', value: string, position: number): Promise<void> {
 		try {
+			// Validate required fields
+			if (!kind || !value || position === undefined) {
+				throw new Error('kind, value, and position are required');
+			}
+
+			// Validate cell kind
+			if (!['js', 'md', 'html'].includes(kind)) {
+				throw new Error('Invalid cell kind. Must be js, md, or html');
+			}
+
 			if (position < 0 || position > this.cells.length) {
 				throw new Error(`Invalid position: ${position}`);
 			}
