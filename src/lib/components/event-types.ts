@@ -6,6 +6,11 @@ export type CellCreatedEvent = {
 	cellKind: CellKind;
 };
 
+export type CreateNotebookEvent = {
+	name: string;
+	description: string;
+};
+
 export type DeleteCellEvent = {
 	id: string;
 };

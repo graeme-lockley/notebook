@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { Globe, Copy, Download, Search, Plus } from 'lucide-svelte';
+	import CreateNotebookModal from './CreateNotebookModal.svelte';
+	import type { CreateNotebookEvent } from './event-types';
 
 	let { title = 'Untitled Notebook', lastEdited = new Date(), version = '1.0.0' } = $props();
 
 	const dispatch = createEventDispatcher<{
 		titleChange: string;
 		search: void;
-		newNotebook: void;
+		newNotebook: { name: string; description: string };
 		share: void;
 		duplicate: void;
 		download: void;
@@ -15,6 +18,7 @@
 
 	let isEditingTitle = $state(false);
 	let titleValue = $state(title);
+	let showNewNotebookModal = $state(false);
 
 	function handleTitleClick() {
 		isEditingTitle = true;
@@ -49,7 +53,41 @@
 	}
 
 	function handleNewNotebook() {
-		dispatch('newNotebook');
+		showNewNotebookModal = true;
+	}
+
+	async function handleCreateNotebook(event: CustomEvent<CreateNotebookEvent>) {
+		try {
+			const { name, description } = event.detail;
+
+			// Call the API to create the notebook
+			const response = await fetch('/api/notebooks', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					title: name,
+					description: description || ''
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to create notebook: ${response.statusText}`);
+			}
+
+			const result = await response.json();
+
+			// Navigate to a clean page with the new notebook
+			await goto(`/notebook/${result.id}`);
+		} catch (error) {
+			console.error('Error creating notebook:', error);
+			// You might want to show an error message to the user here
+		}
+	}
+
+	function handleCancelNotebook() {
+		showNewNotebookModal = false;
 	}
 
 	function handleShare() {
@@ -145,6 +183,13 @@
 		</button>
 	</div>
 </header>
+
+<!-- New Notebook Modal -->
+<CreateNotebookModal
+	isOpen={showNewNotebookModal}
+	on:createNotebook={handleCreateNotebook}
+	on:cancel={handleCancelNotebook}
+/>
 
 <style>
 	.topbar {
