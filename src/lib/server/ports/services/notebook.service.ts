@@ -21,9 +21,6 @@ export interface LibraryService {
 	eventHandler(event: LibraryEvent): void;
 	hydrateLibrary(): Promise<void>;
 	registerLibraryCallback(): Promise<void>;
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	readonly eventStore: any;
 }
 
 export type Cell = {
@@ -43,4 +40,5 @@ export interface NotebookService {
 		cellId: string,
 		updates: Partial<{ kind: 'js' | 'md' | 'html'; value: string }>
 	): Promise<void>;
+	moveCell(cellId: string, position: number): Promise<void>;
 }

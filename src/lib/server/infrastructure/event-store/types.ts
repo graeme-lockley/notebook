@@ -18,7 +18,7 @@ export interface Event {
 export interface EventRequest {
 	topic: string;
 	type: string;
-	payload: unknown;
+	payload: JSONObject;
 }
 
 export interface Schema {

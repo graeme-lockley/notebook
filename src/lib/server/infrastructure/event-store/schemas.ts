@@ -90,10 +90,9 @@ export const NOTEBOOK_EVENT_SCHEMAS: EventSchema[] = [
 		$schema: 'https://json-schema.org/draft/2020-12/schema',
 		properties: {
 			cellId: { type: 'string' },
-			oldPosition: { type: 'number' },
-			newPosition: { type: 'number' },
+			position: { type: 'number' },
 			movedAt: { type: 'string', format: 'date-time' }
 		},
-		required: ['cellId', 'oldPosition', 'newPosition', 'movedAt']
+		required: ['cellId', 'position', 'movedAt']
 	}
 ];

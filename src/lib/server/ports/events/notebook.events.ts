@@ -4,7 +4,7 @@ export interface NotebookCreatedEvent {
 		notebookId: string;
 		title: string;
 		description?: string;
-		createdAt: Date;
+		createdAt: string; // ISO timestamp string
 	};
 }
 
@@ -16,7 +16,7 @@ export interface NotebookUpdatedEvent {
 			title: string;
 			description: string;
 		}>;
-		updatedAt: Date;
+		updatedAt: string; // ISO timestamp string
 	};
 }
 
@@ -24,7 +24,7 @@ export interface NotebookDeletedEvent {
 	type: 'notebook.deleted';
 	payload: {
 		notebookId: string;
-		deletedAt: Date;
+		deletedAt: string; // ISO timestamp string
 	};
 }
 
@@ -35,7 +35,7 @@ export interface CellCreatedEvent {
 		kind: 'js' | 'md' | 'html';
 		value: string;
 		position: number;
-		createdAt: Date;
+		createdAt: string; // ISO timestamp string
 	};
 }
 
@@ -48,7 +48,7 @@ export interface CellUpdatedEvent {
 			kind: 'js' | 'md' | 'html';
 			isClosed: boolean;
 		}>;
-		updatedAt: Date;
+		updatedAt: string; // ISO timestamp string
 	};
 }
 
@@ -56,7 +56,7 @@ export interface CellDeletedEvent {
 	type: 'cell.deleted';
 	payload: {
 		cellId: string;
-		deletedAt: Date;
+		deletedAt: string; // ISO timestamp string
 	};
 }
 
@@ -64,10 +64,8 @@ export interface CellMovedEvent {
 	type: 'cell.moved';
 	payload: {
 		cellId: string;
-		notebookId: string;
-		oldPosition: number;
-		newPosition: number;
-		movedAt: Date;
+		position: number;
+		movedAt: string; // ISO timestamp string
 	};
 }
 

@@ -12,7 +12,7 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 		}
 
 		const body = await request.json();
-		const { kind, value } = body;
+		const { kind, value, position } = body;
 
 		// Access the injected libraryService
 		const libraryService: LibraryService = locals.libraryService;
@@ -21,6 +21,24 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 		const notebookService = await libraryService.getNotebookService(notebookId);
 		if (notebookService === undefined) {
 			return json({ error: 'Notebook not found' }, { status: 404 });
+		}
+
+		// If position is provided, this is a move operation
+		if (position !== undefined) {
+			await notebookService.moveCell(cellId, position);
+			logger.info(`Moved cell ${cellId} to position ${position} in notebook ${notebookId}`);
+
+			return json({
+				message: 'Cell moved successfully',
+				notebookId,
+				cellId,
+				position
+			});
+		}
+
+		// Otherwise, this is an update operation
+		if (kind === undefined && value === undefined) {
+			return json({ error: 'Either kind, value, or position must be provided' }, { status: 400 });
 		}
 
 		await notebookService.updateCell(cellId, { kind, value });
@@ -34,8 +52,8 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			updates: { kind, value }
 		});
 	} catch (error) {
-		logger.error('Error updating cell:', error);
-		return json({ error: 'Failed to update cell' }, { status: 500 });
+		logger.error('Error updating/moving cell:', error);
+		return json({ error: 'Failed to update/move cell' }, { status: 500 });
 	}
 }
 

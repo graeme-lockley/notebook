@@ -53,7 +53,7 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 					try {
 						// Check if topic exists
 						try {
-							await libraryService.eventStore.getTopic(topicName);
+							await notebookService.eventStore.getTopic(topicName);
 							// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						} catch (error: any) {
 							if (error.status === 404) {
@@ -69,7 +69,7 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 							isStreaming = false;
 						}, 60000); // 1 minute timeout
 
-						for await (const event of libraryService.eventStore.streamEvents(topicName, {
+						for await (const event of notebookService.eventStore.streamEvents(topicName, {
 							sinceEventId: notebookService.lastEventId,
 							pollInterval: 2000, // Increased poll interval for stability
 							signal: AbortSignal.timeout(60000) // 1 minute timeout
@@ -95,9 +95,16 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 									}
 								};
 
-								controller.enqueue(`data: ${JSON.stringify(eventData)}\n\n`);
+								// Check if controller is still open before enqueuing
+								if (isStreaming) {
+									controller.enqueue(`data: ${JSON.stringify(eventData)}\n\n`);
+									logger.info(`Sent event ${event.id} to client`);
+								} else {
+									logger.warn(`Controller closed, skipping event ${event.id}`);
+								}
 							} catch (error) {
 								logger.error(`Error processing event ${event.id}:`, error);
+								// Don't break the stream on individual event processing errors
 							}
 						}
 

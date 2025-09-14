@@ -1,10 +1,8 @@
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
-import {
-	eventStoreClient,
-	type EventStoreClient
-} from '$lib/server/infrastructure/event-store/config';
+import { eventStoreClient } from '$lib/server/infrastructure/event-store/config';
 import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/infrastructure/event-store/schemas';
 import { createLibraryService } from '$lib/server/adapters/services/notebook.service.impl';
+import type { EventStorePort } from '$lib/server/ports/event-store/event-store.port';
 
 let isInitialized = false;
 
@@ -39,7 +37,7 @@ async function initializeServices() {
 	}
 }
 
-async function isValidTopic(eventStore: EventStoreClient, topicName: string): Promise<boolean> {
+async function isValidTopic(eventStore: EventStorePort, topicName: string): Promise<boolean> {
 	try {
 		await eventStore.getTopic(topicName);
 		return true;

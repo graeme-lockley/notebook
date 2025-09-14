@@ -190,6 +190,51 @@
 
 		const currentCells = notebookStore.notebook.cells;
 
+		// Check if the order has changed by comparing server order with current order
+		const serverOrder = serverCells
+			.map((serverCell) => {
+				const clientCellId = Array.from(cellIdMapping.entries()).find(
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					([_, serverId]) => serverId === serverCell.id
+				)?.[0];
+				return clientCellId;
+			})
+			.filter(Boolean);
+
+		const currentOrder = currentCells.map((cell) => cell.id);
+
+		const orderChanged =
+			serverOrder.length === currentOrder.length &&
+			!serverOrder.every((id, index) => id === currentOrder[index]);
+
+		if (orderChanged) {
+			console.log('Cell order changed, reordering cells');
+			console.log('Server order:', serverOrder);
+			console.log('Current order:', currentOrder);
+
+			// Reorder cells to match server order
+			const reorderedCells = serverOrder
+				.map((clientCellId) => currentCells.find((cell) => cell.id === clientCellId))
+				.filter((cell): cell is NonNullable<typeof cell> => cell !== undefined);
+
+			// Remove all current cells
+			const cellIdsToRemove = [...currentCells.map((cell) => cell.id)];
+			cellIdsToRemove.forEach((cellId) => {
+				notebookStore?.notebook.removeCell(cellId);
+			});
+
+			// Add cells back in the new order
+			reorderedCells.forEach((cell) => {
+				notebookStore?.notebook.addCell({
+					kind: cell.kind,
+					value: cell.value,
+					focus: false
+				});
+			});
+
+			return; // Skip the rest of the update logic since we've reordered
+		}
+
 		// Remove cells that don't exist on server
 		for (let i = currentCells.length - 1; i >= 0; i--) {
 			const cell = currentCells[i];
@@ -400,22 +445,60 @@
 	}
 
 	async function moveCellOnServer(cellId: string, direction: 'up' | 'down') {
-		if (!notebookId) return;
+		if (!notebookId || !notebookStore) return;
+
+		console.log(`Attempting to move cell ${cellId} ${direction}`);
+
+		// Get the server cell ID from the mapping
+		const serverCellId = cellIdMapping.get(cellId);
+		if (!serverCellId) {
+			console.error('No server cell ID found for client cell ID:', cellId);
+			return;
+		}
 
 		try {
-			const response = await fetch(`/api/notebooks/${notebookId}/cells/${cellId}/move`, {
-				method: 'POST',
+			// Find the current position of the cell
+			const currentPosition = notebookStore.notebook.cells.findIndex((cell) => cell.id === cellId);
+			if (currentPosition === -1) {
+				console.error('Cell not found in notebook:', cellId);
+				return;
+			}
+
+			console.log(
+				`Current position: ${currentPosition}, Total cells: ${notebookStore.notebook.cells.length}`
+			);
+
+			// Calculate new position
+			let newPosition: number;
+			if (direction === 'up') {
+				newPosition = Math.max(0, currentPosition - 1);
+			} else {
+				newPosition = Math.min(notebookStore.notebook.cells.length - 1, currentPosition + 1);
+			}
+
+			console.log(`Calculated new position: ${newPosition}`);
+
+			// Don't move if already at the boundary
+			if (newPosition === currentPosition) {
+				console.log('Cell already at boundary, no move needed');
+				return;
+			}
+
+			console.log(`Sending move request: cellId=${serverCellId}, position=${newPosition}`);
+
+			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
+				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ direction })
+				body: JSON.stringify({ position: newPosition })
 			});
 
 			if (!response.ok) {
 				throw new Error(`Failed to move cell: ${response.statusText}`);
 			}
 
-			console.log('Cell moved successfully, waiting for server event...');
+			console.log(`Cell moved ${direction} successfully, waiting for server event...`);
 		} catch (error) {
 			console.error('Error moving cell:', error);
 		}

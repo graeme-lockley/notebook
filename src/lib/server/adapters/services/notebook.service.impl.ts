@@ -1,40 +1,37 @@
-import type {
-	LibraryService,
-	Notebook,
-	NotebookService,
-	Cell
-} from '../../ports/services/notebook.service';
+import type { EventStorePort } from '$lib/server/ports/event-store/event-store.port';
+import { NOTEBOOK_EVENT_SCHEMAS } from '$lib/server/infrastructure/event-store/schemas';
+import { logger } from '../../infrastructure/logging/logger.service';
 import type {
 	CellCreatedEvent,
-	LibraryEvent,
-	NotebookEvent,
-	NotebookCreatedEvent,
-	NotebookUpdatedEvent,
-	NotebookDeletedEvent,
 	CellDeletedEvent,
-	CellUpdatedEvent
+	CellMovedEvent,
+	CellUpdatedEvent,
+	LibraryEvent,
+	NotebookCreatedEvent,
+	NotebookDeletedEvent,
+	NotebookEvent,
+	NotebookUpdatedEvent
 } from '../../ports/events/notebook.events';
-import { logger } from '../../infrastructure/logging/logger.service';
+import type {
+	Cell,
+	LibraryService,
+	Notebook,
+	NotebookService
+} from '../../ports/services/notebook.service';
 import { Library } from './library';
-import type { EventStoreClient } from '$lib/server/infrastructure/event-store/config';
-import { NOTEBOOK_EVENT_SCHEMAS } from '$lib/server/infrastructure/event-store/schemas';
 
-export function createLibraryService(eventStore: EventStoreClient): LibraryService {
+export function createLibraryService(eventStore: EventStorePort): LibraryService {
 	return new LibraryServiceImpl(eventStore);
 }
 
 class LibraryServiceImpl implements LibraryService {
 	private lastEventId: string | null = null;
-	private _eventStore: EventStoreClient;
+	private _eventStore: EventStorePort;
 	private library: Library = new Library();
 	private notebookServices: Map<string, NotebookService> = new Map<string, NotebookService>();
 
-	constructor(eventStore: EventStoreClient) {
+	constructor(eventStore: EventStorePort) {
 		this._eventStore = eventStore;
-	}
-
-	get eventStore(): EventStoreClient {
-		return this._eventStore;
 	}
 
 	async createNotebook(title: string, description?: string): Promise<[string, string]> {
@@ -51,7 +48,7 @@ class LibraryServiceImpl implements LibraryService {
 				notebookId,
 				title,
 				description,
-				createdAt: new Date()
+				createdAt: new Date().toISOString()
 			}
 		};
 
@@ -66,20 +63,14 @@ class LibraryServiceImpl implements LibraryService {
 		if (!notebook) {
 			return null;
 		}
-		return {
-			id: notebook.id,
-			title: notebook.title,
-			description: notebook.description,
-			createdAt: notebook.createdAt,
-			updatedAt: notebook.updatedAt
-		};
+		return { ...notebook };
 	}
 
 	async getNotebookService(notebookId: string): Promise<NotebookService | undefined> {
 		if (this.library.has(notebookId)) {
 			const result = this.notebookServices.get(notebookId);
 			if (result === undefined) {
-				const newResult = new NotebookServiceImpl(notebookId, this.eventStore);
+				const newResult = new NotebookServiceImpl(notebookId, this._eventStore);
 
 				logger.info(`LibraryService: getNotebookService: ${notebookId}: initializing notebook`);
 				await newResult.initializeNotebook();
@@ -127,7 +118,7 @@ class LibraryServiceImpl implements LibraryService {
 			payload: {
 				notebookId: notebookId,
 				changes: updates,
-				updatedAt: new Date()
+				updatedAt: new Date().toISOString()
 			}
 		};
 
@@ -145,7 +136,7 @@ class LibraryServiceImpl implements LibraryService {
 			type: 'notebook.deleted',
 			payload: {
 				notebookId: notebookId,
-				deletedAt: new Date()
+				deletedAt: new Date().toISOString()
 			}
 		};
 
@@ -195,8 +186,8 @@ class LibraryServiceImpl implements LibraryService {
 					id: notebookId,
 					title,
 					description,
-					createdAt,
-					updatedAt: createdAt
+					createdAt: new Date(createdAt),
+					updatedAt: new Date(createdAt)
 				});
 				break;
 			}
@@ -217,7 +208,7 @@ class LibraryServiceImpl implements LibraryService {
 					if (changes.description !== undefined) {
 						notebook.description = changes.description;
 					}
-					notebook.updatedAt = updatedAt;
+					notebook.updatedAt = new Date(updatedAt);
 				}
 				break;
 			}
@@ -281,11 +272,11 @@ class LibraryServiceImpl implements LibraryService {
 
 export class NotebookServiceImpl implements NotebookService {
 	id: string;
-	eventStore: EventStoreClient;
+	eventStore: EventStorePort;
 	lastEventId: string | null = null;
 	private _cells: Cell[] = [];
 
-	constructor(id: string, eventStore: EventStoreClient) {
+	constructor(id: string, eventStore: EventStorePort) {
 		this.id = id;
 		this.eventStore = eventStore;
 	}
@@ -362,7 +353,7 @@ export class NotebookServiceImpl implements NotebookService {
 					kind,
 					value,
 					position,
-					createdAt: new Date()
+					createdAt: new Date().toISOString()
 				}
 			};
 
@@ -389,7 +380,7 @@ export class NotebookServiceImpl implements NotebookService {
 				type: 'cell.deleted',
 				payload: {
 					cellId,
-					deletedAt: new Date()
+					deletedAt: new Date().toISOString()
 				}
 			};
 
@@ -427,7 +418,7 @@ export class NotebookServiceImpl implements NotebookService {
 				payload: {
 					cellId,
 					changes: updates,
-					updatedAt: new Date()
+					updatedAt: new Date().toISOString()
 				}
 			};
 
@@ -440,6 +431,46 @@ export class NotebookServiceImpl implements NotebookService {
 		}
 	}
 
+	async moveCell(cellId: string, position: number): Promise<void> {
+		try {
+			logger.info(
+				`LibraryService: moveCell: Attempting to move cell ${cellId} to position ${position}`
+			);
+			logger.info(
+				`LibraryService: moveCell: Current cells: ${this._cells.map((c) => c.id).join(', ')}`
+			);
+
+			const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
+			if (cellIndex === -1) {
+				throw new Error(`Cell not found: ${cellId}`);
+			}
+
+			logger.info(`LibraryService: moveCell: Found cell at index ${cellIndex}`);
+
+			if (position < 0 || position > this.cells.length) {
+				throw new Error(`Invalid position: ${position}`);
+			}
+
+			const cellEvent: CellMovedEvent = {
+				type: 'cell.moved',
+				payload: {
+					cellId,
+					position,
+					movedAt: new Date().toISOString()
+				}
+			};
+
+			await this.eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+
+			logger.info(
+				`LibraryService: moveCell: Moved cell ${cellId} to position ${position} in notebook ${this.id}`
+			);
+		} catch (error) {
+			logger.error(`LibraryService: moveCell: Failed to move cell ${cellId}:`, error);
+			throw error;
+		}
+	}
+
 	eventHandler(event: NotebookEvent & { id: string }): void {
 		// Check if this event has already been processed
 		if (hasEventBeenProcessed(event.id, this.lastEventId)) {
@@ -447,8 +478,10 @@ export class NotebookServiceImpl implements NotebookService {
 			return;
 		}
 
-		logger.info(`NotebookService: eventHandler: ${event.type}: ${JSON.stringify(event.payload)}`);
-		switch (event.type) {
+		const type = event.type;
+		logger.info(`NotebookService: eventHandler: ${type}: ${JSON.stringify(event.payload)}`);
+
+		switch (type) {
 			case 'cell.created': {
 				logger.info(
 					`NotebookService: eventHandler: cell.created: ${JSON.stringify(event.payload)}`
@@ -463,8 +496,8 @@ export class NotebookServiceImpl implements NotebookService {
 					id: cellId,
 					kind,
 					value,
-					createdAt,
-					updatedAt: createdAt
+					createdAt: new Date(createdAt),
+					updatedAt: new Date(createdAt)
 				});
 
 				break;
@@ -481,7 +514,7 @@ export class NotebookServiceImpl implements NotebookService {
 						...existingCell,
 						kind: changes.kind !== undefined ? changes.kind : existingCell.kind,
 						value: changes.value !== undefined ? changes.value : existingCell.value,
-						updatedAt: updatedAt || new Date()
+						updatedAt: new Date(updatedAt)
 					};
 				} else {
 					logger.warn(
@@ -505,6 +538,34 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 				break;
 			}
+			case 'cell.moved': {
+				logger.info(`NotebookService: eventHandler: cell.moved: ${JSON.stringify(event.payload)}`);
+				const { cellId, position } = event.payload;
+				const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
+
+				if (cellIndex === -1) {
+					logger.warn(
+						`NotebookService: eventHandler: cell.moved: Cell not found: ${cellId}: ${JSON.stringify(event.payload)}`
+					);
+				} else {
+					// Remove the cell from its current position
+					const [movedElement] = this._cells.splice(cellIndex, 1);
+
+					// Adjust the target position if we're moving to a position after the current one
+					// because removing the cell shifts all subsequent positions down by 1
+					const adjustedPosition = position > cellIndex ? position - 1 : position;
+
+					// Insert the cell at the new position
+					this._cells.splice(adjustedPosition, 0, movedElement);
+
+					logger.info(
+						`Moved cell ${cellId} from position ${cellIndex} to position ${adjustedPosition}`
+					);
+				}
+				break;
+			}
+			default:
+				logger.warn(`NotebookService: eventHandler: Unknown cell event type: ${type}`);
 		}
 
 		this.lastEventId = event.id;
@@ -579,7 +640,7 @@ function extractSequenceNumber(eventId: string): number | null {
 	return isNaN(sequence) ? null : sequence;
 }
 
-async function isValidTopic(eventStore: EventStoreClient, topicName: string): Promise<boolean> {
+async function isValidTopic(eventStore: EventStorePort, topicName: string): Promise<boolean> {
 	try {
 		await eventStore.getTopic(topicName);
 		return true;
