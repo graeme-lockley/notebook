@@ -1,4 +1,4 @@
-import type { LibraryEvent } from '../../ports/events/notebook.events';
+import type { LibraryEvent } from '../../../ports/events/notebook.events';
 
 export type Notebook = {
 	id: string;

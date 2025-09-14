@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventStoreTestImpl } from '../../ports/event-store/event-store.test-impl';
 import type { EventStorePort } from '../../ports/event-store/event-store.port';
 import { createLibraryService, NotebookServiceImpl } from './notebook.service.impl';
-import type { LibraryService } from '../../ports/services/notebook.service';
+import type { LibraryService } from '../../application/ports/inbound/notebook.service';
 
 describe('NotebookServiceImpl with Test EventStore', () => {
 	let eventStorePort: EventStorePort;
