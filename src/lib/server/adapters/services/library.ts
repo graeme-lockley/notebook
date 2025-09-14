@@ -1,4 +1,4 @@
-import type { Notebook } from '../../application/ports/inbound/notebook.service';
+import type { Notebook } from '../../application/ports/inbound/notebook-service';
 
 export class Library {
 	private notebooks: Map<string, Notebook> = new Map();

@@ -3,7 +3,7 @@ import { EventStoreClient } from '../../infrastructure/event-store/client';
 import type { EventStoreConfig } from '../../infrastructure/event-store/types';
 import type { EventStorePort } from '../../ports/event-store/event-store.port';
 import { createLibraryService, NotebookServiceImpl } from './notebook.service.impl';
-import type { LibraryService } from '../../application/ports/inbound/notebook.service';
+import type { LibraryService } from '../../application/ports/inbound/notebook-service';
 
 describe('NotebookServiceImpl', () => {
 	let eventStorePort: EventStorePort;

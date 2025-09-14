@@ -17,7 +17,7 @@ import type {
 	LibraryService,
 	Notebook,
 	NotebookService
-} from '../../application/ports/inbound/notebook.service';
+} from '../../application/ports/inbound/notebook-service';
 import { Library } from './library';
 
 export function createLibraryService(eventStore: EventStorePort): LibraryService {

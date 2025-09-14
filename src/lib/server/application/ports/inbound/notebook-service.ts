@@ -8,15 +8,17 @@ export type Notebook = {
 	updatedAt: Date;
 };
 
+export type EventID = string;
+
 export interface LibraryService {
-	createNotebook(title: string, description?: string): Promise<[string, string]>;
+	createNotebook(title: string, description?: string): Promise<[string, EventID]>;
 	getNotebook(notebookId: string): Notebook | null;
 	getNotebookService(notebookId: string): Promise<NotebookService | undefined>;
 	updateNotebook(
 		notebookId: string,
 		updates: Partial<{ title: string; description: string }>
-	): Promise<string>;
-	deleteNotebook(notebookId: string): Promise<string>;
+	): Promise<EventID>;
+	deleteNotebook(notebookId: string): Promise<EventID>;
 
 	eventHandler(event: LibraryEvent): void;
 	hydrateLibrary(): Promise<void>;
