@@ -12,13 +12,13 @@ import type {
 	Schema,
 	Topic
 } from '../../infrastructure/event-store/types';
-import type { EventStorePort } from './event-store.port';
+import type { EventStore } from '../../application/ports/outbound/event-store';
 
 /**
  * In-memory test implementation of EventStore port.
  * This allows for fast, isolated testing without external dependencies.
  */
-export class EventStoreTestImpl implements EventStorePort {
+export class EventStoreTestImpl implements EventStore {
 	private topics: Map<string, Topic> = new Map();
 	private events: Map<string, Event[]> = new Map();
 	private consumers: Map<string, Consumer> = new Map();

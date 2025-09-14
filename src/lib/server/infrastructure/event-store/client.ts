@@ -14,9 +14,9 @@ import type {
 	Topic,
 	TopicCreation
 } from './types.ts';
-import type { EventStorePort } from '../../ports/event-store/event-store.port';
+import type { EventStore } from '../../application/ports/outbound/event-store.js';
 
-export class EventStoreClient implements EventStorePort {
+export class EventStoreClient implements EventStore {
 	private config: Required<EventStoreConfig>;
 
 	constructor(config: EventStoreConfig) {

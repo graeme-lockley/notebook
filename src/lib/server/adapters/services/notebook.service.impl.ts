@@ -1,4 +1,4 @@
-import type { EventStorePort } from '$lib/server/ports/event-store/event-store.port';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 import { NOTEBOOK_EVENT_SCHEMAS } from '$lib/server/infrastructure/event-store/schemas';
 import { logger } from '../../infrastructure/logging/logger.service';
 import type {
@@ -20,17 +20,17 @@ import type {
 } from '../../application/ports/inbound/notebook-service';
 import { Library } from './library';
 
-export function createLibraryService(eventStore: EventStorePort): LibraryService {
+export function createLibraryService(eventStore: EventStore): LibraryService {
 	return new LibraryServiceImpl(eventStore);
 }
 
 class LibraryServiceImpl implements LibraryService {
 	private lastEventId: string | null = null;
-	private _eventStore: EventStorePort;
+	private _eventStore: EventStore;
 	private library: Library = new Library();
 	private notebookServices: Map<string, NotebookService> = new Map<string, NotebookService>();
 
-	constructor(eventStore: EventStorePort) {
+	constructor(eventStore: EventStore) {
 		this._eventStore = eventStore;
 	}
 
@@ -272,11 +272,11 @@ class LibraryServiceImpl implements LibraryService {
 
 export class NotebookServiceImpl implements NotebookService {
 	id: string;
-	eventStore: EventStorePort;
+	eventStore: EventStore;
 	lastEventId: string | null = null;
 	private _cells: Cell[] = [];
 
-	constructor(id: string, eventStore: EventStorePort) {
+	constructor(id: string, eventStore: EventStore) {
 		this.id = id;
 		this.eventStore = eventStore;
 	}
@@ -640,7 +640,7 @@ function extractSequenceNumber(eventId: string): number | null {
 	return isNaN(sequence) ? null : sequence;
 }
 
-async function isValidTopic(eventStore: EventStorePort, topicName: string): Promise<boolean> {
+async function isValidTopic(eventStore: EventStore, topicName: string): Promise<boolean> {
 	try {
 		await eventStore.getTopic(topicName);
 		return true;

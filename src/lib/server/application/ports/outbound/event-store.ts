@@ -11,14 +11,14 @@ import type {
 	HealthStatus,
 	Schema,
 	Topic
-} from '../../infrastructure/event-store/types';
+} from '../../../infrastructure/event-store/types';
 
 /**
  * EventStore port interface that defines the contract for event store implementations.
  * This allows for dependency inversion and easier testing by providing a clean abstraction
  * over the actual event store implementation.
  */
-export interface EventStorePort {
+export interface EventStore {
 	// Health check
 	getHealth(): Promise<HealthStatus>;
 

@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventStoreClient } from '../../infrastructure/event-store/client';
 import type { EventStoreConfig } from '../../infrastructure/event-store/types';
-import type { EventStorePort } from '../../ports/event-store/event-store.port';
+import type { EventStore } from '../../application/ports/outbound/event-store';
 import { createLibraryService, NotebookServiceImpl } from './notebook.service.impl';
 import type { LibraryService } from '../../application/ports/inbound/notebook-service';
 
 describe('NotebookServiceImpl', () => {
-	let eventStorePort: EventStorePort;
+	let eventStorePort: EventStore;
 	let libraryService: LibraryService;
 	let eventStoreConfig: EventStoreConfig;
 

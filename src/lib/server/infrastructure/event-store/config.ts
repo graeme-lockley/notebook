@@ -1,6 +1,6 @@
 import type { EventStoreConfig } from './types';
 import { EventStoreClient } from './client';
-import type { EventStorePort } from '../../ports/event-store/event-store.port';
+import type { EventStore } from '../../application/ports/outbound/event-store';
 
 export function eventStoreConfig(): EventStoreConfig {
 	return {
@@ -11,8 +11,8 @@ export function eventStoreConfig(): EventStoreConfig {
 	};
 }
 
-export function eventStoreClient(config: EventStoreConfig = eventStoreConfig()): EventStorePort {
+export function eventStoreClient(config: EventStoreConfig = eventStoreConfig()): EventStore {
 	return new EventStoreClient(config);
 }
 
-export { type EventStoreClient, type EventStorePort };
+export { type EventStoreClient, type EventStore as EventStorePort };
