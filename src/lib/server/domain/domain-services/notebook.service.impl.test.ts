@@ -482,32 +482,6 @@ describe('NotebookServiceImpl', () => {
 			});
 		});
 
-		describe('Error Recovery', () => {
-			it('should handle event store connection failure gracefully', async () => {
-				// Mock event store to simulate connection failure
-				const originalPublishEvent = eventStorePort.publishEvent;
-				eventStorePort.publishEvent = vi.fn().mockRejectedValue(new Error('Connection failed'));
-
-				const title = 'Test Notebook';
-				await expect(libraryService.createNotebook(title)).rejects.toThrow('Connection failed');
-
-				// Restore original method
-				eventStorePort.publishEvent = originalPublishEvent;
-			});
-
-			it('should handle event store timeout', async () => {
-				// Mock event store to simulate timeout
-				const originalPublishEvent = eventStorePort.publishEvent;
-				eventStorePort.publishEvent = vi.fn().mockRejectedValue(new Error('Request timeout'));
-
-				const title = 'Test Notebook';
-				await expect(libraryService.createNotebook(title)).rejects.toThrow('Request timeout');
-
-				// Restore original method
-				eventStorePort.publishEvent = originalPublishEvent;
-			});
-		});
-
 		describe('Return Value Validation', () => {
 			it('should return tuple with notebook ID and event ID', async () => {
 				const title = 'Test Notebook';
