@@ -36,7 +36,8 @@ class LibraryServiceImpl implements LibraryService {
 	async createNotebook(title: string, description?: string): Promise<[string, string]> {
 		const notebookId = this.generateNotebookId();
 
-		if (title === '') {
+		// Validate title
+		if (!title || typeof title !== 'string' || title.trim() === '') {
 			throw new Error('Title is required');
 		}
 
