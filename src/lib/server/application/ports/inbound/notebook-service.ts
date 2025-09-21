@@ -21,6 +21,7 @@ export interface LibraryService {
 }
 
 export interface NotebookService {
+	readonly id: string;
 	get cells(): Cell[];
 	get eventStore(): EventStore;
 	get lastEventId(): string | null;

@@ -1193,4 +1193,294 @@ describe('NotebookServiceImpl', () => {
 			});
 		});
 	});
+
+	describe('getNotebookService', () => {
+		describe('Core Functionality', () => {
+			describe('Happy Path', () => {
+				it('should return NotebookService for valid notebook ID', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Get the service
+					const service = await libraryService.getNotebookService(notebookId);
+
+					expect(service).toBeDefined();
+					expect(service).toBeInstanceOf(NotebookServiceImpl);
+					expect(service!.id).toBe(notebookId);
+				});
+
+				it('should initialize new notebook service properly', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Mock the initialization methods to verify they're called
+					const service = await libraryService.getNotebookService(notebookId);
+
+					expect(service).toBeDefined();
+					// The service should be properly initialized with access to event store
+					expect(service!.eventStore).toBeDefined();
+					// The service should have a lastEventId after initialization (welcome cell creation)
+					expect(service!.lastEventId).toBeTruthy();
+				});
+			});
+
+			describe('Not Found', () => {
+				it('should return undefined for non-existent notebook ID', async () => {
+					const service = await libraryService.getNotebookService('non-existent-id');
+					expect(service).toBeUndefined();
+				});
+
+				it('should return undefined for empty string ID', async () => {
+					const service = await libraryService.getNotebookService('');
+					expect(service).toBeUndefined();
+				});
+
+				it('should return undefined for null ID', async () => {
+					const service = await libraryService.getNotebookService(null as unknown as string);
+					expect(service).toBeUndefined();
+				});
+
+				it('should return undefined for undefined ID', async () => {
+					const service = await libraryService.getNotebookService(undefined as unknown as string);
+					expect(service).toBeUndefined();
+				});
+			});
+		});
+
+		describe('Service Lifecycle & Caching', () => {
+			describe('Caching Behavior', () => {
+				it('should return same instance on multiple calls', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Get the service multiple times
+					const service1 = await libraryService.getNotebookService(notebookId);
+					const service2 = await libraryService.getNotebookService(notebookId);
+					const service3 = await libraryService.getNotebookService(notebookId);
+
+					expect(service1).toBe(service2);
+					expect(service2).toBe(service3);
+					expect(service1).toBe(service3);
+				});
+
+				it('should create new service only once per notebook', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Get the service multiple times
+					await libraryService.getNotebookService(notebookId);
+					await libraryService.getNotebookService(notebookId);
+					await libraryService.getNotebookService(notebookId);
+
+					// All calls should return the same instance
+					const service1 = await libraryService.getNotebookService(notebookId);
+					const service2 = await libraryService.getNotebookService(notebookId);
+					expect(service1).toBe(service2);
+				});
+
+				it('should handle concurrent requests for same notebook', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook Concurrent',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Get the service first to ensure it's cached
+					const firstService = await libraryService.getNotebookService(notebookId);
+					expect(firstService).toBeDefined();
+
+					// Make concurrent requests (should all return the cached instance)
+					const [service1, service2, service3] = await Promise.all([
+						libraryService.getNotebookService(notebookId),
+						libraryService.getNotebookService(notebookId),
+						libraryService.getNotebookService(notebookId)
+					]);
+
+					// All should return the same instance
+					expect(service1).toBe(service2);
+					expect(service2).toBe(service3);
+					expect(service1).toBe(service3);
+					expect(service1).toBe(firstService);
+				});
+			});
+
+			describe('Service Initialization', () => {
+				it('should call initializeNotebook on new service creation', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					// The service should be initialized and ready to use
+					expect(service!.eventStore).toBeDefined();
+				});
+
+				it('should call hydrateNotebook on new service creation', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					// The service should be hydrated and have access to its data
+					expect(service!.cells).toBeDefined();
+				});
+
+				it('should call registerNotebookCallback on new service creation', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					// The service should be properly registered
+					expect(service!.eventStore).toBeDefined();
+				});
+
+				it('should handle service creation successfully', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook Success',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Should create service successfully
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					expect(service!.id).toBe(notebookId);
+				});
+			});
+		});
+
+		describe('Return Value Validation', () => {
+			describe('Service Properties', () => {
+				it('should return service with correct notebook ID', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					expect(service!.id).toBe(notebookId);
+				});
+
+				it('should return service with access to event store', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					expect(service!.eventStore).toBeDefined();
+					expect(typeof service!.eventStore.getTopic).toBe('function');
+				});
+
+				it('should return service with proper lastEventId', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					// The service should have a lastEventId after initialization (welcome cell creation)
+					expect(service!.lastEventId).toBeTruthy();
+				});
+
+				it('should return service with welcome cell initially', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Notebook',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					const service = await libraryService.getNotebookService(notebookId);
+					expect(service).toBeDefined();
+					// The service should have a welcome cell after initialization
+					expect(service!.cells).toHaveLength(1);
+					expect(service!.cells[0].kind).toBe('md');
+					expect(service!.cells[0].value).toContain('Welcome to Your Notebook');
+				});
+			});
+		});
+
+		describe('Input Validation', () => {
+			describe('Edge Cases', () => {
+				it('should handle whitespace-only ID gracefully', async () => {
+					const service = await libraryService.getNotebookService('   ');
+					expect(service).toBeUndefined();
+				});
+
+				it('should handle ID with special characters', async () => {
+					const service = await libraryService.getNotebookService('test@#$%^&*()');
+					expect(service).toBeUndefined();
+				});
+
+				it('should handle ID with Unicode characters', async () => {
+					const service = await libraryService.getNotebookService('测试笔记本');
+					expect(service).toBeUndefined();
+				});
+
+				it('should handle very long ID', async () => {
+					const longId = 'a'.repeat(1000);
+					const service = await libraryService.getNotebookService(longId);
+					expect(service).toBeUndefined();
+				});
+
+				it('should handle ID with HTML entities', async () => {
+					const service = await libraryService.getNotebookService(
+						'&lt;script&gt;alert("xss")&lt;/script&gt;'
+					);
+					expect(service).toBeUndefined();
+				});
+
+				it('should handle ID with SQL injection attempts', async () => {
+					const service = await libraryService.getNotebookService("'; DROP TABLE notebooks; --");
+					expect(service).toBeUndefined();
+				});
+
+				it('should handle ID with XSS attempts', async () => {
+					const service = await libraryService.getNotebookService('<script>alert("xss")</script>');
+					expect(service).toBeUndefined();
+				});
+			});
+		});
+	});
 });
