@@ -30,5 +30,7 @@ export interface NotebookService {
 	deleteCell(cellId: string): Promise<void>;
 	updateCell(cellId: string, updates: Partial<{ kind: CellKind; value: string }>): Promise<void>;
 	moveCell(cellId: string, position: number): Promise<void>;
+
+	hydrateNotebook(): Promise<void>;
 	eventHandler(event: NotebookEvent & { id: string }): void;
 }

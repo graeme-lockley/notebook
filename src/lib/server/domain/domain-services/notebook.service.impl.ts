@@ -9,7 +9,7 @@ import type {
 	NotebookEvent
 } from '$lib/server/domain/events/notebook.events';
 import type { NotebookService } from '$lib/server/application/ports/inbound/notebook-service';
-import type { Cell } from '$lib/server/domain/value-objects';
+import type { Cell, CellKind } from '$lib/server/domain/value-objects';
 
 export class NotebookServiceImpl implements NotebookService {
 	id: string;
@@ -66,6 +66,8 @@ export class NotebookServiceImpl implements NotebookService {
 					`LibraryService: initializeNotebook: Created welcome cell for notebook: ${this.id}`
 				);
 			}
+
+			await this.hydrateNotebook();
 		} catch (error) {
 			logger.error(
 				`LibraryService: initializeNotebook: Failed to initialize notebook ${this.id}:`,
@@ -75,7 +77,7 @@ export class NotebookServiceImpl implements NotebookService {
 		}
 	}
 
-	async addCell(kind: 'js' | 'md' | 'html', value: string, position: number): Promise<void> {
+	async addCell(kind: CellKind, value: string, position: number): Promise<void> {
 		try {
 			// Validate required fields
 			if (!kind || !value || position === undefined) {
@@ -144,7 +146,7 @@ export class NotebookServiceImpl implements NotebookService {
 
 	async updateCell(
 		cellId: string,
-		updates: Partial<{ kind: 'js' | 'md' | 'html'; value: string }>
+		updates: Partial<{ kind: CellKind; value: string }>
 	): Promise<void> {
 		try {
 			const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
@@ -300,15 +302,15 @@ export class NotebookServiceImpl implements NotebookService {
 					// Remove the cell from its current position
 					const [movedElement] = this._cells.splice(cellIndex, 1);
 
-					// Adjust the target position if we're moving to a position after the current one
-					// because removing the cell shifts all subsequent positions down by 1
-					const adjustedPosition = position > cellIndex ? position - 1 : position;
+					// The target position is already correct since we removed the cell
+					// No adjustment needed - the position refers to the final array state
+					const targetPosition = position;
 
 					// Insert the cell at the new position
-					this._cells.splice(adjustedPosition, 0, movedElement);
+					this._cells.splice(targetPosition, 0, movedElement);
 
 					logger.info(
-						`Moved cell ${cellId} from position ${cellIndex} to position ${adjustedPosition}`
+						`Moved cell ${cellId} from position ${cellIndex} to position ${targetPosition}`
 					);
 				}
 				break;
