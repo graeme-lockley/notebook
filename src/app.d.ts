@@ -4,7 +4,7 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			libraryService: import('$lib/server/domain/domain-services/notebook.service.impl').LibraryService;
+			libraryService: import('$lib/server/application/ports/inbound/notebook-service').LibraryService;
 		}
 		// interface PageData {}
 		// interface PageState {}

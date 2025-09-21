@@ -1,6 +1,7 @@
-import type { LibraryEvent } from '../../../domain/events/notebook.events';
+import type { LibraryEvent, NotebookEvent } from '../../../domain/events/notebook.events';
 import type { Notebook } from '../../../domain/value-objects/Notebook';
 import type { Cell, CellKind } from '../../../domain/value-objects';
+import type { EventStore } from '../outbound/event-store';
 
 export type EventID = string;
 
@@ -21,9 +22,12 @@ export interface LibraryService {
 
 export interface NotebookService {
 	get cells(): Cell[];
+	get eventStore(): EventStore;
+	get lastEventId(): string | null;
 
 	addCell(kind: CellKind, value: string, position: number): Promise<void>;
 	deleteCell(cellId: string): Promise<void>;
 	updateCell(cellId: string, updates: Partial<{ kind: CellKind; value: string }>): Promise<void>;
 	moveCell(cellId: string, position: number): Promise<void>;
+	eventHandler(event: NotebookEvent & { id: string }): void;
 }

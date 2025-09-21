@@ -267,13 +267,13 @@ class LibraryServiceImpl implements LibraryService {
 
 export class NotebookServiceImpl implements NotebookService {
 	id: string;
-	eventStore: EventStore;
-	lastEventId: string | null = null;
+	private _eventStore: EventStore;
+	private _lastEventId: string | null = null;
 	private _cells: Cell[] = [];
 
 	constructor(id: string, eventStore: EventStore) {
 		this.id = id;
-		this.eventStore = eventStore;
+		this._eventStore = eventStore;
 	}
 
 	topicName(): string {
@@ -284,13 +284,21 @@ export class NotebookServiceImpl implements NotebookService {
 		return this._cells;
 	}
 
+	get eventStore(): EventStore {
+		return this._eventStore;
+	}
+
+	get lastEventId(): string | null {
+		return this._lastEventId;
+	}
+
 	async initializeNotebook(): Promise<void> {
 		// Determine if the topic with the notebook id exists, if not, create it, and
 		// add a default Markdown cell with a welcome message of sorts.
 
 		try {
 			// If no events exist, this is a new notebook that needs initialization
-			if (await isValidTopic(this.eventStore, this.topicName())) {
+			if (await isValidTopic(this._eventStore, this.topicName())) {
 				logger.info(
 					`LibraryService: initializeNotebook: Notebook topic already exists: ${this.topicName()}`
 				);
@@ -299,7 +307,7 @@ export class NotebookServiceImpl implements NotebookService {
 					`LibraryService: initializeNotebook: Creating new notebook topic: ${this.topicName()}`
 				);
 
-				await this.eventStore.createTopic(this.topicName(), NOTEBOOK_EVENT_SCHEMAS);
+				await this._eventStore.createTopic(this.topicName(), NOTEBOOK_EVENT_SCHEMAS);
 
 				// Add a welcome markdown cell using the addCell method
 				await this.addCell(
@@ -353,7 +361,7 @@ export class NotebookServiceImpl implements NotebookService {
 			};
 
 			// Publish the event to the notebook's topic
-			await this.eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
 
 			logger.info(
 				`LibraryService: addCell: Added ${kind} cell ${cellId} to notebook ${this.id} at position ${position}`
@@ -379,7 +387,7 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 			};
 
-			await this.eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
 
 			logger.info(`LibraryService: deleteCell: Deleted cell ${cellId} from notebook ${this.id}`);
 		} catch (error) {
@@ -417,7 +425,7 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 			};
 
-			await this.eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
 
 			logger.info(`LibraryService: updateCell: Updated cell ${cellId} in notebook ${this.id}`);
 		} catch (error) {
@@ -455,7 +463,7 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 			};
 
-			await this.eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
 
 			logger.info(
 				`LibraryService: moveCell: Moved cell ${cellId} to position ${position} in notebook ${this.id}`
@@ -468,7 +476,7 @@ export class NotebookServiceImpl implements NotebookService {
 
 	eventHandler(event: NotebookEvent & { id: string }): void {
 		// Check if this event has already been processed
-		if (hasEventBeenProcessed(event.id, this.lastEventId)) {
+		if (hasEventBeenProcessed(event.id, this._lastEventId)) {
 			logger.info(`NotebookService: eventHandler: Event already processed, skipping: ${event.id}`);
 			return;
 		}
@@ -563,11 +571,11 @@ export class NotebookServiceImpl implements NotebookService {
 				logger.warn(`NotebookService: eventHandler: Unknown cell event type: ${type}`);
 		}
 
-		this.lastEventId = event.id;
+		this._lastEventId = event.id;
 	}
 
 	async hydrateNotebook(): Promise<void> {
-		const events = await this.eventStore.getEvents(this.topicName());
+		const events = await this._eventStore.getEvents(this.topicName());
 		logger.info(`LibraryService: hydrateNotebook: ${events.length} events`);
 		events.forEach((event) => {
 			this.eventHandler(event as unknown as NotebookEvent & { id: string });
@@ -580,7 +588,7 @@ export class NotebookServiceImpl implements NotebookService {
 		const callbackUrl = 'http://localhost:5173/api/events/webhook';
 
 		// Get all existing consumers
-		const existingConsumers = await this.eventStore.getConsumers();
+		const existingConsumers = await this._eventStore.getConsumers();
 
 		// Remove any existing consumers with the same callback URL
 		for (const consumer of existingConsumers) {
@@ -588,12 +596,12 @@ export class NotebookServiceImpl implements NotebookService {
 				logger.info(
 					`LibraryService: Removing existing ${this.id} consumer with callback: ${callbackUrl}`
 				);
-				await this.eventStore.unregisterConsumer(consumer.id);
+				await this._eventStore.unregisterConsumer(consumer.id);
 			}
 		}
 
 		// Register the new consumer
-		await this.eventStore.registerConsumer(callbackUrl, { [this.id]: this.lastEventId });
+		await this._eventStore.registerConsumer(callbackUrl, { [this.id]: this._lastEventId });
 	}
 }
 

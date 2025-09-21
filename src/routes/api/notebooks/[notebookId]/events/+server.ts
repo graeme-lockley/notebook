@@ -70,7 +70,7 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 						}, 60000); // 1 minute timeout
 
 						for await (const event of notebookService.eventStore.streamEvents(topicName, {
-							sinceEventId: notebookService.lastEventId,
+							sinceEventId: notebookService.lastEventId ?? undefined,
 							pollInterval: 2000, // Increased poll interval for stability
 							signal: AbortSignal.timeout(60000) // 1 minute timeout
 						})) {
