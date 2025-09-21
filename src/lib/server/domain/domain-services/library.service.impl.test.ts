@@ -1,16 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { EventStoreTestImpl } from '../../adapters/outbound/event-store/inmemory/event-store';
-import type { EventStore } from '../../application/ports/outbound/event-store';
-import { createLibraryService, NotebookServiceImpl } from './notebook.service.impl';
-import type { LibraryService } from '../../application/ports/inbound/notebook-service';
-import { LIBRARY_EVENT_SCHEMAS } from '../../adapters/outbound/event-store/remote/schemas';
+
+import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
+import type { LibraryService } from '$lib/server/application/ports/inbound/notebook-service';
+import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
 import type {
 	NotebookCreatedEvent,
 	NotebookUpdatedEvent,
 	NotebookDeletedEvent,
 	LibraryEvent
-} from '../../domain/events/notebook.events';
-import { logger, type LoggerConfig } from '../../infrastructure/logging/logger.service';
+} from '$lib/server/domain/events/notebook.events';
+import { logger, type LoggerConfig } from '$lib/server/infrastructure/logging/logger.service';
+
+import { createLibraryService } from './library.service.impl';
+import { NotebookServiceImpl } from './notebook.service.impl';
 
 describe('NotebookServiceImpl', () => {
 	let eventStorePort: EventStore;
