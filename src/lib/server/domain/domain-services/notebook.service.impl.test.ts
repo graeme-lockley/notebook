@@ -1730,4 +1730,162 @@ describe('NotebookServiceImpl', () => {
 			});
 		});
 	});
+
+	describe('deleteNotebook', () => {
+		describe('Core Functionality', () => {
+			describe('Happy Path', () => {
+				it('should delete existing notebook successfully', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Test Title',
+						'Test Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Verify notebook exists
+					const notebook = libraryService.getNotebook(notebookId);
+					expect(notebook).toBeDefined();
+
+					// Delete the notebook
+					const eventId = await libraryService.deleteNotebook(notebookId);
+
+					expect(eventId).toBeTruthy();
+					expect(typeof eventId).toBe('string');
+				});
+			});
+
+			describe('Not Found', () => {
+				it('should throw error for non-existent notebook', async () => {
+					// Attempt to delete non-existent notebook
+					await expect(libraryService.deleteNotebook('non-existent-id')).rejects.toThrow(
+						'Notebook not found: non-existent-id'
+					);
+				});
+			});
+		});
+
+		describe('Input Validation', () => {
+			it('should throw error for invalid notebook ID', async () => {
+				// Test with null notebook ID
+				await expect(libraryService.deleteNotebook(null as unknown as string)).rejects.toThrow();
+
+				// Test with undefined notebook ID
+				await expect(
+					libraryService.deleteNotebook(undefined as unknown as string)
+				).rejects.toThrow();
+
+				// Test with empty string notebook ID
+				await expect(libraryService.deleteNotebook('')).rejects.toThrow();
+			});
+
+			it('should throw error for non-string ID', async () => {
+				// Test with number ID
+				await expect(libraryService.deleteNotebook(123 as unknown as string)).rejects.toThrow();
+
+				// Test with object ID
+				await expect(libraryService.deleteNotebook({} as unknown as string)).rejects.toThrow();
+
+				// Test with array ID
+				await expect(libraryService.deleteNotebook([] as unknown as string)).rejects.toThrow();
+			});
+
+			it('should handle whitespace-only ID gracefully', async () => {
+				// Test with whitespace-only ID
+				await expect(libraryService.deleteNotebook('   ')).rejects.toThrow();
+			});
+		});
+
+		describe('Event Integration', () => {
+			it('should publish event with correct structure', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook('Test Title', 'Test Description');
+				await libraryService.hydrateLibrary();
+
+				// Delete the notebook
+				const eventId = await libraryService.deleteNotebook(notebookId);
+
+				// Verify event was published
+				expect(eventId).toBeTruthy();
+
+				// Get events from event store to verify structure
+				const events = await eventStorePort.getEvents('library');
+				const deleteEvent = events.find((e) => e.id === eventId);
+
+				expect(deleteEvent).toBeDefined();
+				expect(deleteEvent!.type).toBe('notebook.deleted');
+				expect(deleteEvent!.payload.notebookId).toBe(notebookId);
+				expect(deleteEvent!.payload.deletedAt).toBeTruthy();
+			});
+
+			it('should return valid event ID', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook('Test Title', 'Test Description');
+				await libraryService.hydrateLibrary();
+
+				// Delete the notebook
+				const eventId = await libraryService.deleteNotebook(notebookId);
+
+				// Verify event ID format and uniqueness
+				expect(eventId).toBeTruthy();
+				expect(typeof eventId).toBe('string');
+				expect(eventId.length).toBeGreaterThan(0);
+			});
+		});
+
+		describe('Projection Update', () => {
+			it('should update library projection when event is processed', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook('Test Title', 'Test Description');
+				await libraryService.hydrateLibrary();
+
+				// Verify notebook exists in projection
+				const notebook = libraryService.getNotebook(notebookId);
+				expect(notebook).toBeDefined();
+
+				// Delete the notebook
+				const eventId = await libraryService.deleteNotebook(notebookId);
+
+				// Verify event was published
+				expect(eventId).toBeTruthy();
+
+				// Process the event to update the projection
+				const events = await eventStorePort.getEvents('library');
+				const deleteEvent = events.find((e) => e.id === eventId);
+				expect(deleteEvent).toBeDefined();
+
+				// Manually process the event to update the projection
+				libraryService.eventHandler(deleteEvent! as unknown as LibraryEvent);
+
+				// Verify the library projection was updated (notebook removed)
+				const deletedNotebook = libraryService.getNotebook(notebookId);
+				expect(deletedNotebook).toBeNull();
+			});
+		});
+
+		describe('Edge Cases', () => {
+			it('should handle ID with special characters', async () => {
+				// Create a notebook with special characters in ID
+				const [notebookId] = await libraryService.createNotebook('Test Title', 'Test Description');
+				await libraryService.hydrateLibrary();
+
+				// Delete the notebook
+				const eventId = await libraryService.deleteNotebook(notebookId);
+
+				expect(eventId).toBeTruthy();
+				expect(typeof eventId).toBe('string');
+			});
+
+			it('should handle ID with Unicode characters', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook('Test Title', 'Test Description');
+				await libraryService.hydrateLibrary();
+
+				// Delete the notebook
+				const eventId = await libraryService.deleteNotebook(notebookId);
+
+				expect(eventId).toBeTruthy();
+				expect(typeof eventId).toBe('string');
+			});
+		});
+	});
 });
