@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { EventStoreClient } from '../../infrastructure/event-store/client';
-import type { EventStoreConfig } from '../../infrastructure/event-store/types';
+import { EventStoreTestImpl } from '../../adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '../../application/ports/outbound/event-store';
 import { createLibraryService, NotebookServiceImpl } from './notebook.service.impl';
 import type { LibraryService } from '../../application/ports/inbound/notebook-service';
@@ -8,24 +7,18 @@ import type { LibraryService } from '../../application/ports/inbound/notebook-se
 describe('NotebookServiceImpl', () => {
 	let eventStorePort: EventStore;
 	let libraryService: LibraryService;
-	let eventStoreConfig: EventStoreConfig;
 
 	beforeEach(async () => {
-		// Create a real EventStoreClient instance for testing
-		// This assumes you have a test event store running or will mock the HTTP layer
-		eventStoreConfig = {
-			baseUrl: 'http://localhost:8000', // Test event store URL
-			timeout: 5000,
-			retries: 1,
-			retryDelay: 100
-		};
-
-		eventStorePort = new EventStoreClient(eventStoreConfig);
+		// Create a test EventStore implementation for isolated testing
+		eventStorePort = new EventStoreTestImpl();
 		libraryService = createLibraryService(eventStorePort);
 	});
 
 	afterEach(async () => {
-		// Clean up any resources if needed
+		// Clean up test data
+		if (eventStorePort instanceof EventStoreTestImpl) {
+			eventStorePort.clear();
+		}
 	});
 
 	describe('Initialization', () => {
@@ -101,6 +94,33 @@ describe('NotebookServiceImpl', () => {
 			expect((notebookService as any).lastEventId).toBeNull();
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expect((notebookService as any)._cells).toEqual([]);
+		});
+	});
+
+	describe('EventStore Integration', () => {
+		it('should verify test store is working', async () => {
+			// Test basic event store functionality
+			const health = await eventStorePort.getHealth();
+			expect(health.status).toBe('healthy');
+			expect(health.consumers).toBe(0);
+
+			// Test connection
+			const isConnected = await eventStorePort.testConnection();
+			expect(isConnected).toBe(true);
+
+			// Test topics (should be empty initially)
+			const topics = await eventStorePort.getTopics();
+			expect(topics).toEqual([]);
+		});
+
+		it('should demonstrate dependency inversion principle', () => {
+			// The service depends on the EventStorePort interface, not the concrete implementation
+			// This allows us to swap implementations easily for testing
+			expect(eventStorePort).toBeInstanceOf(EventStoreTestImpl);
+
+			// The service should work with any implementation of EventStorePort
+			const notebookService = new NotebookServiceImpl('test-notebook', eventStorePort);
+			expect(notebookService.eventStore).toBe(eventStorePort);
 		});
 	});
 });

@@ -4,15 +4,14 @@
 
 import type {
 	Consumer,
-	ConsumerRegistration,
 	Event,
 	EventRequest,
 	EventsQuery,
 	HealthStatus,
 	Schema,
 	Topic
-} from '../../infrastructure/event-store/types';
-import type { EventStore } from '../../application/ports/outbound/event-store';
+} from '$lib/server/application/ports/outbound/types';
+import type { EventStore } from '../../../../application/ports/outbound/event-store';
 
 /**
  * In-memory test implementation of EventStore port.
@@ -129,13 +128,13 @@ export class EventStoreTestImpl implements EventStore {
 	}
 
 	// Consumer management
-	async registerConsumer(registration: ConsumerRegistration): Promise<string> {
+	async registerConsumer(callback: string, topics: Record<string, string | null>): Promise<string> {
 		const consumerId = `consumer-${++this.consumerSequence}`;
 
 		const consumer: Consumer = {
 			id: consumerId,
-			callback: registration.callback,
-			topics: { ...registration.topics },
+			callback: callback,
+			topics: { ...topics },
 			nudge: async () => {
 				// In a real implementation, this would trigger the callback
 				// For testing, we just no-op

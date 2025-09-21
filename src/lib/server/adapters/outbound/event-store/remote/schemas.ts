@@ -1,4 +1,4 @@
-import type { EventSchema } from '../../ports/events/event.types';
+import type { EventSchema } from '$lib/server/domain/events/event.types';
 
 export const LIBRARY_EVENT_SCHEMAS: EventSchema[] = [
 	{

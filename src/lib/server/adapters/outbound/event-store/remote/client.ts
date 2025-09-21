@@ -13,8 +13,8 @@ import type {
 	Schema,
 	Topic,
 	TopicCreation
-} from './types.ts';
-import type { EventStore } from '../../application/ports/outbound/event-store.js';
+} from '../../../../application/ports/outbound/types.js';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store.js';
 
 export class EventStoreClient implements EventStore {
 	private config: Required<EventStoreConfig>;
@@ -170,10 +170,10 @@ export class EventStoreClient implements EventStore {
 	}
 
 	// Consumer management
-	async registerConsumer(registration: ConsumerRegistration): Promise<string> {
+	async registerConsumer(callback: string, topics: Record<string, string | null>): Promise<string> {
 		const response = await this.request<{ consumerId: string }>('/consumers/register', {
 			method: 'POST',
-			body: JSON.stringify(registration)
+			body: JSON.stringify({ callback, topics })
 		});
 		return response.consumerId;
 	}

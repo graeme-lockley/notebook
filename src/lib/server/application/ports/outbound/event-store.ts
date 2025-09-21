@@ -4,14 +4,13 @@
 
 import type {
 	Consumer,
-	ConsumerRegistration,
 	Event,
 	EventRequest,
 	EventsQuery,
 	HealthStatus,
 	Schema,
 	Topic
-} from '../../../infrastructure/event-store/types';
+} from './types';
 
 /**
  * EventStore port interface that defines the contract for event store implementations.
@@ -34,7 +33,7 @@ export interface EventStore {
 	getEvents(topic: string, query?: EventsQuery): Promise<Event[]>;
 
 	// Consumer management
-	registerConsumer(registration: ConsumerRegistration): Promise<string>;
+	registerConsumer(callback: string, topics: Record<string, string | null>): Promise<string>;
 	getConsumers(): Promise<Consumer[]>;
 	unregisterConsumer(id: string): Promise<void>;
 

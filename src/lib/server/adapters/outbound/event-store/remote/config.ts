@@ -1,6 +1,6 @@
-import type { EventStoreConfig } from './types';
+import type { EventStoreConfig } from '../../../../application/ports/outbound/types';
 import { EventStoreClient } from './client';
-import type { EventStore } from '../../application/ports/outbound/event-store';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 
 export function eventStoreConfig(): EventStoreConfig {
 	return {

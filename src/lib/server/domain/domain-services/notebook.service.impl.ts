@@ -1,6 +1,6 @@
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import { NOTEBOOK_EVENT_SCHEMAS } from '$lib/server/infrastructure/event-store/schemas';
-import { logger } from '../../infrastructure/logging/logger.service';
+import { NOTEBOOK_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
+import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type {
 	CellCreatedEvent,
 	CellDeletedEvent,
@@ -11,14 +11,13 @@ import type {
 	NotebookDeletedEvent,
 	NotebookEvent,
 	NotebookUpdatedEvent
-} from '../../ports/events/notebook.events';
+} from '$lib/server/domain/events/notebook.events';
 import type {
-	Cell,
 	LibraryService,
-	Notebook,
 	NotebookService
-} from '../../application/ports/inbound/notebook-service';
+} from '$lib/server/application/ports/inbound/notebook-service';
 import { Library } from './library';
+import type { Cell, Notebook } from '$lib/server/domain/value-objects';
 
 export function createLibraryService(eventStore: EventStore): LibraryService {
 	return new LibraryServiceImpl(eventStore);
@@ -261,12 +260,7 @@ class LibraryServiceImpl implements LibraryService {
 		}
 
 		// Register the new consumer
-		await this._eventStore.registerConsumer({
-			callback: callbackUrl,
-			topics: {
-				library: this.lastEventId
-			}
-		});
+		await this._eventStore.registerConsumer(callbackUrl, { library: this.lastEventId });
 	}
 }
 
@@ -598,12 +592,7 @@ export class NotebookServiceImpl implements NotebookService {
 		}
 
 		// Register the new consumer
-		await this.eventStore.registerConsumer({
-			callback: callbackUrl,
-			topics: {
-				[this.id]: this.lastEventId
-			}
-		});
+		await this.eventStore.registerConsumer(callbackUrl, { [this.id]: this.lastEventId });
 	}
 }
 

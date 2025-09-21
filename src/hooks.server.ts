@@ -1,7 +1,7 @@
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
-import { eventStoreClient } from '$lib/server/infrastructure/event-store/config';
-import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/infrastructure/event-store/schemas';
-import { createLibraryService } from '$lib/server/adapters/services/notebook.service.impl';
+import { eventStoreClient } from '$lib/server/adapters/outbound/event-store/remote/config';
+import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
+import { createLibraryService } from '$lib/server/domain/domain-services/notebook.service.impl';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 
 let isInitialized = false;

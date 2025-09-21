@@ -1,12 +1,6 @@
-import type { LibraryEvent } from '../../../ports/events/notebook.events';
-
-export type Notebook = {
-	id: string;
-	title: string;
-	description?: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
+import type { LibraryEvent } from '../../../domain/events/notebook.events';
+import type { Notebook } from '../../../domain/value-objects/Notebook';
+import type { Cell, CellKind } from '../../../domain/value-objects';
 
 export type EventID = string;
 
@@ -25,22 +19,11 @@ export interface LibraryService {
 	registerLibraryCallback(): Promise<void>;
 }
 
-export type Cell = {
-	id: string;
-	kind: 'js' | 'md' | 'html';
-	value: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
 export interface NotebookService {
 	get cells(): Cell[];
 
-	addCell(kind: 'js' | 'md' | 'html', value: string, position: number): Promise<void>;
+	addCell(kind: CellKind, value: string, position: number): Promise<void>;
 	deleteCell(cellId: string): Promise<void>;
-	updateCell(
-		cellId: string,
-		updates: Partial<{ kind: 'js' | 'md' | 'html'; value: string }>
-	): Promise<void>;
+	updateCell(cellId: string, updates: Partial<{ kind: CellKind; value: string }>): Promise<void>;
 	moveCell(cellId: string, position: number): Promise<void>;
 }
