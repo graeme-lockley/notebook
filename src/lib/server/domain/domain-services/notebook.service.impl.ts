@@ -108,8 +108,14 @@ class LibraryServiceImpl implements LibraryService {
 	): Promise<string> {
 		this.getNotebookId(notebookId);
 
-		if (updates.title === '') {
-			throw new Error('Title is required');
+		// Trim and validate title if provided
+		if (updates.title !== undefined) {
+			const trimmedTitle = updates.title.trim();
+			if (trimmedTitle === '') {
+				throw new Error('Title is required');
+			}
+			// Update the title with trimmed value
+			updates.title = trimmedTitle;
 		}
 
 		// Publish event

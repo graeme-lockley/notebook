@@ -1483,4 +1483,251 @@ describe('NotebookServiceImpl', () => {
 			});
 		});
 	});
+
+	describe('updateNotebook', () => {
+		describe('Core Functionality', () => {
+			describe('Happy Path', () => {
+				it('should update title only', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Original Title',
+						'Original Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Update only the title
+					const eventId = await libraryService.updateNotebook(notebookId, {
+						title: 'Updated Title'
+					});
+
+					expect(eventId).toBeTruthy();
+					expect(typeof eventId).toBe('string');
+				});
+
+				it('should update description only', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Original Title',
+						'Original Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Update only the description
+					const eventId = await libraryService.updateNotebook(notebookId, {
+						description: 'Updated Description'
+					});
+
+					expect(eventId).toBeTruthy();
+					expect(typeof eventId).toBe('string');
+				});
+
+				it('should update both title and description', async () => {
+					// Create a notebook first
+					const [notebookId] = await libraryService.createNotebook(
+						'Original Title',
+						'Original Description'
+					);
+					await libraryService.hydrateLibrary();
+
+					// Update both title and description
+					const eventId = await libraryService.updateNotebook(notebookId, {
+						title: 'Updated Title',
+						description: 'Updated Description'
+					});
+
+					expect(eventId).toBeTruthy();
+					expect(typeof eventId).toBe('string');
+				});
+			});
+
+			describe('Not Found', () => {
+				it('should throw error for non-existent notebook', async () => {
+					// Attempt to update non-existent notebook
+					await expect(
+						libraryService.updateNotebook('non-existent-id', { title: 'New Title' })
+					).rejects.toThrow('Notebook not found: non-existent-id');
+				});
+			});
+		});
+
+		describe('Input Validation', () => {
+			it('should throw error for empty title', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Attempt to update with empty title
+				await expect(libraryService.updateNotebook(notebookId, { title: '' })).rejects.toThrow(
+					'Title is required'
+				);
+			});
+
+			it('should throw error for invalid notebook ID', async () => {
+				// Test with null notebook ID
+				await expect(
+					libraryService.updateNotebook(null as unknown as string, { title: 'New Title' })
+				).rejects.toThrow();
+
+				// Test with undefined notebook ID
+				await expect(
+					libraryService.updateNotebook(undefined as unknown as string, { title: 'New Title' })
+				).rejects.toThrow();
+
+				// Test with empty string notebook ID
+				await expect(libraryService.updateNotebook('', { title: 'New Title' })).rejects.toThrow();
+			});
+
+			it('should handle empty updates object', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Update with empty object
+				const eventId = await libraryService.updateNotebook(notebookId, {});
+
+				expect(eventId).toBeTruthy();
+				expect(typeof eventId).toBe('string');
+			});
+		});
+
+		describe('Event Integration', () => {
+			it('should publish event with correct structure', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Update the notebook
+				const eventId = await libraryService.updateNotebook(notebookId, {
+					title: 'Updated Title',
+					description: 'Updated Description'
+				});
+
+				// Verify event was published
+				expect(eventId).toBeTruthy();
+
+				// Get events from event store to verify structure
+				const events = await eventStorePort.getEvents('library');
+				const updateEvent = events.find((e) => e.id === eventId);
+
+				expect(updateEvent).toBeDefined();
+				expect(updateEvent!.type).toBe('notebook.updated');
+				expect(updateEvent!.payload.notebookId).toBe(notebookId);
+
+				// Type assertion for the changes object
+				const changes = updateEvent!.payload.changes as { title?: string; description?: string };
+				expect(changes.title).toBe('Updated Title');
+				expect(changes.description).toBe('Updated Description');
+				expect(updateEvent!.payload.updatedAt).toBeTruthy();
+			});
+
+			it('should return valid event ID', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Update the notebook
+				const eventId = await libraryService.updateNotebook(notebookId, {
+					title: 'Updated Title'
+				});
+
+				// Verify event ID format and uniqueness
+				expect(eventId).toBeTruthy();
+				expect(typeof eventId).toBe('string');
+				expect(eventId.length).toBeGreaterThan(0);
+			});
+
+			it('should update library projection when event is processed', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Verify original state
+				const originalNotebook = libraryService.getNotebook(notebookId);
+				expect(originalNotebook).toBeDefined();
+				expect(originalNotebook!.title).toBe('Original Title');
+				expect(originalNotebook!.description).toBe('Original Description');
+
+				// Update the notebook
+				const eventId = await libraryService.updateNotebook(notebookId, {
+					title: 'Updated Title',
+					description: 'Updated Description'
+				});
+
+				// Verify event was published
+				expect(eventId).toBeTruthy();
+
+				// Process the event to update the projection
+				const events = await eventStorePort.getEvents('library');
+				const updateEvent = events.find((e) => e.id === eventId);
+				expect(updateEvent).toBeDefined();
+
+				// Manually process the event to update the projection
+				libraryService.eventHandler(updateEvent! as unknown as LibraryEvent);
+
+				// Verify the library projection was updated
+				const updatedNotebook = libraryService.getNotebook(notebookId);
+				expect(updatedNotebook).toBeDefined();
+				expect(updatedNotebook!.title).toBe('Updated Title');
+				expect(updatedNotebook!.description).toBe('Updated Description');
+				expect(updatedNotebook!.updatedAt).toBeTruthy();
+				expect(updatedNotebook!.updatedAt).not.toBe(originalNotebook!.updatedAt);
+			});
+		});
+
+		describe('Edge Cases', () => {
+			it('should throw error for whitespace-only title', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Update with whitespace-only title should fail validation
+				await expect(
+					libraryService.updateNotebook(notebookId, {
+						title: '   '
+					})
+				).rejects.toThrow('Title is required');
+			});
+
+			it('should handle partial updates correctly', async () => {
+				// Create a notebook first
+				const [notebookId] = await libraryService.createNotebook(
+					'Original Title',
+					'Original Description'
+				);
+				await libraryService.hydrateLibrary();
+
+				// Update only title
+				const eventId1 = await libraryService.updateNotebook(notebookId, {
+					title: 'Updated Title Only'
+				});
+
+				// Update only description
+				const eventId2 = await libraryService.updateNotebook(notebookId, {
+					description: 'Updated Description Only'
+				});
+
+				expect(eventId1).toBeTruthy();
+				expect(eventId2).toBeTruthy();
+				expect(eventId1).not.toBe(eventId2); // Different events
+			});
+		});
+	});
 });
