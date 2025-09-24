@@ -1,9 +1,10 @@
 import { ReactiveNotebook } from '$lib/model/cell';
+import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 
 // Initial cells data with closed/open state
 const initialCells: Array<{
 	id: string;
-	kind: 'js' | 'md' | 'html';
+	kind: CellKind;
 	value: string;
 	valueError: Error | null;
 	isFocused: boolean;

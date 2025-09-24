@@ -1,3 +1,5 @@
+import type { CellKind } from '../value-objects/CellKind';
+
 export interface NotebookCreatedEvent {
 	type: 'notebook.created';
 	payload: {
@@ -32,7 +34,7 @@ export interface CellCreatedEvent {
 	type: 'cell.created';
 	payload: {
 		cellId: string;
-		kind: 'js' | 'md' | 'html';
+		kind: CellKind;
 		value: string;
 		position: number;
 		createdAt: string; // ISO timestamp string
@@ -45,7 +47,7 @@ export interface CellUpdatedEvent {
 		cellId: string;
 		changes: Partial<{
 			value: string;
-			kind: 'js' | 'md' | 'html';
+			kind: CellKind;
 			isClosed: boolean;
 		}>;
 		updatedAt: string; // ISO timestamp string

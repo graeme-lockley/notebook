@@ -1,24 +1,6 @@
-import type { LibraryEvent, NotebookEvent } from '../../../domain/events/notebook.events';
-import type { Notebook } from '../../../domain/value-objects/Notebook';
+import type { NotebookEvent } from '../../../domain/events/notebook.events';
 import type { Cell, CellKind } from '../../../domain/value-objects';
 import type { EventStore } from '../outbound/event-store';
-
-export type EventID = string;
-
-export interface LibraryService {
-	createNotebook(title: string, description?: string): Promise<[string, EventID]>;
-	getNotebook(notebookId: string): Notebook | null;
-	getNotebookService(notebookId: string): Promise<NotebookService | undefined>;
-	updateNotebook(
-		notebookId: string,
-		updates: Partial<{ title: string; description: string }>
-	): Promise<EventID>;
-	deleteNotebook(notebookId: string): Promise<EventID>;
-
-	eventHandler(event: LibraryEvent): void;
-	hydrateLibrary(): Promise<void>;
-	registerLibraryCallback(): Promise<void>;
-}
 
 export interface NotebookService {
 	readonly id: string;

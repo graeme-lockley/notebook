@@ -6,12 +6,11 @@ import {
 	type ObservableValue,
 	type IVariable
 } from '../../runtime';
+import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 
 import { executeHtml } from './cell/html';
 import { executeJavaScript } from './cell/javascript';
 import { executeMarkdown } from './cell/markdown';
-
-export type CellKind = 'js' | 'md' | 'html';
 
 export type CellStatus = 'ok' | 'error' | 'pending';
 

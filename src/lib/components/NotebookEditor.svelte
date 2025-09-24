@@ -12,14 +12,11 @@
 		DuplicateCellEvent
 	} from './event-types';
 	import type { NotebookStore } from '$lib/stores/notebook';
+	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 
 	interface Props {
 		notebookStore: NotebookStore;
-		addCellToServer?: (
-			kind: 'js' | 'md' | 'html',
-			value: string,
-			position: number
-		) => Promise<void>;
+		addCellToServer?: (kind: CellKind, value: string, position: number) => Promise<void>;
 		updateCellOnServer?: (
 			cellId: string,
 			updates: { kind?: string; value?: string }
@@ -77,7 +74,7 @@
 		}
 	}
 
-	function getDefaultCellContent(kind: 'js' | 'md' | 'html'): string {
+	function getDefaultCellContent(kind: CellKind): string {
 		switch (kind) {
 			case 'js':
 				return 'Math.PI';

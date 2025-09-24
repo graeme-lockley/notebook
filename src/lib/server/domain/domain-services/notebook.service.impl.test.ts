@@ -314,7 +314,7 @@ describe('NotebookServiceImpl', () => {
 				const originalUpdatedAt = notebookService.cells[0].updatedAt;
 
 				// Wait a small amount to ensure timestamp difference
-				await new Promise((resolve) => setTimeout(resolve, 1));
+				await new Promise((resolve) => setTimeout(resolve, 2));
 
 				await notebookService.updateCell(cellId, { value: 'updated' });
 				await notebookService.hydrateNotebook();

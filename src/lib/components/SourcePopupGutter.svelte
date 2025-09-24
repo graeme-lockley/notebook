@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { Braces, Code, Text } from 'lucide-svelte';
-	import type { CellKind } from '$lib/model/cell';
+	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 	import Menu from './popup/Menu.svelte';
 	import type { Item } from './popup/types';
 	import type { SourceKindChangeEvent } from './event-types';

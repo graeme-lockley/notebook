@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { LibraryService } from '$lib/server/application/ports/inbound/notebook-service';
+import type { LibraryService } from '$lib/server/application/ports/inbound/library-service';
 import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
 import type {
 	NotebookCreatedEvent,

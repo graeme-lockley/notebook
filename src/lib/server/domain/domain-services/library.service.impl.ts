@@ -6,10 +6,8 @@ import type {
 	NotebookDeletedEvent,
 	NotebookUpdatedEvent
 } from '$lib/server/domain/events/notebook.events';
-import type {
-	LibraryService,
-	NotebookService
-} from '$lib/server/application/ports/inbound/notebook-service';
+import type { NotebookService } from '$lib/server/application/ports/inbound/notebook-service';
+import type { LibraryService } from '$lib/server/application/ports/inbound/library-service';
 import { Library } from './library';
 import type { Notebook } from '$lib/server/domain/value-objects';
 

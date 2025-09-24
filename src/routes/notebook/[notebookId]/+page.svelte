@@ -7,6 +7,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { SvelteMap } from 'svelte/reactivity';
+	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 
 	let notebookStore: NotebookStore | undefined;
 	let loading = true;
@@ -317,7 +318,7 @@
 		// The TopBar component will handle the API call and navigation
 	}
 
-	async function addCellToServer(kind: 'js' | 'md' | 'html', value: string, position: number) {
+	async function addCellToServer(kind: CellKind, value: string, position: number) {
 		if (!notebookId) return;
 
 		try {
