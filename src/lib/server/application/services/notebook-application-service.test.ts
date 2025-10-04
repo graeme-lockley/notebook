@@ -1,24 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { NotebookApplicationService } from './notebook-application-service';
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 describe('NotebookApplicationService', () => {
 	let eventStore: EventStore;
-	let eventBroadcaster: StandaloneWebSocketBroadcaster;
+
 	let notebookService: NotebookApplicationService;
 
 	beforeEach(async () => {
 		eventStore = new EventStoreTestImpl();
-		eventBroadcaster = {
-			broadcastCustomEvent: vi.fn()
-		} as unknown as StandaloneWebSocketBroadcaster;
 
 		// Create the library topic for notebook creation
 		await eventStore.createTopic('library', []);
 
-		notebookService = new NotebookApplicationService(eventStore, eventBroadcaster);
+		notebookService = new NotebookApplicationService(eventStore);
 	});
 
 	describe('addCell', () => {
@@ -41,17 +37,6 @@ describe('NotebookApplicationService', () => {
 			// Create the notebook topic first
 			await eventStore.createTopic(notebookId, []);
 			await notebookService.addCell(notebookId, 'js', 'console.log("test");', 0);
-
-			expect(eventBroadcaster.broadcastCustomEvent).toHaveBeenCalledWith(
-				notebookId,
-				'notebook.updated',
-				expect.objectContaining({
-					cells: expect.any(Array),
-					event: expect.objectContaining({
-						type: 'cell.created'
-					})
-				})
-			);
 		});
 	});
 

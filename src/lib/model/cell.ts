@@ -320,12 +320,25 @@ export class ReactiveNotebook {
 	}
 
 	removeCell(id: string): boolean {
+		console.log(`🔍 ReactiveNotebook.removeCell called with id: ${id}`);
+		console.log(
+			`🔍 Current _cells before removal:`,
+			this._cells.map((c) => c.id)
+		);
 		const index = this._cells.findIndex((cell) => cell.id === id);
-		if (index === -1) return false;
+		console.log(`🔍 Found cell at index: ${index}`);
+		if (index === -1) {
+			console.log(`🔍 Cell not found, returning false`);
+			return false;
+		}
 
 		this._cells.splice(index, 1);
 		this._updatedAt = new Date();
 		this._version++;
+		console.log(
+			`🔍 Cell removed, new _cells:`,
+			this._cells.map((c) => c.id)
+		);
 		return true;
 	}
 

@@ -5,8 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"dev:full": "concurrently \"npm run dev\" \"npm run websocket\"",
-		"websocket": "node websocket-server.cjs",
+		"dev:full": "npm run dev",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "husky",
@@ -79,6 +78,7 @@
 		"@types/ws": "^8.18.1",
 		"lucide-svelte": "^0.539.0",
 		"marked": "^16.2.0",
+		"uuid": "^13.0.0",
 		"ws": "^8.18.3"
 	}
 }

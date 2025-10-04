@@ -1,5 +1,4 @@
 import type { EventStore } from '../ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 import { LibraryServiceImpl } from '$lib/server/domain/domain-services/library.service.impl';
 import { NotebookServiceImpl } from '$lib/server/domain/domain-services/notebook.service.impl';
 import type { Notebook } from '$lib/server/domain/value-objects';
@@ -18,10 +17,7 @@ import { logger } from '$lib/server/infrastructure/logging/logger.service';
 export class LibraryApplicationService {
 	private libraryService: LibraryServiceImpl;
 
-	constructor(
-		private eventStore: EventStore,
-		private eventBroadcaster?: StandaloneWebSocketBroadcaster
-	) {
+	constructor(private eventStore: EventStore) {
 		this.libraryService = new LibraryServiceImpl();
 	}
 

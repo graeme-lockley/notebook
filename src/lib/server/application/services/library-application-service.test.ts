@@ -1,24 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { LibraryApplicationService } from './library-application-service';
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 describe('LibraryApplicationService', () => {
 	let eventStore: EventStore;
-	let eventBroadcaster: StandaloneWebSocketBroadcaster;
+
 	let libraryService: LibraryApplicationService;
 
 	beforeEach(async () => {
 		eventStore = new EventStoreTestImpl();
-		eventBroadcaster = {
-			broadcastCustomEvent: vi.fn()
-		} as unknown as StandaloneWebSocketBroadcaster;
 
 		// Create the library topic
 		await eventStore.createTopic('library', []);
 
-		libraryService = new LibraryApplicationService(eventStore, eventBroadcaster);
+		libraryService = new LibraryApplicationService(eventStore);
 		await libraryService.initialize();
 	});
 

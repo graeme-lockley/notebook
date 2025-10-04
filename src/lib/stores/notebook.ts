@@ -45,8 +45,19 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 	}
 
 	async function removeCell(id: string) {
-		await currentNotebook.removeCell(id);
+		console.log(`🔍 Store removeCell called with id: ${id}`);
+		console.log(
+			`🔍 Current cells before removal:`,
+			currentNotebook.cells.map((c) => c.id)
+		);
+		const result = await currentNotebook.removeCell(id);
+		console.log(`🔍 ReactiveNotebook.removeCell result:`, result);
+		console.log(
+			`🔍 Current cells after removal:`,
+			currentNotebook.cells.map((c) => c.id)
+		);
 		set(currentNotebook);
+		console.log(`🔍 Store set() called after removal`);
 	}
 
 	async function updateCell(id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) {

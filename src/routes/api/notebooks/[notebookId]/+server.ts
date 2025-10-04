@@ -22,20 +22,28 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
-		// Get the notebook service to access cells
-		const { notebookService } = locals;
-		const notebookServiceInstance = await notebookService.getNotebookService(notebookId);
+		// Get the notebook data from the read model
+		const { notebookReadModel } = locals;
+		const notebookData = await notebookReadModel.getNotebook(notebookId);
 
-		logger.info(`Notebook found: ${notebookId} with ${notebookServiceInstance.cells.length} cells`);
+		if (!notebookData) {
+			logger.error(`Notebook data not found in read model: ${notebookId}`);
+			return json({ error: 'Notebook data not found' }, { status: 404 });
+		}
 
-		// Return the complete notebook data including cells
+		// Get the cells for this notebook
+		const cells = await notebookReadModel.getCells(notebookId);
+
+		logger.info(`Notebook found: ${notebookId} with ${cells.length} cells`);
+
+		// Return the complete notebook data including cells from read model
 		return json({
 			id: notebookMetadata.id,
 			title: notebookMetadata.title,
 			description: notebookMetadata.description,
 			createdAt: notebookMetadata.createdAt,
 			updatedAt: notebookMetadata.updatedAt,
-			cells: notebookServiceInstance.cells
+			cells: cells
 		});
 	} catch (error) {
 		logger.error('Error getting notebook:', error);

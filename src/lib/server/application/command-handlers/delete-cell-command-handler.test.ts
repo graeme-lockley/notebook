@@ -1,24 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 import { DeleteCellCommandHandler } from './delete-cell-command-handler';
 
 describe('DeleteCellCommandHandler', () => {
 	let eventStore: EventStore;
-	let eventBroadcaster: StandaloneWebSocketBroadcaster;
 	let commandHandler: DeleteCellCommandHandler;
 
 	beforeEach(async () => {
 		eventStore = new EventStoreTestImpl();
-		eventBroadcaster = {
-			broadcastCustomEvent: vi.fn()
-		} as unknown as StandaloneWebSocketBroadcaster;
-
 		// Create the notebook topic
 		await eventStore.createTopic('test-notebook', []);
 
-		commandHandler = new DeleteCellCommandHandler(eventStore, eventBroadcaster);
+		commandHandler = new DeleteCellCommandHandler(eventStore);
 	});
 
 	describe('handle', () => {
@@ -32,8 +26,7 @@ describe('DeleteCellCommandHandler', () => {
 			};
 
 			const addHandler = new (await import('./add-cell-command-handler')).AddCellCommandHandler(
-				eventStore,
-				eventBroadcaster
+				eventStore
 			);
 			const addResult = await addHandler.handle(addCommand);
 
@@ -64,8 +57,7 @@ describe('DeleteCellCommandHandler', () => {
 			};
 
 			const addHandler = new (await import('./add-cell-command-handler')).AddCellCommandHandler(
-				eventStore,
-				eventBroadcaster
+				eventStore
 			);
 			const addResult = await addHandler.handle(addCommand);
 
@@ -76,17 +68,6 @@ describe('DeleteCellCommandHandler', () => {
 			};
 
 			await commandHandler.handle(command);
-
-			expect(eventBroadcaster.broadcastCustomEvent).toHaveBeenCalledWith(
-				'test-notebook',
-				'notebook.updated',
-				expect.objectContaining({
-					cells: expect.any(Array),
-					event: expect.objectContaining({
-						type: 'cell.deleted'
-					})
-				})
-			);
 		});
 
 		it('should validate command', async () => {

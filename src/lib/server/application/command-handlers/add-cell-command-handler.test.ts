@@ -1,24 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 import { AddCellCommandHandler } from './add-cell-command-handler';
 
 describe('AddCellCommandHandler', () => {
 	let eventStore: EventStore;
-	let eventBroadcaster: StandaloneWebSocketBroadcaster;
 	let commandHandler: AddCellCommandHandler;
 
 	beforeEach(async () => {
 		eventStore = new EventStoreTestImpl();
-		eventBroadcaster = {
-			broadcastCustomEvent: vi.fn()
-		} as unknown as StandaloneWebSocketBroadcaster;
-
 		// Create the notebook topic
 		await eventStore.createTopic('test-notebook', []);
 
-		commandHandler = new AddCellCommandHandler(eventStore, eventBroadcaster);
+		commandHandler = new AddCellCommandHandler(eventStore);
 	});
 
 	describe('handle', () => {
@@ -52,17 +46,6 @@ describe('AddCellCommandHandler', () => {
 			};
 
 			await commandHandler.handle(command);
-
-			expect(eventBroadcaster.broadcastCustomEvent).toHaveBeenCalledWith(
-				'test-notebook',
-				'notebook.updated',
-				expect.objectContaining({
-					cells: expect.any(Array),
-					event: expect.objectContaining({
-						type: 'cell.created'
-					})
-				})
-			);
 		});
 
 		it('should validate command', async () => {

@@ -59,6 +59,19 @@ export class InMemoryNotebookReadModel implements NotebookReadModel {
 		logger.debug(`NotebookReadModel: addCell(${notebookId}, ${cell.id})`);
 	}
 
+	addCellAtPosition(notebookId: string, cell: Cell, position: number): void {
+		const existingCells = this.cells.get(notebookId) || [];
+		const updatedCells = [...existingCells];
+
+		// Insert cell at the specified position
+		updatedCells.splice(position, 0, cell);
+
+		this.cells.set(notebookId, updatedCells);
+		logger.debug(
+			`NotebookReadModel: addCellAtPosition(${notebookId}, ${cell.id}) at position ${position}`
+		);
+	}
+
 	updateCell(notebookId: string, cellId: string, updatedCell: Cell): void {
 		const existingCells = this.cells.get(notebookId) || [];
 		const cellIndex = existingCells.findIndex((c) => c.id === cellId);

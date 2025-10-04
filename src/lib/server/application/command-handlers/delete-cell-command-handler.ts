@@ -1,5 +1,4 @@
 import type { EventStore } from '../ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 import type { EventBus } from '../ports/outbound/event-bus';
 import { NotebookApplicationService } from '../services/notebook-application-service';
 import type { DeleteCellCommand, DeleteCellCommandResult } from '../commands/delete-cell-command';
@@ -8,7 +7,6 @@ import { logger } from '$lib/server/infrastructure/logging/logger.service';
 export class DeleteCellCommandHandler {
 	constructor(
 		private eventStore: EventStore,
-		private eventBroadcaster?: StandaloneWebSocketBroadcaster,
 		private eventBus?: EventBus
 	) {}
 
@@ -18,10 +16,7 @@ export class DeleteCellCommandHandler {
 			this.validateCommand(command);
 
 			// Create notebook application service
-			const notebookService = new NotebookApplicationService(
-				this.eventStore,
-				this.eventBroadcaster
-			);
+			const notebookService = new NotebookApplicationService(this.eventStore);
 
 			// Get or create notebook service instance
 			const notebookServiceInstance = await notebookService.getNotebookService(command.notebookId);
@@ -47,18 +42,6 @@ export class DeleteCellCommandHandler {
 					payload: event.payload,
 					timestamp: new Date(),
 					aggregateId: command.notebookId
-				});
-			}
-
-			// Broadcast via WebSocket
-			if (this.eventBroadcaster) {
-				await this.eventBroadcaster.broadcastCustomEvent(command.notebookId, 'notebook.updated', {
-					cells: notebookServiceInstance.cells,
-					event: {
-						id: eventId,
-						type: event.type,
-						payload: event.payload
-					}
 				});
 			}
 

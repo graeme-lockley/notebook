@@ -1,5 +1,4 @@
 import type { EventStore } from '../ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 import { NotebookServiceImpl } from '$lib/server/domain/domain-services/notebook.service.impl';
 import type { CellKind } from '$lib/server/domain/value-objects';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
@@ -14,10 +13,7 @@ export class NotebookApplicationService {
 		NotebookServiceImpl
 	>();
 
-	constructor(
-		private eventStore: EventStore,
-		private eventBroadcaster?: StandaloneWebSocketBroadcaster
-	) {}
+	constructor(private eventStore: EventStore) {}
 
 	async getNotebookService(notebookId: string): Promise<NotebookServiceImpl> {
 		// Check if we already have a service for this notebook
@@ -58,18 +54,6 @@ export class NotebookApplicationService {
 		// Process event to update domain state
 		notebookService.eventHandler({ ...event, id: eventId });
 
-		// Broadcast via WebSocket
-		if (this.eventBroadcaster) {
-			await this.eventBroadcaster.broadcastCustomEvent(notebookId, 'notebook.updated', {
-				cells: notebookService.cells,
-				event: {
-					id: eventId,
-					type: event.type,
-					payload: event.payload
-				}
-			});
-		}
-
 		logger.info(
 			`NotebookApplicationService: addCell: Added ${kind} cell to notebook ${notebookId}`
 		);
@@ -92,18 +76,6 @@ export class NotebookApplicationService {
 		// Process event to update domain state
 		notebookService.eventHandler({ ...event, id: eventId });
 
-		// Broadcast via WebSocket
-		if (this.eventBroadcaster) {
-			await this.eventBroadcaster.broadcastCustomEvent(notebookId, 'notebook.updated', {
-				cells: notebookService.cells,
-				event: {
-					id: eventId,
-					type: event.type,
-					payload: event.payload
-				}
-			});
-		}
-
 		logger.info(
 			`NotebookApplicationService: updateCell: Updated cell ${cellId} in notebook ${notebookId}`
 		);
@@ -122,18 +94,6 @@ export class NotebookApplicationService {
 		// Process event to update domain state
 		notebookService.eventHandler({ ...event, id: eventId });
 
-		// Broadcast via WebSocket
-		if (this.eventBroadcaster) {
-			await this.eventBroadcaster.broadcastCustomEvent(notebookId, 'notebook.updated', {
-				cells: notebookService.cells,
-				event: {
-					id: eventId,
-					type: event.type,
-					payload: event.payload
-				}
-			});
-		}
-
 		logger.info(
 			`NotebookApplicationService: deleteCell: Deleted cell ${cellId} from notebook ${notebookId}`
 		);
@@ -151,18 +111,6 @@ export class NotebookApplicationService {
 
 		// Process event to update domain state
 		notebookService.eventHandler({ ...event, id: eventId });
-
-		// Broadcast via WebSocket
-		if (this.eventBroadcaster) {
-			await this.eventBroadcaster.broadcastCustomEvent(notebookId, 'notebook.updated', {
-				cells: notebookService.cells,
-				event: {
-					id: eventId,
-					type: event.type,
-					payload: event.payload
-				}
-			});
-		}
 
 		logger.info(
 			`NotebookApplicationService: moveCell: Moved cell ${cellId} to position ${position} in notebook ${notebookId}`

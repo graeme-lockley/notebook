@@ -6,7 +6,6 @@ import { UpdateCellCommandHandler } from '$lib/server/application/command-handle
 import { DeleteCellCommandHandler } from '$lib/server/application/command-handlers/delete-cell-command-handler';
 import { MoveCellCommandHandler } from '$lib/server/application/command-handlers/move-cell-command-handler';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 import type { EventBus } from '$lib/server/application/ports/outbound/event-bus';
 
 export async function PATCH({ params, request, locals }: RequestEvent): Promise<Response> {
@@ -23,7 +22,6 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 		// Access the injected services
 		const libraryService: LibraryApplicationService = locals.libraryService;
 		const eventStore: EventStore = locals.eventStore;
-		const eventBroadcaster: StandaloneWebSocketBroadcaster = locals.eventBroadcaster;
 		const eventBus: EventBus = locals.eventBus;
 
 		// Check if notebook exists
@@ -34,7 +32,7 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 
 		// If position is provided, this is a move operation
 		if (position !== undefined) {
-			const commandHandler = new MoveCellCommandHandler(eventStore, eventBroadcaster, eventBus);
+			const commandHandler = new MoveCellCommandHandler(eventStore, eventBus);
 			const result = await commandHandler.handle({
 				notebookId,
 				cellId,
@@ -57,7 +55,7 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			return json({ error: 'Either kind, value, or position must be provided' }, { status: 400 });
 		}
 
-		const commandHandler = new UpdateCellCommandHandler(eventStore, eventBroadcaster, eventBus);
+		const commandHandler = new UpdateCellCommandHandler(eventStore, eventBus);
 		const result = await commandHandler.handle({
 			notebookId,
 			cellId,
@@ -90,7 +88,6 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 		// Access the injected services
 		const libraryService: LibraryApplicationService = locals.libraryService;
 		const eventStore: EventStore = locals.eventStore;
-		const eventBroadcaster: StandaloneWebSocketBroadcaster = locals.eventBroadcaster;
 		const eventBus: EventBus = locals.eventBus;
 
 		// Check if notebook exists
@@ -99,7 +96,7 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
-		const commandHandler = new DeleteCellCommandHandler(eventStore, eventBroadcaster, eventBus);
+		const commandHandler = new DeleteCellCommandHandler(eventStore, eventBus);
 		const result = await commandHandler.handle({
 			notebookId,
 			cellId

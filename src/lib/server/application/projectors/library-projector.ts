@@ -1,9 +1,12 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
-import type { LibraryReadModel } from '../ports/inbound/read-models';
+import type { LibraryReadModel, NotebookReadModel } from '../ports/inbound/read-models';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 
 export class LibraryProjector implements EventHandler {
-	constructor(private readModel: LibraryReadModel) {}
+	constructor(
+		private readModel: LibraryReadModel,
+		private notebookReadModel?: NotebookReadModel
+	) {}
 
 	async handle(event: DomainEvent): Promise<void> {
 		logger.debug(`LibraryProjector: Handling event: ${event.type}`);
@@ -40,12 +43,23 @@ export class LibraryProjector implements EventHandler {
 			updatedAt: new Date(payload.createdAt)
 		};
 
-		// Update read model
+		// Update library read model
 		if (
 			this.readModel instanceof
 			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
 		) {
 			this.readModel.updateNotebook(notebook);
+		}
+
+		// Also update notebook read model so it knows about the notebook
+		if (this.notebookReadModel) {
+			if (
+				this.notebookReadModel instanceof
+				(await import('../adapters/inbound/in-memory-notebook-read-model'))
+					.InMemoryNotebookReadModel
+			) {
+				this.notebookReadModel.updateNotebook(notebook);
+			}
 		}
 
 		logger.info(`LibraryProjector: Notebook created: ${payload.notebookId}`);
@@ -76,12 +90,23 @@ export class LibraryProjector implements EventHandler {
 			updatedAt: new Date(payload.updatedAt)
 		};
 
-		// Update read model
+		// Update library read model
 		if (
 			this.readModel instanceof
 			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
 		) {
 			this.readModel.updateNotebook(updatedNotebook);
+		}
+
+		// Also update notebook read model
+		if (this.notebookReadModel) {
+			if (
+				this.notebookReadModel instanceof
+				(await import('../adapters/inbound/in-memory-notebook-read-model'))
+					.InMemoryNotebookReadModel
+			) {
+				this.notebookReadModel.updateNotebook(updatedNotebook);
+			}
 		}
 
 		logger.info(`LibraryProjector: Notebook updated: ${payload.notebookId}`);
@@ -93,12 +118,23 @@ export class LibraryProjector implements EventHandler {
 			deletedAt: string;
 		};
 
-		// Update read model
+		// Update library read model
 		if (
 			this.readModel instanceof
 			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
 		) {
 			this.readModel.removeNotebook(payload.notebookId);
+		}
+
+		// Also update notebook read model
+		if (this.notebookReadModel) {
+			if (
+				this.notebookReadModel instanceof
+				(await import('../adapters/inbound/in-memory-notebook-read-model'))
+					.InMemoryNotebookReadModel
+			) {
+				this.notebookReadModel.removeNotebook(payload.notebookId);
+			}
 		}
 
 		logger.info(`LibraryProjector: Notebook deleted: ${payload.notebookId}`);

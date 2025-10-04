@@ -49,11 +49,11 @@ export class NotebookProjector implements EventHandler {
 			this.readModel instanceof
 			(await import('../adapters/inbound/in-memory-notebook-read-model')).InMemoryNotebookReadModel
 		) {
-			this.readModel.addCell(event.aggregateId, cell);
+			this.readModel.addCellAtPosition(event.aggregateId, cell, payload.position);
 		}
 
 		logger.info(
-			`NotebookProjector: Cell created: ${payload.cellId} in notebook ${event.aggregateId}`
+			`NotebookProjector: Cell created: ${payload.cellId} in notebook ${event.aggregateId} at position ${payload.position}`
 		);
 	}
 

@@ -18,9 +18,17 @@
 	let reconnectDelay = 1000; // Start with 1 second
 	let cellIdMapping: Map<string, string> = new SvelteMap(); // Maps client cell IDs to server cell IDs
 	let lastProcessedEventId: string | null = null; // Track the last processed event ID
+	let isReloading = false; // Track if we're currently reloading to prevent interference
+	// let reloadTimeout: NodeJS.Timeout | null = null; // Debounce reload requests - no longer needed
 
 	// Get the notebookId from the URL parameters
 	$: notebookId = $page.params.notebookId;
+
+	// Protect notebook store from reactive updates during reload
+	$: if (notebookStore && !isReloading) {
+		// This reactive statement ensures the notebook store is only updated when not reloading
+		console.log('📊 Notebook store updated, cells:', notebookStore.notebook?.cells?.length || 0);
+	}
 
 	// Helper function to extract sequence number from event ID
 	function extractSequenceNumber(eventId: string): number | null {
@@ -51,10 +59,55 @@
 	}
 
 	onMount(async () => {
+		console.log('🚀 Notebook page mounted for:', notebookId);
 		if (notebookId) {
 			await loadNotebook(notebookId);
 		}
 	});
+
+	// Add global error handler to catch any unhandled errors
+	if (typeof window !== 'undefined') {
+		window.addEventListener('error', (event) => {
+			console.error('❌ Global error caught:', event.error);
+		});
+
+		window.addEventListener('unhandledrejection', (event) => {
+			console.error('❌ Unhandled promise rejection:', event.reason);
+		});
+
+		// Add mouse movement debugging with debounce
+		let mouseMoveCount = 0;
+		let mouseMoveTimeout: NodeJS.Timeout | null = null;
+		window.addEventListener('mousemove', () => {
+			mouseMoveCount++;
+
+			// Clear existing timeout
+			if (mouseMoveTimeout) {
+				clearTimeout(mouseMoveTimeout);
+			}
+
+			// Debounce mouse movement logging
+			mouseMoveTimeout = setTimeout(() => {
+				if (mouseMoveCount % 10 === 0) {
+					// Log every 10th mouse move to avoid spam
+					console.log('🖱️ Mouse moved, count:', mouseMoveCount, 'isReloading:', isReloading);
+				}
+			}, 50); // 50ms debounce
+		});
+
+		// Add mouse enter/leave debugging for the notebook container
+		document.addEventListener('DOMContentLoaded', () => {
+			const notebookContainer = document.querySelector('[data-testid="notebook-editor"]');
+			if (notebookContainer) {
+				notebookContainer.addEventListener('mouseenter', () => {
+					console.log('🖱️ Mouse entered notebook container');
+				});
+				notebookContainer.addEventListener('mouseleave', () => {
+					console.log('🖱️ Mouse left notebook container');
+				});
+			}
+		});
+	}
 
 	async function loadNotebook(id: string) {
 		try {
@@ -133,6 +186,7 @@
 		websocket.onmessage = (event) => {
 			try {
 				const data = JSON.parse(event.data);
+				console.log('🔌 WebSocket message received:', data);
 				handleWebSocketMessage(data);
 			} catch (err) {
 				console.error('Error parsing WebSocket message:', err);
@@ -156,7 +210,7 @@
 			return;
 		}
 
-		const message = data as { type: string; data?: unknown };
+		const message = data as { type: string; data?: unknown; payload?: unknown; eventId?: string };
 
 		switch (message.type) {
 			case 'connected':
@@ -169,6 +223,14 @@
 			case 'server_ready':
 				console.log('Server ready for notebook:', message.data);
 				break;
+			case 'cell.created':
+			case 'cell.updated':
+			case 'cell.deleted':
+			case 'cell.moved':
+				// Handle cell events
+				console.log('📨 Received WebSocket cell event:', message.type, message.payload);
+				handleCellEvent(message);
+				break;
 			case 'notebook.updated':
 			case 'notebook.initialized':
 				// Use existing event handling logic
@@ -179,6 +241,141 @@
 				console.log('Unknown WebSocket message type:', message.type);
 		}
 	}
+
+	function handleCellEvent(message: { type: string; payload?: unknown; eventId?: string }) {
+		console.log('🎯 Handling cell event:', message.type, message.payload);
+
+		if (!notebookStore || !notebookStore.notebook) {
+			console.error('❌ No notebookStore or notebook instance available for cell event');
+			return;
+		}
+
+		const payload = message.payload as Record<string, unknown>;
+
+		switch (message.type) {
+			case 'cell.created': {
+				const cellId = payload.cellId as string;
+				const kind = payload.kind as CellKind;
+				const value = payload.value as string;
+				const position = payload.position as number;
+				// const createdAt = payload.createdAt as string; // Not used in current implementation
+
+				console.log(`➕ Adding cell ${cellId} at position ${position}`);
+
+				// Use the store's addCell method to trigger reactivity
+				notebookStore
+					.addCell({
+						kind,
+						value
+					})
+					.then(() => {
+						if (!notebookStore) {
+							console.error('❌ No notebookStore available for cell mapping');
+							return;
+						}
+
+						// Get the last added cell (which should be the new one)
+						const newCell = notebookStore.notebook.cells[notebookStore.notebook.cells.length - 1];
+
+						// Update the cell ID mapping: client ID -> server ID
+						// The newCell.id is the client-generated ID, cellId is the server ID
+						cellIdMapping.set(newCell.id, cellId);
+						console.log(`🔗 Mapped client ID ${newCell.id} to server ID ${cellId}`);
+
+						// Move the cell to the correct position if needed
+						if (position !== notebookStore.notebook.cells.length - 1) {
+							notebookStore.notebook.moveCell(
+								notebookStore.notebook.cells[notebookStore.notebook.cells.length - 1].id,
+								position
+							);
+							// Trigger reactivity after moving
+							notebookStore.set(notebookStore.notebook);
+						}
+					});
+				break;
+			}
+			case 'cell.updated': {
+				const serverCellId = payload.cellId as string;
+				const changes = payload.changes as { kind?: CellKind; value?: string };
+
+				console.log(`✏️ Updating cell ${serverCellId}:`, changes);
+
+				// Find the client ID that maps to this server ID
+				let clientCellId = serverCellId;
+				for (const [clientId, serverId] of cellIdMapping.entries()) {
+					if (serverId === serverCellId) {
+						clientCellId = clientId;
+						console.log(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
+						break;
+					}
+				}
+
+				// Use the store's updateCell method to trigger reactivity
+				notebookStore.updateCell(clientCellId, changes);
+				break;
+			}
+			case 'cell.deleted': {
+				const serverCellId = payload.cellId as string;
+
+				console.log(`🗑️ Deleting cell ${serverCellId}`);
+				console.log(
+					`🔍 Current cells before deletion:`,
+					notebookStore.notebook.cells.map((c) => c.id)
+				);
+
+				// Find the client ID that maps to this server ID
+				let clientCellId = serverCellId;
+				for (const [clientId, serverId] of cellIdMapping.entries()) {
+					if (serverId === serverCellId) {
+						clientCellId = clientId;
+						console.log(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
+						break;
+					}
+				}
+
+				// Use the store's removeCell method to trigger reactivity
+				const result = notebookStore.removeCell(clientCellId);
+				console.log(`🔍 Remove cell result:`, result);
+				console.log(
+					`🔍 Current cells after deletion:`,
+					notebookStore.notebook.cells.map((c) => c.id)
+				);
+
+				// Clean up the mapping
+				cellIdMapping.delete(clientCellId);
+				console.log(`🧹 Cleaned up mapping for client ID ${clientCellId}`);
+				break;
+			}
+			case 'cell.moved': {
+				const serverCellId = payload.cellId as string;
+				const position = payload.position as number;
+
+				console.log(`↕️ Moving cell ${serverCellId} to position ${position}`);
+
+				// Find the client ID that maps to this server ID
+				let clientCellId = serverCellId;
+				for (const [clientId, serverId] of cellIdMapping.entries()) {
+					if (serverId === serverCellId) {
+						clientCellId = clientId;
+						console.log(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
+						break;
+					}
+				}
+
+				// Move cell and trigger reactivity
+				notebookStore.notebook.moveCell(clientCellId, position);
+				notebookStore.set(notebookStore.notebook);
+				break;
+			}
+		}
+
+		console.log(
+			'✅ Cell event handled directly, current cells:',
+			notebookStore.notebook.cells.length
+		);
+	}
+
+	// reloadNotebook and performReload functions removed - we now use direct cell manipulation instead of full reloads
 
 	function attemptReconnect(notebookId: string) {
 		if (reconnectAttempts < maxReconnectAttempts) {

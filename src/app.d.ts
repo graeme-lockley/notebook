@@ -6,11 +6,11 @@ declare global {
 		interface Locals {
 			libraryService: import('$lib/server/application/services/library-application-service').LibraryApplicationService;
 			notebookService: import('$lib/server/application/services/notebook-application-service').NotebookApplicationService;
-			eventBroadcaster: import('$lib/server/websocket/standalone-broadcaster').StandaloneWebSocketBroadcaster;
 			eventStore: import('$lib/server/application/ports/outbound/event-store').EventStore;
 			eventBus: import('$lib/server/application/ports/outbound/event-bus').EventBus;
 			notebookReadModel: import('$lib/server/application/ports/inbound/read-models').NotebookReadModel;
 			libraryReadModel: import('$lib/server/application/ports/inbound/read-models').LibraryReadModel;
+			webSocketService: import('$lib/server/application/ports/outbound/websocket-service').WebSocketService;
 		}
 		// interface PageData {}
 		// interface PageState {}
