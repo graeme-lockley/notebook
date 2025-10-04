@@ -2,7 +2,11 @@ import { json } from '@sveltejs/kit';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
-import type { NotebookApplicationService } from '$lib/server/application/services/notebook-application-service';
+import { UpdateCellCommandHandler } from '$lib/server/application/command-handlers/update-cell-command-handler';
+import { DeleteCellCommandHandler } from '$lib/server/application/command-handlers/delete-cell-command-handler';
+import { MoveCellCommandHandler } from '$lib/server/application/command-handlers/move-cell-command-handler';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
+import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 export async function PATCH({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -17,7 +21,8 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 
 		// Access the injected services
 		const libraryService: LibraryApplicationService = locals.libraryService;
-		const notebookService: NotebookApplicationService = locals.notebookService;
+		const eventStore: EventStore = locals.eventStore;
+		const eventBroadcaster: StandaloneWebSocketBroadcaster = locals.eventBroadcaster;
 
 		// Check if notebook exists
 		const notebook = libraryService.getNotebook(notebookId);
@@ -27,14 +32,21 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 
 		// If position is provided, this is a move operation
 		if (position !== undefined) {
-			await notebookService.moveCell(notebookId, cellId, position);
+			const commandHandler = new MoveCellCommandHandler(eventStore, eventBroadcaster);
+			const result = await commandHandler.handle({
+				notebookId,
+				cellId,
+				position
+			});
+
 			logger.info(`Moved cell ${cellId} to position ${position} in notebook ${notebookId}`);
 
 			return json({
 				message: 'Cell moved successfully',
 				notebookId,
 				cellId,
-				position
+				position,
+				eventId: result.eventId
 			});
 		}
 
@@ -43,7 +55,12 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			return json({ error: 'Either kind, value, or position must be provided' }, { status: 400 });
 		}
 
-		await notebookService.updateCell(notebookId, cellId, { kind, value });
+		const commandHandler = new UpdateCellCommandHandler(eventStore, eventBroadcaster);
+		const result = await commandHandler.handle({
+			notebookId,
+			cellId,
+			updates: { kind, value }
+		});
 
 		logger.info(`Updated cell ${cellId} in notebook ${notebookId}`);
 
@@ -51,7 +68,8 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			message: 'Cell updated successfully',
 			notebookId,
 			cellId,
-			updates: { kind, value }
+			updates: { kind, value },
+			eventId: result.eventId
 		});
 	} catch (error) {
 		logger.error('Error updating/moving cell:', error);
@@ -69,7 +87,8 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 
 		// Access the injected services
 		const libraryService: LibraryApplicationService = locals.libraryService;
-		const notebookService: NotebookApplicationService = locals.notebookService;
+		const eventStore: EventStore = locals.eventStore;
+		const eventBroadcaster: StandaloneWebSocketBroadcaster = locals.eventBroadcaster;
 
 		// Check if notebook exists
 		const notebook = libraryService.getNotebook(notebookId);
@@ -77,12 +96,17 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
-		await notebookService.deleteCell(notebookId, cellId);
+		const commandHandler = new DeleteCellCommandHandler(eventStore, eventBroadcaster);
+		const result = await commandHandler.handle({
+			notebookId,
+			cellId
+		});
 
 		return json({
 			message: 'Cell deleted successfully',
 			notebookId,
-			cellId
+			cellId,
+			eventId: result.eventId
 		});
 	} catch (error) {
 		logger.error('Error deleting cell:', error);

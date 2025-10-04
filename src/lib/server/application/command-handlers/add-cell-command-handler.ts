@@ -1,0 +1,84 @@
+import type { EventStore } from '../ports/outbound/event-store';
+import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
+import { NotebookApplicationService } from '../services/notebook-application-service';
+import type { AddCellCommand, AddCellCommandResult } from '../commands/add-cell-command';
+import { logger } from '$lib/server/infrastructure/logging/logger.service';
+
+export class AddCellCommandHandler {
+	constructor(
+		private eventStore: EventStore,
+		private eventBroadcaster?: StandaloneWebSocketBroadcaster
+	) {}
+
+	async handle(command: AddCellCommand): Promise<AddCellCommandResult> {
+		try {
+			// Validate command
+			this.validateCommand(command);
+
+			// Create notebook application service
+			const notebookService = new NotebookApplicationService(
+				this.eventStore,
+				this.eventBroadcaster
+			);
+
+			// Get or create notebook service instance
+			const notebookServiceInstance = await notebookService.getNotebookService(command.notebookId);
+
+			// Create domain event
+			const event = notebookServiceInstance.createCellEvent(
+				command.kind,
+				command.value,
+				command.position
+			);
+
+			// Publish event to event store
+			const eventId = await this.eventStore.publishEvent(
+				command.notebookId,
+				event.type,
+				event.payload
+			);
+
+			// Process event to update domain state
+			notebookServiceInstance.eventHandler({ ...event, id: eventId });
+
+			// Broadcast via WebSocket
+			if (this.eventBroadcaster) {
+				await this.eventBroadcaster.broadcastCustomEvent(command.notebookId, 'notebook.updated', {
+					cells: notebookServiceInstance.cells,
+					event: {
+						id: eventId,
+						type: event.type,
+						payload: event.payload
+					}
+				});
+			}
+
+			logger.info(
+				`AddCellCommandHandler: Added ${command.kind} cell to notebook ${command.notebookId}`
+			);
+
+			return {
+				cellId: event.payload.cellId,
+				eventId
+			};
+		} catch (error) {
+			logger.error('AddCellCommandHandler: Error adding cell:', error);
+			throw error;
+		}
+	}
+
+	private validateCommand(command: AddCellCommand): void {
+		if (!command.notebookId) {
+			throw new Error('Notebook ID is required');
+		}
+		if (!command.kind) {
+			throw new Error('Cell kind is required');
+		}
+		if (command.value === undefined || command.value === null) {
+			throw new Error('Cell value is required');
+		}
+		if (command.position < 0) {
+			throw new Error('Position must be non-negative');
+		}
+	}
+}

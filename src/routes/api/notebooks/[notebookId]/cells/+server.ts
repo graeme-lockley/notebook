@@ -1,7 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { NotebookApplicationService } from '$lib/server/application/services/notebook-application-service';
+import type { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
+import { AddCellCommandHandler } from '$lib/server/application/command-handlers/add-cell-command-handler';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
+import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 export async function POST({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -14,11 +17,27 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 		const body = await request.json();
 		const { kind, value, position } = body;
 
-		// Access the injected notebookService
-		const notebookService: NotebookApplicationService = locals.notebookService;
+		// Access the injected services
+		const libraryService: LibraryApplicationService = locals.libraryService;
+		const eventStore: EventStore = locals.eventStore;
+		const eventBroadcaster: StandaloneWebSocketBroadcaster = locals.eventBroadcaster;
 
-		// Add the cell via the application service (this will publish events and broadcast)
-		await notebookService.addCell(notebookId, kind, value, position);
+		// Check if notebook exists
+		const notebook = libraryService.getNotebook(notebookId);
+		if (!notebook) {
+			return json({ error: 'Notebook not found' }, { status: 404 });
+		}
+
+		// Create command handler
+		const commandHandler = new AddCellCommandHandler(eventStore, eventBroadcaster);
+
+		// Execute command
+		const result = await commandHandler.handle({
+			notebookId,
+			kind,
+			value,
+			position
+		});
 
 		logger.info(`Added ${kind} cell to notebook ${notebookId} at position ${position}`);
 
@@ -26,6 +45,8 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 			{
 				message: 'Cell added successfully',
 				notebookId,
+				cellId: result.cellId,
+				eventId: result.eventId,
 				kind,
 				position
 			},
