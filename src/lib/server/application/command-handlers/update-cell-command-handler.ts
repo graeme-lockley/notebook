@@ -1,5 +1,6 @@
 import type { EventStore } from '../ports/outbound/event-store';
 import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
+import type { EventBus } from '../ports/outbound/event-bus';
 import { NotebookApplicationService } from '../services/notebook-application-service';
 import type { UpdateCellCommand, UpdateCellCommandResult } from '../commands/update-cell-command';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
@@ -7,7 +8,8 @@ import { logger } from '$lib/server/infrastructure/logging/logger.service';
 export class UpdateCellCommandHandler {
 	constructor(
 		private eventStore: EventStore,
-		private eventBroadcaster?: StandaloneWebSocketBroadcaster
+		private eventBroadcaster?: StandaloneWebSocketBroadcaster,
+		private eventBus?: EventBus
 	) {}
 
 	async handle(command: UpdateCellCommand): Promise<UpdateCellCommandResult> {
@@ -36,6 +38,17 @@ export class UpdateCellCommandHandler {
 
 			// Process event to update domain state
 			notebookServiceInstance.eventHandler({ ...event, id: eventId });
+
+			// Publish to event bus for projectors
+			if (this.eventBus) {
+				await this.eventBus.publish({
+					id: eventId,
+					type: event.type,
+					payload: event.payload,
+					timestamp: new Date(),
+					aggregateId: command.notebookId
+				});
+			}
 
 			// Broadcast via WebSocket
 			if (this.eventBroadcaster) {

@@ -5,6 +5,7 @@ import type { LibraryApplicationService } from '$lib/server/application/services
 import { AddCellCommandHandler } from '$lib/server/application/command-handlers/add-cell-command-handler';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
+import type { EventBus } from '$lib/server/application/ports/outbound/event-bus';
 
 export async function POST({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -21,6 +22,7 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 		const libraryService: LibraryApplicationService = locals.libraryService;
 		const eventStore: EventStore = locals.eventStore;
 		const eventBroadcaster: StandaloneWebSocketBroadcaster = locals.eventBroadcaster;
+		const eventBus: EventBus = locals.eventBus;
 
 		// Check if notebook exists
 		const notebook = libraryService.getNotebook(notebookId);
@@ -29,7 +31,7 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 		}
 
 		// Create command handler
-		const commandHandler = new AddCellCommandHandler(eventStore, eventBroadcaster);
+		const commandHandler = new AddCellCommandHandler(eventStore, eventBroadcaster, eventBus);
 
 		// Execute command
 		const result = await commandHandler.handle({
