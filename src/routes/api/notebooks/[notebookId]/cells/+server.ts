@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { LibraryService } from '$lib/server/application/ports/inbound/library-service';
+import type { NotebookApplicationService } from '$lib/server/application/services/notebook-application-service';
 
 export async function POST({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -14,17 +14,11 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 		const body = await request.json();
 		const { kind, value, position } = body;
 
-		// Access the injected libraryService
-		const libraryService: LibraryService = locals.libraryService;
+		// Access the injected notebookService
+		const notebookService: NotebookApplicationService = locals.notebookService;
 
-		// Get the notebook service
-		const notebookService = await libraryService.getNotebookService(notebookId);
-		if (!notebookService) {
-			return json({ error: 'Notebook not found' }, { status: 404 });
-		}
-
-		// Add the cell via the server (this will publish events)
-		await notebookService.addCell(kind, value, position);
+		// Add the cell via the application service (this will publish events and broadcast)
+		await notebookService.addCell(notebookId, kind, value, position);
 
 		logger.info(`Added ${kind} cell to notebook ${notebookId} at position ${position}`);
 

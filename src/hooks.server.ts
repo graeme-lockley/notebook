@@ -1,15 +1,17 @@
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import { eventStoreClient } from '$lib/server/adapters/outbound/event-store/remote/config';
 import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
-import { createLibraryService } from '$lib/server/domain/domain-services/library.service.impl';
+import { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
+import { NotebookApplicationService } from '$lib/server/application/services/notebook-application-service';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 import { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 let isInitialized = false;
 let eventBroadcaster: StandaloneWebSocketBroadcaster;
-let libraryService: ReturnType<typeof createLibraryService>;
-
-const eventStore = eventStoreClient();
+let libraryService: LibraryApplicationService;
+let notebookService: NotebookApplicationService;
+// Initialize event store
+const eventStore: EventStore = eventStoreClient();
 
 export async function handle({ event, resolve }) {
 	// Initialize services on first request if not already done
@@ -19,7 +21,9 @@ export async function handle({ event, resolve }) {
 
 	// Inject services into event.locals for API routes to access
 	event.locals.libraryService = libraryService;
+	event.locals.notebookService = notebookService;
 	event.locals.eventBroadcaster = eventBroadcaster;
+	event.locals.eventStore = eventStore;
 
 	return resolve(event);
 }
@@ -32,13 +36,15 @@ async function initializeServices() {
 		eventBroadcaster = new StandaloneWebSocketBroadcaster();
 		logger.info('Standalone WebSocket broadcaster initialized');
 
-		// Create library service with event broadcaster
-		libraryService = createLibraryService(eventStore, eventBroadcaster);
+		// Create application services that bridge domain and infrastructure
+		libraryService = new LibraryApplicationService(eventStore, eventBroadcaster);
+		notebookService = new NotebookApplicationService(eventStore, eventBroadcaster);
+
+		// Initialize the library service to hydrate with existing events
+		await libraryService.initialize();
 
 		// Setup library topic
 		await setupLibraryTopic();
-		await libraryService.hydrateLibrary();
-		await libraryService.registerLibraryCallback();
 
 		isInitialized = true;
 
@@ -59,8 +65,6 @@ async function isValidTopic(eventStore: EventStore, topicName: string): Promise<
 }
 
 async function setupLibraryTopic() {
-	const eventStore = eventStoreClient();
-
 	logger.info('Checking if library topic exists...');
 	if (await isValidTopic(eventStore, 'library')) {
 		logger.info('Library topic already exists');

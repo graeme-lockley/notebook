@@ -5,6 +5,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
+		"dev:full": "concurrently \"npm run dev\" \"npm run websocket\"",
+		"websocket": "node websocket-server.cjs",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "husky",

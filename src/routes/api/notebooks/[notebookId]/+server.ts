@@ -23,13 +23,10 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 		}
 
 		// Get the notebook service to access cells
-		const notebookService = await libraryService.getNotebookService(notebookId);
-		if (!notebookService) {
-			logger.error(`Notebook service not found: ${notebookId}`);
-			return json({ error: 'Notebook service not found' }, { status: 404 });
-		}
+		const { notebookService } = locals;
+		const notebookServiceInstance = await notebookService.getNotebookService(notebookId);
 
-		logger.info(`Notebook found: ${notebookId} with ${notebookService.cells.length} cells`);
+		logger.info(`Notebook found: ${notebookId} with ${notebookServiceInstance.cells.length} cells`);
 
 		// Return the complete notebook data including cells
 		return json({
@@ -38,7 +35,7 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 			description: notebookMetadata.description,
 			createdAt: notebookMetadata.createdAt,
 			updatedAt: notebookMetadata.updatedAt,
-			cells: notebookService.cells
+			cells: notebookServiceInstance.cells
 		});
 	} catch (error) {
 		logger.error('Error getting notebook:', error);

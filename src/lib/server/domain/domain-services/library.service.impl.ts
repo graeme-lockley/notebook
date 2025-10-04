@@ -1,4 +1,3 @@
-import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type {
 	LibraryEvent,
@@ -6,32 +5,23 @@ import type {
 	NotebookDeletedEvent,
 	NotebookUpdatedEvent
 } from '$lib/server/domain/events/notebook.events';
-import type { NotebookService } from '$lib/server/application/ports/inbound/notebook-service';
-import type { LibraryService } from '$lib/server/application/ports/inbound/library-service';
 import { Library } from './library';
 import type { Notebook } from '$lib/server/domain/value-objects';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
+import type { LibraryDomainService } from './library.domain-service';
 
-export function createLibraryService(
-	eventStore: EventStore,
-	eventBroadcaster?: StandaloneWebSocketBroadcaster
-): LibraryService {
-	return new LibraryServiceImpl(eventStore, eventBroadcaster);
+export function createLibraryService(): LibraryServiceImpl {
+	return new LibraryServiceImpl();
 }
 
-export class LibraryServiceImpl implements LibraryService {
+export class LibraryServiceImpl implements LibraryDomainService {
 	private lastEventId: string | null = null;
-	private _eventStore: EventStore;
-	private _eventBroadcaster?: StandaloneWebSocketBroadcaster;
 	private library: Library = new Library();
-	private notebookServices: Map<string, NotebookService> = new Map<string, NotebookService>();
 
-	constructor(eventStore: EventStore, eventBroadcaster?: StandaloneWebSocketBroadcaster) {
-		this._eventStore = eventStore;
-		this._eventBroadcaster = eventBroadcaster;
+	constructor() {
+		// Pure domain service with no infrastructure dependencies
 	}
 
-	async createNotebook(title: string, description?: string): Promise<[string, string]> {
+	createNotebookEvent(title: string, description?: string): NotebookCreatedEvent {
 		const notebookId = this.generateNotebookId();
 
 		// Validate title
@@ -39,7 +29,7 @@ export class LibraryServiceImpl implements LibraryService {
 			throw new Error('Title is required');
 		}
 
-		// Publish event
+		// Create event
 		const event: NotebookCreatedEvent = {
 			type: 'notebook.created',
 			payload: {
@@ -50,10 +40,9 @@ export class LibraryServiceImpl implements LibraryService {
 			}
 		};
 
-		const eventId = await this.publishEvent(event);
-		logger.info(`Created notebook: ${notebookId}`);
+		logger.info(`LibraryService: createNotebookEvent: Created notebook event for: ${notebookId}`);
 
-		return [notebookId, eventId];
+		return event;
 	}
 
 	getNotebook(notebookId: string): Notebook | null {
@@ -72,39 +61,10 @@ export class LibraryServiceImpl implements LibraryService {
 		};
 	}
 
-	async getNotebookService(notebookId: string): Promise<NotebookService | undefined> {
-		// Check if we already have a service for this notebook
-		if (this.notebookServices.has(notebookId)) {
-			return this.notebookServices.get(notebookId);
-		}
-
-		// Check if the notebook exists in our library
-		const notebook = this.library.get(notebookId);
-		if (!notebook) {
-			logger.info(`LibraryService: getNotebookService: ${notebookId}: Not found`);
-			return undefined;
-		}
-
-		// Create a new service for this notebook
-		const { NotebookServiceImpl } = await import('./notebook.service.impl.js');
-		const service = new NotebookServiceImpl(notebookId, this._eventStore, this._eventBroadcaster);
-
-		// Initialize the service
-		await service.initializeNotebook();
-		await service.hydrateNotebook();
-		await service.registerNotebookCallback();
-
-		// Cache the service
-		this.notebookServices.set(notebookId, service);
-
-		logger.info(`LibraryService: getNotebookService: ${notebookId}: Created and cached`);
-		return service;
-	}
-
-	async updateNotebook(
+	createUpdateNotebookEvent(
 		notebookId: string,
 		updates: Partial<{ title: string; description: string }>
-	): Promise<string> {
+	): NotebookUpdatedEvent {
 		this.getNotebookId(notebookId);
 
 		// Trim and validate title if provided
@@ -117,7 +77,7 @@ export class LibraryServiceImpl implements LibraryService {
 			updates.title = trimmedTitle;
 		}
 
-		// Publish event
+		// Create event
 		const event: NotebookUpdatedEvent = {
 			type: 'notebook.updated',
 			payload: {
@@ -127,16 +87,17 @@ export class LibraryServiceImpl implements LibraryService {
 			}
 		};
 
-		const eventId = await this.publishEvent(event);
-		logger.info(`Updated notebook: ${notebookId}`);
+		logger.info(
+			`LibraryService: createUpdateNotebookEvent: Created update event for notebook: ${notebookId}`
+		);
 
-		return eventId;
+		return event;
 	}
 
-	async deleteNotebook(notebookId: string): Promise<string> {
+	createDeleteNotebookEvent(notebookId: string): NotebookDeletedEvent {
 		this.getNotebookId(notebookId);
 
-		// Publish event
+		// Create event
 		const event: NotebookDeletedEvent = {
 			type: 'notebook.deleted',
 			payload: {
@@ -145,21 +106,11 @@ export class LibraryServiceImpl implements LibraryService {
 			}
 		};
 
-		const eventId = await this.publishEvent(event);
-		logger.info(`Deleted notebook: ${notebookId}`);
+		logger.info(
+			`LibraryService: createDeleteNotebookEvent: Created delete event for notebook: ${notebookId}`
+		);
 
-		return eventId;
-	}
-
-	async publishEvent(event: LibraryEvent): Promise<string> {
-		// Publish to the main notebooks topic
-		const eventId = await this._eventStore.publishEvent('library', event.type, event.payload);
-		logger.info(`Published event: ${event.type} with ID: ${eventId}`);
-
-		// Update our last processed event ID
-		this.lastEventId = eventId;
-
-		return eventId;
+		return event;
 	}
 
 	eventHandler(event: LibraryEvent & { id: string }): void {
@@ -217,34 +168,6 @@ export class LibraryServiceImpl implements LibraryService {
 
 		// Update the last processed event ID
 		this.lastEventId = event.id;
-	}
-
-	async hydrateLibrary(): Promise<void> {
-		const events = await this._eventStore.getEvents('library');
-		logger.info(`LibraryService: hydrateLibrary: ${events.length} events`);
-		events.forEach((event) => {
-			this.eventHandler(event as unknown as LibraryEvent & { id: string });
-		});
-	}
-
-	async registerLibraryCallback(): Promise<void> {
-		logger.info('LibraryService: registerLibraryCallback');
-
-		const callbackUrl = 'http://localhost:5173/api/events/webhook';
-
-		// Get existing consumers to avoid duplicates
-		const existingConsumers = await this._eventStore.getConsumers();
-		const hasExistingConsumer = existingConsumers.some(
-			(consumer) => consumer.callback === callbackUrl
-		);
-
-		if (hasExistingConsumer) {
-			logger.info('LibraryService: registerLibraryCallback: Consumer already exists');
-			return;
-		}
-
-		// Register the new consumer
-		await this._eventStore.registerConsumer(callbackUrl, { library: this.lastEventId });
 	}
 
 	private getNotebookId(notebookId: string): Notebook {

@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { LibraryService } from '$lib/server/application/ports/inbound/library-service';
+import type { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
+import type { NotebookApplicationService } from '$lib/server/application/services/notebook-application-service';
 
 export async function PATCH({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -14,18 +15,19 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 		const body = await request.json();
 		const { kind, value, position } = body;
 
-		// Access the injected libraryService
-		const libraryService: LibraryService = locals.libraryService;
+		// Access the injected services
+		const libraryService: LibraryApplicationService = locals.libraryService;
+		const notebookService: NotebookApplicationService = locals.notebookService;
 
-		// Get the notebook service
-		const notebookService = await libraryService.getNotebookService(notebookId);
-		if (notebookService === undefined) {
+		// Check if notebook exists
+		const notebook = libraryService.getNotebook(notebookId);
+		if (!notebook) {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
 		// If position is provided, this is a move operation
 		if (position !== undefined) {
-			await notebookService.moveCell(cellId, position);
+			await notebookService.moveCell(notebookId, cellId, position);
 			logger.info(`Moved cell ${cellId} to position ${position} in notebook ${notebookId}`);
 
 			return json({
@@ -41,7 +43,7 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			return json({ error: 'Either kind, value, or position must be provided' }, { status: 400 });
 		}
 
-		await notebookService.updateCell(cellId, { kind, value });
+		await notebookService.updateCell(notebookId, cellId, { kind, value });
 
 		logger.info(`Updated cell ${cellId} in notebook ${notebookId}`);
 
@@ -65,16 +67,17 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 			return json({ error: 'Notebook ID and Cell ID are required' }, { status: 400 });
 		}
 
-		// Access the injected libraryService
-		const libraryService: LibraryService = locals.libraryService;
+		// Access the injected services
+		const libraryService: LibraryApplicationService = locals.libraryService;
+		const notebookService: NotebookApplicationService = locals.notebookService;
 
-		// Get the notebook service
-		const notebookService = await libraryService.getNotebookService(notebookId);
-		if (!notebookService) {
+		// Check if notebook exists
+		const notebook = libraryService.getNotebook(notebookId);
+		if (!notebook) {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
-		await notebookService.deleteCell(cellId);
+		await notebookService.deleteCell(notebookId, cellId);
 
 		return json({
 			message: 'Cell deleted successfully',

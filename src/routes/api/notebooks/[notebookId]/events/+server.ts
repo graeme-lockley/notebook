@@ -1,6 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import type { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
+import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 
 export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -10,24 +12,37 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 			return json({ error: 'Notebook ID is required' }, { status: 400 });
 		}
 
-		// Access the injected libraryService
-		const { libraryService } = locals;
+		// Access the injected services
+		const libraryService: LibraryApplicationService = locals.libraryService;
+		const eventStore: EventStore = locals.eventStore;
 
-		// Get the notebook service
-		const notebookService = await libraryService.getNotebookService(notebookId);
-		if (!notebookService) {
+		// Check if notebook exists
+		const notebook = libraryService.getNotebook(notebookId);
+		if (!notebook) {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
 		// Create a readable stream for Server-Sent Events
 		const stream = new ReadableStream({
-			start(controller) {
+			async start(controller) {
+				// Send initial data - get current cells from event store
+				const getInitialCells = async () => {
+					try {
+						await eventStore.getEvents(notebookId);
+						// For now, return empty array - in Phase 3 we'll implement proper projections
+						return [];
+					} catch {
+						return [];
+					}
+				};
+
 				// Send initial data
+				const initialCells = await getInitialCells();
 				const initialData = {
 					type: 'notebook.initialized',
 					data: {
 						notebookId,
-						cells: notebookService.cells
+						cells: initialCells
 					}
 				};
 
@@ -53,7 +68,7 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 					try {
 						// Check if topic exists
 						try {
-							await notebookService.eventStore.getTopic(topicName);
+							await eventStore.getTopic(topicName);
 							// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						} catch (error: any) {
 							if (error.status === 404) {
@@ -69,24 +84,23 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 							isStreaming = false;
 						}, 60000); // 1 minute timeout
 
-						for await (const event of notebookService.eventStore.streamEvents(topicName, {
-							sinceEventId: notebookService.lastEventId ?? undefined,
+						for await (const event of eventStore.streamEvents(topicName, {
+							sinceEventId: undefined, // TODO: Implement proper event tracking in Phase 3
 							pollInterval: 2000, // Increased poll interval for stability
 							signal: AbortSignal.timeout(60000) // 1 minute timeout
 						})) {
 							if (!isStreaming) break;
 
 							try {
-								// Process the event through the notebook service
-								// eslint-disable-next-line @typescript-eslint/no-explicit-any
-								notebookService.eventHandler(event as any);
+								// TODO: In Phase 3, we'll implement proper event processing
+								// For now, just forward the event to the client
 
 								// Send updated data to client
 								const eventData = {
 									type: 'notebook.updated',
 									data: {
 										notebookId,
-										cells: notebookService.cells,
+										cells: [], // TODO: Implement proper cell projection in Phase 3
 										event: {
 											id: event.id,
 											type: event.type,

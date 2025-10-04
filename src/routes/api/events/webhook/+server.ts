@@ -20,10 +20,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const { libraryService } = locals;
 		logger.info(`LibraryService available: ${!!libraryService}`);
 
-		// Process each event to update local projections
-		for (const event of events) {
-			libraryService.eventHandler(event);
-		}
+		// TODO: Implement event processing in Phase 3 (Event Projectors)
+		// For now, just log the events
+		logger.info(`Received ${events.length} events for processing`);
 
 		logger.info(`Processed ${events.length} events for consumer ${consumerId}`);
 

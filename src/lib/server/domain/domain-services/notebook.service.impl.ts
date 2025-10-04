@@ -1,5 +1,3 @@
-import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import { NOTEBOOK_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
 import { logger } from '$lib/server/infrastructure/logging/logger.service';
 import type {
 	CellCreatedEvent,
@@ -8,25 +6,16 @@ import type {
 	CellUpdatedEvent,
 	NotebookEvent
 } from '$lib/server/domain/events/notebook.events';
-import type { NotebookService } from '$lib/server/application/ports/inbound/notebook-service';
 import type { Cell, CellKind } from '$lib/server/domain/value-objects';
-import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
+import type { NotebookDomainService } from './notebook.domain-service';
 
-export class NotebookServiceImpl implements NotebookService {
+export class NotebookServiceImpl implements NotebookDomainService {
 	id: string;
-	private _eventStore: EventStore;
 	private _lastEventId: string | null = null;
 	private _cells: Cell[] = [];
-	private _eventBroadcaster?: StandaloneWebSocketBroadcaster;
 
-	constructor(
-		id: string,
-		eventStore: EventStore,
-		eventBroadcaster?: StandaloneWebSocketBroadcaster
-	) {
+	constructor(id: string) {
 		this.id = id;
-		this._eventStore = eventStore;
-		this._eventBroadcaster = eventBroadcaster;
 	}
 
 	topicName(): string {
@@ -37,284 +26,144 @@ export class NotebookServiceImpl implements NotebookService {
 		return this._cells;
 	}
 
-	get eventStore(): EventStore {
-		return this._eventStore;
-	}
-
 	get lastEventId(): string | null {
 		return this._lastEventId;
 	}
 
-	async initializeNotebook(): Promise<void> {
-		// Determine if the topic with the notebook id exists, if not, create it, and
-		// add a default Markdown cell with a welcome message of sorts.
-
-		try {
-			// If no events exist, this is a new notebook that needs initialization
-			if (await isValidTopic(this._eventStore, this.topicName())) {
-				logger.info(
-					`LibraryService: initializeNotebook: Notebook topic already exists: ${this.topicName()}`
-				);
-			} else {
-				logger.info(
-					`LibraryService: initializeNotebook: Creating new notebook topic: ${this.topicName()}`
-				);
-
-				await this._eventStore.createTopic(this.topicName(), NOTEBOOK_EVENT_SCHEMAS);
-
-				// Add a welcome markdown cell using the addCell method
-				await this.addCell(
-					'md',
-					`# Welcome to Your Notebook\n\nThis is your new notebook. Start adding cells to create your content!\n\nYou can:\n- Add JavaScript cells with \`+\`\n- Add Markdown cells for documentation\n- Add HTML cells for rich content\n\nHappy coding! 🚀`,
-					0
-				);
-
-				logger.info(
-					`LibraryService: initializeNotebook: Created welcome cell for notebook: ${this.id}`
-				);
-			}
-
-			await this.hydrateNotebook();
-		} catch (error) {
-			logger.error(
-				`LibraryService: initializeNotebook: Failed to initialize notebook ${this.id}:`,
-				error
-			);
-			throw error;
-		}
+	createWelcomeCellEvent(): CellCreatedEvent {
+		return this.createCellEvent(
+			'md',
+			`# Welcome to Your Notebook\n\nThis is your new notebook. Start adding cells to create your content!\n\nYou can:\n- Add JavaScript cells with \`+\`\n- Add Markdown cells for documentation\n- Add HTML cells for rich content\n\nHappy coding! 🚀`,
+			0
+		);
 	}
 
-	async addCell(kind: CellKind, value: string, position: number): Promise<void> {
-		try {
-			// Validate required fields
-			if (!kind || !value || position === undefined) {
-				throw new Error('kind, value, and position are required');
-			}
+	createCellEvent(kind: CellKind, value: string, position: number): CellCreatedEvent {
+		// Validate required fields
+		if (!kind || !value || position === undefined) {
+			throw new Error('kind, value, and position are required');
+		}
 
-			// Validate cell kind
-			if (!['js', 'md', 'html'].includes(kind)) {
-				throw new Error('Invalid cell kind. Must be js, md, or html');
-			}
+		// Validate cell kind
+		if (!['js', 'md', 'html'].includes(kind)) {
+			throw new Error('Invalid cell kind. Must be js, md, or html');
+		}
 
-			if (position < 0 || position > this.cells.length) {
-				throw new Error(`Invalid position: ${position}`);
-			}
+		if (position < 0 || position > this.cells.length) {
+			throw new Error(`Invalid position: ${position}`);
+		}
 
-			// Generate a unique cell ID
-			const cellId = `cell-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+		// Generate a unique cell ID
+		const cellId = `cell-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-			// Create the cell creation event
-			const cellEvent: CellCreatedEvent = {
-				type: 'cell.created',
-				payload: {
-					cellId,
-					kind,
-					value,
-					position,
-					createdAt: new Date().toISOString()
-				}
-			};
-
-			// Publish the event to the notebook's topic
-			const eventId = await this._eventStore.publishEvent(
-				this.topicName(),
-				cellEvent.type,
-				cellEvent.payload
-			);
-
-			// Update local state immediately
-			this._cells.splice(position, 0, {
-				id: cellId,
+		// Create the cell creation event
+		const cellEvent: CellCreatedEvent = {
+			type: 'cell.created',
+			payload: {
+				cellId,
 				kind,
 				value,
-				createdAt: new Date(cellEvent.payload.createdAt),
-				updatedAt: new Date(cellEvent.payload.createdAt)
-			});
-			this._lastEventId = eventId;
-
-			// Broadcast update via WebSocket with the updated state
-			if (this._eventBroadcaster) {
-				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
-					cells: this._cells,
-					event: {
-						id: eventId,
-						type: cellEvent.type,
-						payload: cellEvent.payload
-					}
-				});
+				position,
+				createdAt: new Date().toISOString()
 			}
+		};
 
-			logger.info(
-				`LibraryService: addCell: Added ${kind} cell ${cellId} to notebook ${this.id} at position ${position}`
-			);
-		} catch (error) {
-			logger.error(`LibraryService: addCell: Failed to add cell to notebook ${this.id}:`, error);
-			throw error;
-		}
+		logger.info(
+			`NotebookService: createCellEvent: Created ${kind} cell ${cellId} for notebook ${this.id} at position ${position}`
+		);
+
+		return cellEvent;
 	}
 
-	async deleteCell(cellId: string): Promise<void> {
-		try {
-			const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
-			if (cellIndex === -1) {
-				throw new Error(`Cell not found: ${cellId}`);
-			}
-
-			const cellEvent: CellDeletedEvent = {
-				type: 'cell.deleted',
-				payload: {
-					cellId,
-					deletedAt: new Date().toISOString()
-				}
-			};
-
-			const eventId = await this._eventStore.publishEvent(
-				this.topicName(),
-				cellEvent.type,
-				cellEvent.payload
-			);
-
-			// Update local state immediately
-			this._cells.splice(cellIndex, 1);
-			this._lastEventId = eventId;
-
-			// Broadcast update via WebSocket with the updated state
-			if (this._eventBroadcaster) {
-				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
-					cells: this._cells,
-					event: {
-						id: eventId,
-						type: cellEvent.type,
-						payload: cellEvent.payload
-					}
-				});
-			}
-
-			logger.info(`LibraryService: deleteCell: Deleted cell ${cellId} from notebook ${this.id}`);
-		} catch (error) {
-			logger.error(`LibraryService: deleteCell: Failed to delete cell ${cellId}:`, error);
-			throw error;
+	createDeleteCellEvent(cellId: string): CellDeletedEvent {
+		const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
+		if (cellIndex === -1) {
+			throw new Error(`Cell not found: ${cellId}`);
 		}
+
+		const cellEvent: CellDeletedEvent = {
+			type: 'cell.deleted',
+			payload: {
+				cellId,
+				deletedAt: new Date().toISOString()
+			}
+		};
+
+		logger.info(
+			`NotebookService: createDeleteCellEvent: Created delete event for cell ${cellId} in notebook ${this.id}`
+		);
+
+		return cellEvent;
 	}
 
-	async updateCell(
+	createUpdateCellEvent(
 		cellId: string,
 		updates: Partial<{ kind: CellKind; value: string }>
-	): Promise<void> {
-		try {
-			const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
-			if (cellIndex === -1) {
-				throw new Error(`Cell not found: ${cellId}`);
-			}
-
-			// Validate that at least one field is provided
-			if (updates.kind === undefined && updates.value === undefined) {
-				throw new Error('At least one field (kind or value) must be provided');
-			}
-
-			// Validate cell kind if provided
-			if (updates.kind && !['js', 'md', 'html'].includes(updates.kind)) {
-				throw new Error('Invalid cell kind. Must be js, md, or html');
-			}
-
-			const cellEvent: CellUpdatedEvent = {
-				type: 'cell.updated',
-				payload: {
-					cellId,
-					changes: updates,
-					updatedAt: new Date().toISOString()
-				}
-			};
-
-			const eventId = await this._eventStore.publishEvent(
-				this.topicName(),
-				cellEvent.type,
-				cellEvent.payload
-			);
-
-			// Update local state immediately
-			const existingCell = this._cells[cellIndex];
-			this._cells[cellIndex] = {
-				...existingCell,
-				kind: updates.kind !== undefined ? updates.kind : existingCell.kind,
-				value: updates.value !== undefined ? updates.value : existingCell.value,
-				updatedAt: new Date(cellEvent.payload.updatedAt)
-			};
-			this._lastEventId = eventId;
-
-			// Broadcast update via WebSocket with the updated state
-			if (this._eventBroadcaster) {
-				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
-					cells: this._cells,
-					event: {
-						id: eventId,
-						type: cellEvent.type,
-						payload: cellEvent.payload
-					}
-				});
-			}
-
-			logger.info(`LibraryService: updateCell: Updated cell ${cellId} in notebook ${this.id}`);
-		} catch (error) {
-			logger.error(`LibraryService: updateCell: Failed to update cell ${cellId}:`, error);
-			throw error;
+	): CellUpdatedEvent {
+		const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
+		if (cellIndex === -1) {
+			throw new Error(`Cell not found: ${cellId}`);
 		}
+
+		// Validate that at least one field is provided
+		if (updates.kind === undefined && updates.value === undefined) {
+			throw new Error('At least one field (kind or value) must be provided');
+		}
+
+		// Validate cell kind if provided
+		if (updates.kind && !['js', 'md', 'html'].includes(updates.kind)) {
+			throw new Error('Invalid cell kind. Must be js, md, or html');
+		}
+
+		const cellEvent: CellUpdatedEvent = {
+			type: 'cell.updated',
+			payload: {
+				cellId,
+				changes: updates,
+				updatedAt: new Date().toISOString()
+			}
+		};
+
+		logger.info(
+			`NotebookService: createUpdateCellEvent: Created update event for cell ${cellId} in notebook ${this.id}`
+		);
+
+		return cellEvent;
 	}
 
-	async moveCell(cellId: string, position: number): Promise<void> {
-		try {
-			logger.info(
-				`LibraryService: moveCell: Attempting to move cell ${cellId} to position ${position}`
-			);
-			logger.info(
-				`LibraryService: moveCell: Current cells: ${this._cells.map((c) => c.id).join(', ')}`
-			);
+	createMoveCellEvent(cellId: string, position: number): CellMovedEvent {
+		logger.info(
+			`NotebookService: createMoveCellEvent: Attempting to move cell ${cellId} to position ${position}`
+		);
+		logger.info(
+			`NotebookService: createMoveCellEvent: Current cells: ${this._cells.map((c) => c.id).join(', ')}`
+		);
 
-			const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
-			if (cellIndex === -1) {
-				throw new Error(`Cell not found: ${cellId}`);
-			}
-
-			logger.info(`LibraryService: moveCell: Found cell at index ${cellIndex}`);
-
-			if (position < 0 || position > this.cells.length) {
-				throw new Error(`Invalid position: ${position}`);
-			}
-
-			const cellEvent: CellMovedEvent = {
-				type: 'cell.moved',
-				payload: {
-					cellId,
-					position,
-					movedAt: new Date().toISOString()
-				}
-			};
-
-			const eventId = await this._eventStore.publishEvent(
-				this.topicName(),
-				cellEvent.type,
-				cellEvent.payload
-			);
-
-			// Broadcast update via WebSocket
-			if (this._eventBroadcaster) {
-				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
-					cells: this._cells,
-					event: {
-						id: eventId,
-						type: cellEvent.type,
-						payload: cellEvent.payload
-					}
-				});
-			}
-
-			logger.info(
-				`LibraryService: moveCell: Moved cell ${cellId} to position ${position} in notebook ${this.id}`
-			);
-		} catch (error) {
-			logger.error(`LibraryService: moveCell: Failed to move cell ${cellId}:`, error);
-			throw error;
+		const cellIndex = this._cells.findIndex((cell) => cell.id === cellId);
+		if (cellIndex === -1) {
+			throw new Error(`Cell not found: ${cellId}`);
 		}
+
+		logger.info(`NotebookService: createMoveCellEvent: Found cell at index ${cellIndex}`);
+
+		if (position < 0 || position > this.cells.length) {
+			throw new Error(`Invalid position: ${position}`);
+		}
+
+		const cellEvent: CellMovedEvent = {
+			type: 'cell.moved',
+			payload: {
+				cellId,
+				position,
+				movedAt: new Date().toISOString()
+			}
+		};
+
+		logger.info(
+			`NotebookService: createMoveCellEvent: Created move event for cell ${cellId} to position ${position} in notebook ${this.id}`
+		);
+
+		return cellEvent;
 	}
 
 	eventHandler(event: NotebookEvent & { id: string }): void {
@@ -416,36 +265,6 @@ export class NotebookServiceImpl implements NotebookService {
 
 		this._lastEventId = event.id;
 	}
-
-	async hydrateNotebook(): Promise<void> {
-		const events = await this._eventStore.getEvents(this.topicName());
-		logger.info(`LibraryService: hydrateNotebook: ${events.length} events`);
-		events.forEach((event) => {
-			this.eventHandler(event as unknown as NotebookEvent & { id: string });
-		});
-	}
-
-	async registerNotebookCallback(): Promise<void> {
-		logger.info(`NotebookService: registerLibraryCallback: ${this.id}`);
-
-		const callbackUrl = 'http://localhost:5173/api/events/webhook';
-
-		// Get all existing consumers
-		const existingConsumers = await this._eventStore.getConsumers();
-
-		// Remove any existing consumers with the same callback URL
-		for (const consumer of existingConsumers) {
-			if (consumer.callback === callbackUrl && this.id in consumer.topics) {
-				logger.info(
-					`LibraryService: Removing existing ${this.id} consumer with callback: ${callbackUrl}`
-				);
-				await this._eventStore.unregisterConsumer(consumer.id);
-			}
-		}
-
-		// Register the new consumer
-		await this._eventStore.registerConsumer(callbackUrl, { [this.id]: this._lastEventId });
-	}
 }
 
 function hasEventBeenProcessed(eventId: string, lastEventId: string | null): boolean {
@@ -479,13 +298,4 @@ function extractSequenceNumber(eventId: string): number | null {
 	const sequence = parseInt(sequenceStr, 10);
 
 	return isNaN(sequence) ? null : sequence;
-}
-
-async function isValidTopic(eventStore: EventStore, topicName: string): Promise<boolean> {
-	try {
-		await eventStore.getTopic(topicName);
-		return true;
-	} catch {
-		return false;
-	}
 }
