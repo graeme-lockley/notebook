@@ -10,16 +10,23 @@ import type {
 } from '$lib/server/domain/events/notebook.events';
 import type { NotebookService } from '$lib/server/application/ports/inbound/notebook-service';
 import type { Cell, CellKind } from '$lib/server/domain/value-objects';
+import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 export class NotebookServiceImpl implements NotebookService {
 	id: string;
 	private _eventStore: EventStore;
 	private _lastEventId: string | null = null;
 	private _cells: Cell[] = [];
+	private _eventBroadcaster?: StandaloneWebSocketBroadcaster;
 
-	constructor(id: string, eventStore: EventStore) {
+	constructor(
+		id: string,
+		eventStore: EventStore,
+		eventBroadcaster?: StandaloneWebSocketBroadcaster
+	) {
 		this.id = id;
 		this._eventStore = eventStore;
+		this._eventBroadcaster = eventBroadcaster;
 	}
 
 	topicName(): string {
@@ -109,7 +116,33 @@ export class NotebookServiceImpl implements NotebookService {
 			};
 
 			// Publish the event to the notebook's topic
-			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			const eventId = await this._eventStore.publishEvent(
+				this.topicName(),
+				cellEvent.type,
+				cellEvent.payload
+			);
+
+			// Update local state immediately
+			this._cells.splice(position, 0, {
+				id: cellId,
+				kind,
+				value,
+				createdAt: new Date(cellEvent.payload.createdAt),
+				updatedAt: new Date(cellEvent.payload.createdAt)
+			});
+			this._lastEventId = eventId;
+
+			// Broadcast update via WebSocket with the updated state
+			if (this._eventBroadcaster) {
+				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
+					cells: this._cells,
+					event: {
+						id: eventId,
+						type: cellEvent.type,
+						payload: cellEvent.payload
+					}
+				});
+			}
 
 			logger.info(
 				`LibraryService: addCell: Added ${kind} cell ${cellId} to notebook ${this.id} at position ${position}`
@@ -135,7 +168,27 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 			};
 
-			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			const eventId = await this._eventStore.publishEvent(
+				this.topicName(),
+				cellEvent.type,
+				cellEvent.payload
+			);
+
+			// Update local state immediately
+			this._cells.splice(cellIndex, 1);
+			this._lastEventId = eventId;
+
+			// Broadcast update via WebSocket with the updated state
+			if (this._eventBroadcaster) {
+				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
+					cells: this._cells,
+					event: {
+						id: eventId,
+						type: cellEvent.type,
+						payload: cellEvent.payload
+					}
+				});
+			}
 
 			logger.info(`LibraryService: deleteCell: Deleted cell ${cellId} from notebook ${this.id}`);
 		} catch (error) {
@@ -173,7 +226,33 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 			};
 
-			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			const eventId = await this._eventStore.publishEvent(
+				this.topicName(),
+				cellEvent.type,
+				cellEvent.payload
+			);
+
+			// Update local state immediately
+			const existingCell = this._cells[cellIndex];
+			this._cells[cellIndex] = {
+				...existingCell,
+				kind: updates.kind !== undefined ? updates.kind : existingCell.kind,
+				value: updates.value !== undefined ? updates.value : existingCell.value,
+				updatedAt: new Date(cellEvent.payload.updatedAt)
+			};
+			this._lastEventId = eventId;
+
+			// Broadcast update via WebSocket with the updated state
+			if (this._eventBroadcaster) {
+				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
+					cells: this._cells,
+					event: {
+						id: eventId,
+						type: cellEvent.type,
+						payload: cellEvent.payload
+					}
+				});
+			}
 
 			logger.info(`LibraryService: updateCell: Updated cell ${cellId} in notebook ${this.id}`);
 		} catch (error) {
@@ -211,7 +290,23 @@ export class NotebookServiceImpl implements NotebookService {
 				}
 			};
 
-			await this._eventStore.publishEvent(this.topicName(), cellEvent.type, cellEvent.payload);
+			const eventId = await this._eventStore.publishEvent(
+				this.topicName(),
+				cellEvent.type,
+				cellEvent.payload
+			);
+
+			// Broadcast update via WebSocket
+			if (this._eventBroadcaster) {
+				this._eventBroadcaster.broadcastCustomEvent(this.id, 'notebook.updated', {
+					cells: this._cells,
+					event: {
+						id: eventId,
+						type: cellEvent.type,
+						payload: cellEvent.payload
+					}
+				});
+			}
 
 			logger.info(
 				`LibraryService: moveCell: Moved cell ${cellId} to position ${position} in notebook ${this.id}`

@@ -5,6 +5,7 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			libraryService: import('$lib/server/application/ports/inbound/notebook-service').LibraryService;
+			eventBroadcaster: import('$lib/server/websocket/standalone-broadcaster').StandaloneWebSocketBroadcaster;
 		}
 		// interface PageData {}
 		// interface PageState {}

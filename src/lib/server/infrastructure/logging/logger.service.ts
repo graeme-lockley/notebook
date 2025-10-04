@@ -21,25 +21,37 @@ class Logger {
 
 	info(message: string, ...args: unknown[]): void {
 		if (this.config.enableInfo) {
-			console.log(`[INFO] ${new Date().toISOString()}: ${message}`, ...args);
+			const formattedArgs = args.map((arg) =>
+				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
+			);
+			console.log(`[INFO] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 		}
 	}
 
 	warn(message: string, ...args: unknown[]): void {
 		if (this.config.enableWarn) {
-			console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, ...args);
+			const formattedArgs = args.map((arg) =>
+				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
+			);
+			console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 		}
 	}
 
 	error(message: string, ...args: unknown[]): void {
 		if (this.config.enableError) {
-			console.error(`[ERROR] ${new Date().toISOString()}: ${message}`, ...args);
+			const formattedArgs = args.map((arg) =>
+				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
+			);
+			console.error(`[ERROR] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 		}
 	}
 
 	debug(message: string, ...args: unknown[]): void {
 		if (this.config.enableDebug) {
-			console.log(`[DEBUG] ${new Date().toISOString()}: ${message}`, ...args);
+			const formattedArgs = args.map((arg) =>
+				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
+			);
+			console.log(`[DEBUG] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 		}
 	}
 }

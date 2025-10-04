@@ -3,10 +3,13 @@ import { eventStoreClient } from '$lib/server/adapters/outbound/event-store/remo
 import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
 import { createLibraryService } from '$lib/server/domain/domain-services/library.service.impl';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
+import { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
 let isInitialized = false;
+let eventBroadcaster: StandaloneWebSocketBroadcaster;
+let libraryService: ReturnType<typeof createLibraryService>;
 
-const libraryService = createLibraryService(eventStoreClient());
+const eventStore = eventStoreClient();
 
 export async function handle({ event, resolve }) {
 	// Initialize services on first request if not already done
@@ -16,23 +19,32 @@ export async function handle({ event, resolve }) {
 
 	// Inject services into event.locals for API routes to access
 	event.locals.libraryService = libraryService;
+	event.locals.eventBroadcaster = eventBroadcaster;
 
 	return resolve(event);
 }
 
 async function initializeServices() {
 	try {
-		logger.info('Initializing Event Store services...');
+		logger.info('Initializing services...');
 
+		// Initialize standalone WebSocket broadcaster
+		eventBroadcaster = new StandaloneWebSocketBroadcaster();
+		logger.info('Standalone WebSocket broadcaster initialized');
+
+		// Create library service with event broadcaster
+		libraryService = createLibraryService(eventStore, eventBroadcaster);
+
+		// Setup library topic
 		await setupLibraryTopic();
 		await libraryService.hydrateLibrary();
 		await libraryService.registerLibraryCallback();
 
 		isInitialized = true;
 
-		logger.info('Event Store services initialized successfully');
+		logger.info('All services initialized successfully');
 	} catch (error) {
-		logger.error('Failed to initialize Event Store services:', error);
+		logger.error('Failed to initialize services:', error);
 		throw error;
 	}
 }

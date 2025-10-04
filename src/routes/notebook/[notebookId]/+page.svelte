@@ -12,7 +12,10 @@
 	let notebookStore: NotebookStore | undefined;
 	let loading = true;
 	let error: string | null = null;
-	let eventSource: EventSource | null = null;
+	let websocket: WebSocket | null = null;
+	let reconnectAttempts = 0;
+	let maxReconnectAttempts = 5;
+	let reconnectDelay = 1000; // Start with 1 second
 	let cellIdMapping: Map<string, string> = new SvelteMap(); // Maps client cell IDs to server cell IDs
 	let lastProcessedEventId: string | null = null; // Track the last processed event ID
 
@@ -96,9 +99,9 @@
 
 			notebookStore = createNotebookStore(notebook);
 
-			// Set up event stream for real-time updates
+			// Set up WebSocket connection for real-time updates
 			if (notebookId) {
-				setupEventStream(notebookId);
+				setupWebSocketConnection(notebookId);
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load notebook';
@@ -108,45 +111,91 @@
 		}
 	}
 
-	function setupEventStream(notebookId: string) {
-		// Close existing event source if any
-		if (eventSource) {
-			eventSource.close();
+	function setupWebSocketConnection(notebookId: string) {
+		if (websocket) {
+			websocket.close();
 		}
 
-		// Create new event source
-		eventSource = new EventSource(`/api/notebooks/${notebookId}/events`);
+		// Use WebSocket URL with notebook ID as query parameter
+		const wsUrl = `ws://localhost:3001?notebookId=${notebookId}`;
+		websocket = new WebSocket(wsUrl);
 
-		eventSource.onopen = () => {
-			console.log('Event stream connected');
+		websocket.onopen = () => {
+			console.log('WebSocket connected');
+			reconnectAttempts = 0;
+			reconnectDelay = 1000;
+
+			// Send initial ping and ready signal
+			websocket?.send(JSON.stringify({ type: 'ping' }));
+			websocket?.send(JSON.stringify({ type: 'client_ready', data: { notebookId } }));
 		};
 
-		eventSource.onmessage = (event) => {
+		websocket.onmessage = (event) => {
 			try {
 				const data = JSON.parse(event.data);
-				handleServerEvent(data);
+				handleWebSocketMessage(data);
 			} catch (err) {
-				console.error('Error parsing server event:', err);
+				console.error('Error parsing WebSocket message:', err);
 			}
 		};
 
-		eventSource.onerror = (error) => {
-			console.error('Event stream error:', error);
+		websocket.onclose = (event) => {
+			console.log('WebSocket disconnected:', event.code, event.reason);
+			attemptReconnect(notebookId);
+		};
 
-			// Close the current connection
-			if (eventSource) {
-				eventSource.close();
-				eventSource = null;
-			}
+		websocket.onerror = (error) => {
+			console.error('WebSocket error:', error);
+		};
+	}
 
-			// Reconnect after a delay
+	function handleWebSocketMessage(data: unknown) {
+		// Type guard to ensure data is an object with a type property
+		if (typeof data !== 'object' || data === null || !('type' in data)) {
+			console.error('Invalid WebSocket message format:', data);
+			return;
+		}
+
+		const message = data as { type: string; data?: unknown };
+
+		switch (message.type) {
+			case 'connected':
+				console.log('WebSocket connection confirmed for notebook:', message.data);
+				break;
+			case 'pong':
+				// Handle heartbeat response
+				console.log('WebSocket heartbeat received');
+				break;
+			case 'server_ready':
+				console.log('Server ready for notebook:', message.data);
+				break;
+			case 'notebook.updated':
+			case 'notebook.initialized':
+				// Use existing event handling logic
+				console.log('📨 Received WebSocket event:', message.type, message.data);
+				handleServerEvent(data);
+				break;
+			default:
+				console.log('Unknown WebSocket message type:', message.type);
+		}
+	}
+
+	function attemptReconnect(notebookId: string) {
+		if (reconnectAttempts < maxReconnectAttempts) {
+			reconnectAttempts++;
+			console.log(
+				`Attempting to reconnect WebSocket (${reconnectAttempts}/${maxReconnectAttempts})...`
+			);
+
 			setTimeout(() => {
-				if (notebookId) {
-					console.log('Attempting to reconnect event stream...');
-					setupEventStream(notebookId);
-				}
-			}, 5000);
-		};
+				setupWebSocketConnection(notebookId);
+			}, reconnectDelay);
+
+			// Exponential backoff
+			reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+		} else {
+			console.error('Max reconnection attempts reached');
+		}
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -187,120 +236,49 @@
 	function updateCellsFromServer(serverCells: any[]) {
 		if (!notebookStore) return;
 
-		console.log('Updating cells from server:', serverCells);
+		console.log('🔄 Updating cells from server:', serverCells.length, 'cells');
+		console.log('📊 Current cell mapping:', Array.from(cellIdMapping.entries()));
+		console.log('📋 Current cells:', notebookStore.notebook.cells.length);
 
-		const currentCells = notebookStore.notebook.cells;
+		// Simple approach: clear all cells and rebuild from server
+		const currentCells = [...notebookStore.notebook.cells];
 
-		// Check if the order has changed by comparing server order with current order
-		const serverOrder = serverCells
-			.map((serverCell) => {
-				const clientCellId = Array.from(cellIdMapping.entries()).find(
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					([_, serverId]) => serverId === serverCell.id
-				)?.[0];
-				return clientCellId;
-			})
-			.filter(Boolean);
+		// Remove all current cells
+		currentCells.forEach((cell) => {
+			notebookStore?.notebook.removeCell(cell.id);
+		});
 
-		const currentOrder = currentCells.map((cell) => cell.id);
+		// Clear the mapping
+		cellIdMapping.clear();
 
-		const orderChanged =
-			serverOrder.length === currentOrder.length &&
-			!serverOrder.every((id, index) => id === currentOrder[index]);
+		// Add all cells from server
+		serverCells.forEach((serverCell) => {
+			console.log(
+				'➕ Adding cell from server:',
+				serverCell.id,
+				'kind:',
+				serverCell.kind,
+				'value:',
+				serverCell.value.substring(0, 50)
+			);
 
-		if (orderChanged) {
-			console.log('Cell order changed, reordering cells');
-			console.log('Server order:', serverOrder);
-			console.log('Current order:', currentOrder);
-
-			// Reorder cells to match server order
-			const reorderedCells = serverOrder
-				.map((clientCellId) => currentCells.find((cell) => cell.id === clientCellId))
-				.filter((cell): cell is NonNullable<typeof cell> => cell !== undefined);
-
-			// Remove all current cells
-			const cellIdsToRemove = [...currentCells.map((cell) => cell.id)];
-			cellIdsToRemove.forEach((cellId) => {
-				notebookStore?.notebook.removeCell(cellId);
-			});
-
-			// Add cells back in the new order
-			reorderedCells.forEach((cell) => {
-				notebookStore?.notebook.addCell({
-					kind: cell.kind,
-					value: cell.value,
+			notebookStore?.notebook
+				.addCell({
+					kind: serverCell.kind,
+					value: serverCell.value,
 					focus: false
+				})
+				.then((clientCell) => {
+					// Map the new client cell ID to the server cell ID
+					cellIdMapping.set(clientCell.id, serverCell.id);
+					console.log('🔗 Mapped cell:', clientCell.id, '->', serverCell.id);
 				});
-			});
-
-			return; // Skip the rest of the update logic since we've reordered
-		}
-
-		// Remove cells that don't exist on server
-		for (let i = currentCells.length - 1; i >= 0; i--) {
-			const cell = currentCells[i];
-			const serverCellId = cellIdMapping.get(cell.id);
-			if (!serverCells.find((serverCell) => serverCell.id === serverCellId)) {
-				console.log('Removing cell:', cell.id);
-				notebookStore.notebook.removeCell(cell.id);
-				cellIdMapping.delete(cell.id);
-			}
-		}
-
-		// Add or update cells from server
-		for (const serverCell of serverCells) {
-			// Find existing cell by server ID
-			const existingClientCellId = Array.from(cellIdMapping.entries()).find(
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				([_, serverId]) => serverId === serverCell.id
-			)?.[0];
-
-			if (!existingClientCellId) {
-				// Add new cell
-				console.log('Adding new cell:', serverCell.id);
-				notebookStore.notebook
-					.addCell({
-						kind: serverCell.kind,
-						value: serverCell.value,
-						focus: false
-					})
-					.then((clientCell) => {
-						// Map the new client cell ID to the server cell ID
-						cellIdMapping.set(clientCell.id, serverCell.id);
-						console.log('Mapped new cell:', clientCell.id, '->', serverCell.id);
-					});
-			} else {
-				// Update existing cell
-				const existingCell = currentCells.find((cell) => cell.id === existingClientCellId);
-				if (existingCell) {
-					// Check if we need to update the cell
-					const needsUpdate =
-						existingCell.value !== serverCell.value || existingCell.kind !== serverCell.kind;
-
-					if (needsUpdate) {
-						console.log(
-							'Updating cell:',
-							existingCell.id,
-							'from',
-							existingCell.value,
-							'to',
-							serverCell.value
-						);
-
-						// Update the cell value and kind
-						notebookStore.notebook.updateCell(existingCell.id, {
-							value: serverCell.value,
-							kind: serverCell.kind
-						});
-					}
-				}
-			}
-		}
+		});
 	}
 
 	onDestroy(() => {
-		if (eventSource) {
-			eventSource.close();
+		if (websocket) {
+			websocket.close();
 		}
 	});
 

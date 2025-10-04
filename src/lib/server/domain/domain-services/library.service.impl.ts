@@ -10,19 +10,25 @@ import type { NotebookService } from '$lib/server/application/ports/inbound/note
 import type { LibraryService } from '$lib/server/application/ports/inbound/library-service';
 import { Library } from './library';
 import type { Notebook } from '$lib/server/domain/value-objects';
+import type { StandaloneWebSocketBroadcaster } from '$lib/server/websocket/standalone-broadcaster';
 
-export function createLibraryService(eventStore: EventStore): LibraryService {
-	return new LibraryServiceImpl(eventStore);
+export function createLibraryService(
+	eventStore: EventStore,
+	eventBroadcaster?: StandaloneWebSocketBroadcaster
+): LibraryService {
+	return new LibraryServiceImpl(eventStore, eventBroadcaster);
 }
 
 export class LibraryServiceImpl implements LibraryService {
 	private lastEventId: string | null = null;
 	private _eventStore: EventStore;
+	private _eventBroadcaster?: StandaloneWebSocketBroadcaster;
 	private library: Library = new Library();
 	private notebookServices: Map<string, NotebookService> = new Map<string, NotebookService>();
 
-	constructor(eventStore: EventStore) {
+	constructor(eventStore: EventStore, eventBroadcaster?: StandaloneWebSocketBroadcaster) {
 		this._eventStore = eventStore;
+		this._eventBroadcaster = eventBroadcaster;
 	}
 
 	async createNotebook(title: string, description?: string): Promise<[string, string]> {
@@ -81,7 +87,7 @@ export class LibraryServiceImpl implements LibraryService {
 
 		// Create a new service for this notebook
 		const { NotebookServiceImpl } = await import('./notebook.service.impl.js');
-		const service = new NotebookServiceImpl(notebookId, this._eventStore);
+		const service = new NotebookServiceImpl(notebookId, this._eventStore, this._eventBroadcaster);
 
 		// Initialize the service
 		await service.initializeNotebook();

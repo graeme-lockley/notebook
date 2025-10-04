@@ -17,6 +17,13 @@ export default defineConfig({
 		strictPort: false,
 		hmr: {
 			overlay: true
+		},
+		proxy: {
+			'/ws': {
+				target: 'ws://localhost:3001',
+				ws: true,
+				changeOrigin: true
+			}
 		}
 	},
 	preview: {
