@@ -79,39 +79,6 @@
 		window.addEventListener('unhandledrejection', (event) => {
 			logger.error('❌ Unhandled promise rejection:', event.reason);
 		});
-
-		// Add mouse movement debugging with debounce
-		let mouseMoveCount = 0;
-		let mouseMoveTimeout: NodeJS.Timeout | null = null;
-		window.addEventListener('mousemove', () => {
-			mouseMoveCount++;
-
-			// Clear existing timeout
-			if (mouseMoveTimeout) {
-				clearTimeout(mouseMoveTimeout);
-			}
-
-			// Debounce mouse movement logging
-			mouseMoveTimeout = setTimeout(() => {
-				if (mouseMoveCount % 10 === 0) {
-					// Log every 10th mouse move to avoid spam
-					logger.info('🖱️ Mouse moved, count:', mouseMoveCount, 'isReloading:', isReloading);
-				}
-			}, 50); // 50ms debounce
-		});
-
-		// Add mouse enter/leave debugging for the notebook container
-		document.addEventListener('DOMContentLoaded', () => {
-			const notebookContainer = document.querySelector('[data-testid="notebook-editor"]');
-			if (notebookContainer) {
-				notebookContainer.addEventListener('mouseenter', () => {
-					logger.info('🖱️ Mouse entered notebook container');
-				});
-				notebookContainer.addEventListener('mouseleave', () => {
-					logger.info('🖱️ Mouse left notebook container');
-				});
-			}
-		});
 	}
 
 	async function loadNotebook(id: string) {
