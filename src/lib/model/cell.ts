@@ -46,8 +46,7 @@ export interface NotebookOptions {
 export interface AddCellOptions {
 	kind?: CellKind;
 	value?: string;
-	position?: 'above' | 'below';
-	relativeToId?: string;
+	position?: number;
 	focus?: boolean;
 }
 
@@ -284,21 +283,13 @@ export class ReactiveNotebook {
 
 	// Cell management methods
 	async addCell(options: AddCellOptions = {}): Promise<ReactiveCell> {
-		const {
-			kind = 'js',
-			value = this.getDefaultValue(kind),
-			position = 'below',
-			relativeToId,
-			focus = false
-		} = options;
+		const { kind = 'js', value = this.getDefaultValue(kind), position, focus = false } = options;
 
 		const newCell = new ReactiveCell(this.generateCellId(), kind, value, this.module, this);
 
-		if (relativeToId) {
-			const refIndex = this.getCellIndex(relativeToId);
-			if (refIndex !== -1) {
-				const insertIndex = position === 'above' ? refIndex : refIndex + 1;
-				this._cells.splice(insertIndex, 0, newCell);
+		if (position !== undefined) {
+			if (position < this._cells.length) {
+				this._cells.splice(position, 0, newCell);
 			} else {
 				this._cells.push(newCell);
 			}

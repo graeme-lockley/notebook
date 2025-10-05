@@ -275,31 +275,19 @@
 				notebookStore
 					.addCell({
 						kind,
-						value
+						value,
+						position
 					})
-					.then(() => {
+					.then((newCell) => {
 						if (!notebookStore) {
 							logger.error('❌ No notebookStore available for cell mapping');
 							return;
 						}
 
-						// Get the last added cell (which should be the new one)
-						const newCell = notebookStore.notebook.cells[notebookStore.notebook.cells.length - 1];
-
 						// Update the cell ID mapping: client ID -> server ID
 						// The newCell.id is the client-generated ID, cellId is the server ID
 						cellIdMapping.set(newCell.id, cellId);
 						logger.info(`🔗 Mapped client ID ${newCell.id} to server ID ${cellId}`);
-
-						// Move the cell to the correct position if needed
-						if (position !== notebookStore.notebook.cells.length - 1) {
-							notebookStore.notebook.moveCell(
-								notebookStore.notebook.cells[notebookStore.notebook.cells.length - 1].id,
-								position
-							);
-							// Trigger reactivity after moving
-							notebookStore.set(notebookStore.notebook);
-						}
 					});
 				break;
 			}
