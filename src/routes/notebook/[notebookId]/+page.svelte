@@ -36,6 +36,9 @@
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	$: (globalThis as any).notebookStore = notebookStore;
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	(globalThis as any).cellIdMapping = cellIdMapping;
+
 	// Helper function to extract sequence number from event ID
 	function extractSequenceNumber(eventId: string): number | null {
 		// Event ID format: <topic>-<number>
@@ -307,14 +310,7 @@
 				logger.info(`✏️ Updating cell ${serverCellId}:`, changes);
 
 				// Find the client ID that maps to this server ID
-				let clientCellId = serverCellId;
-				for (const [clientId, serverId] of cellIdMapping.entries()) {
-					if (serverId === serverCellId) {
-						clientCellId = clientId;
-						logger.info(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
-						break;
-					}
-				}
+				let clientCellId = serverCellIdToClientId(serverCellId) || serverCellId;
 
 				// Use the store's updateCell method to trigger reactivity
 				notebookStore.updateCell(clientCellId, changes);
@@ -330,14 +326,7 @@
 				);
 
 				// Find the client ID that maps to this server ID
-				let clientCellId = serverCellId;
-				for (const [clientId, serverId] of cellIdMapping.entries()) {
-					if (serverId === serverCellId) {
-						clientCellId = clientId;
-						logger.info(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
-						break;
-					}
-				}
+				let clientCellId = serverCellIdToClientId(serverCellId) || serverCellId;
 
 				// Use the store's removeCell method to trigger reactivity
 				const result = notebookStore.removeCell(clientCellId);
@@ -359,14 +348,7 @@
 				logger.info(`↕️ Moving cell ${serverCellId} to position ${position}`);
 
 				// Find the client ID that maps to this server ID
-				let clientCellId = serverCellId;
-				for (const [clientId, serverId] of cellIdMapping.entries()) {
-					if (serverId === serverCellId) {
-						clientCellId = clientId;
-						logger.info(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
-						break;
-					}
-				}
+				let clientCellId = serverCellIdToClientId(serverCellId) || serverCellId;
 
 				// Move cell and trigger reactivity
 				notebookStore.notebook.moveCell(clientCellId, position);
@@ -379,6 +361,17 @@
 			'✅ Cell event handled directly, current cells:',
 			notebookStore.notebook.cells.length
 		);
+	}
+
+	function serverCellIdToClientId(serverCellId: string): string | undefined {
+		for (const [clientId, serverId] of cellIdMapping.entries()) {
+			if (serverId === serverCellId) {
+				logger.info(`🔗 Found client ID ${clientId} for server ID ${serverCellId}`);
+				return clientId;
+			}
+		}
+
+		return undefined;
 	}
 
 	// reloadNotebook and performReload functions removed - we now use direct cell manipulation instead of full reloads
