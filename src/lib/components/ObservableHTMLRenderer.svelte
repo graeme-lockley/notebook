@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { logger } from '$lib/common/infrastructure/logging/logger.service';
+
 	let { value } = $props<{
 		value: unknown;
 	}>();
@@ -22,7 +24,7 @@
 				renderedContent = String(value);
 			}
 		} catch (error) {
-			console.error('Error in renderValue:', error);
+			logger.error('Error in renderValue:', error);
 			hasError = true;
 			errorMessage = error instanceof Error ? error.message : String(error);
 		}

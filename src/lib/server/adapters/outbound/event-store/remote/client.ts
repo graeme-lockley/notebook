@@ -15,6 +15,7 @@ import type {
 	TopicCreation
 } from '../../../../application/ports/outbound/types.js';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store.js';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class EventStoreClient implements EventStore {
 	private config: Required<EventStoreConfig>;
@@ -280,7 +281,7 @@ export class EventStoreClient implements EventStore {
 				// Wait before next poll
 				await new Promise((resolve) => setTimeout(resolve, pollInterval));
 			} catch (error) {
-				console.error('Error streaming events:', error);
+				logger.error('Error streaming events:', error);
 				// Wait before retrying
 				await new Promise((resolve) => setTimeout(resolve, pollInterval * 2));
 			}

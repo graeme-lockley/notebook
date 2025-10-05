@@ -4,6 +4,7 @@
 	import { Globe, Copy, Download, Search, Plus } from 'lucide-svelte';
 	import CreateNotebookModal from './CreateNotebookModal.svelte';
 	import type { CreateNotebookEvent } from './event-types';
+	import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 	let { title = 'Untitled Notebook', lastEdited = new Date(), version = '1.0.0' } = $props();
 
@@ -81,7 +82,7 @@
 			// Navigate to a clean page with the new notebook
 			await goto(`/notebook/${result.id}`);
 		} catch (error) {
-			console.error('Error creating notebook:', error);
+			logger.error('Error creating notebook:', error);
 			// You might want to show an error message to the user here
 		}
 	}

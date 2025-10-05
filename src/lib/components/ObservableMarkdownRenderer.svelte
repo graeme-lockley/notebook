@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { marked } from 'marked';
+	import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 	let { value } = $props<{
 		value: unknown;
@@ -22,7 +23,7 @@
 			const content = typeof value === 'string' ? value : String(value);
 			renderedContent = await marked.parse(content);
 		} catch (error) {
-			console.error('Error in renderValue:', error);
+			logger.error('Error in renderValue:', error);
 			hasError = true;
 			errorMessage = error instanceof Error ? error.message : String(error);
 		}

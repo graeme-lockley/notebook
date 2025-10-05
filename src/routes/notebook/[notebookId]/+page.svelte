@@ -71,11 +71,11 @@
 	// Add global error handler to catch any unhandled errors
 	if (typeof window !== 'undefined') {
 		window.addEventListener('error', (event) => {
-			console.error('❌ Global error caught:', event.error);
+			logger.error('❌ Global error caught:', event.error);
 		});
 
 		window.addEventListener('unhandledrejection', (event) => {
-			console.error('❌ Unhandled promise rejection:', event.reason);
+			logger.error('❌ Unhandled promise rejection:', event.reason);
 		});
 
 		// Add mouse movement debugging with debounce
@@ -150,7 +150,7 @@
 					cellIdMapping.set(clientCell.id, cellData.id);
 				}
 			} else {
-				console.error('Cell field not found in notebook data', notebookData);
+				logger.error('Cell field not found in notebook data', notebookData);
 			}
 
 			notebookStore = createNotebookStore(notebook);
@@ -161,7 +161,7 @@
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load notebook';
-			console.error('Error loading notebook:', err);
+			logger.error('Error loading notebook:', err);
 		} finally {
 			loading = false;
 		}
@@ -192,7 +192,7 @@
 				logger.info('🔌 WebSocket message received:', data);
 				handleWebSocketMessage(data);
 			} catch (err) {
-				console.error('Error parsing WebSocket message:', err);
+				logger.error('Error parsing WebSocket message:', err);
 			}
 		};
 
@@ -202,14 +202,14 @@
 		};
 
 		websocket.onerror = (error) => {
-			console.error('WebSocket error:', error);
+			logger.error('WebSocket error:', error);
 		};
 	}
 
 	function handleWebSocketMessage(data: unknown) {
 		// Type guard to ensure data is an object with a type property
 		if (typeof data !== 'object' || data === null || !('type' in data)) {
-			console.error('Invalid WebSocket message format:', data);
+			logger.error('Invalid WebSocket message format:', data);
 			return;
 		}
 
@@ -249,7 +249,7 @@
 		logger.info('🎯 Handling cell event:', message.type, message.payload);
 
 		if (!notebookStore || !notebookStore.notebook) {
-			console.error('❌ No notebookStore or notebook instance available for cell event');
+			logger.error('❌ No notebookStore or notebook instance available for cell event');
 			return;
 		}
 
@@ -273,7 +273,7 @@
 					})
 					.then(() => {
 						if (!notebookStore) {
-							console.error('❌ No notebookStore available for cell mapping');
+							logger.error('❌ No notebookStore available for cell mapping');
 							return;
 						}
 
@@ -394,7 +394,7 @@
 			// Exponential backoff
 			reconnectDelay = Math.min(reconnectDelay * 2, 30000);
 		} else {
-			console.error('Max reconnection attempts reached');
+			logger.error('Max reconnection attempts reached');
 		}
 	}
 
@@ -519,7 +519,7 @@
 			// The event stream will handle updating the UI
 			logger.info('Cell added successfully, waiting for server event...');
 		} catch (error) {
-			console.error('Error adding cell:', error);
+			logger.error('Error adding cell:', error);
 			// You might want to show an error message to the user
 		}
 	}
@@ -532,7 +532,7 @@
 		// Get the server cell ID from the mapping
 		const serverCellId = cellIdMapping.get(cellId);
 		if (!serverCellId) {
-			console.error('No server cell ID found for client cell ID:', cellId);
+			logger.error('No server cell ID found for client cell ID:', cellId);
 			// For cells that don't have a server ID (like the welcome cell),
 			// we need to create them on the server first
 			await createCellOnServer(cellId, updates);
@@ -554,7 +554,7 @@
 
 			logger.info('Cell updated successfully, waiting for server event...');
 		} catch (error) {
-			console.error('Error updating cell:', error);
+			logger.error('Error updating cell:', error);
 		}
 	}
 
@@ -568,7 +568,7 @@
 			// Find the cell in the notebook to get its current state
 			const cell = notebookStore.notebook.cells.find((c) => c.id === clientCellId);
 			if (!cell) {
-				console.error('Cell not found in notebook:', clientCellId);
+				logger.error('Cell not found in notebook:', clientCellId);
 				return;
 			}
 
@@ -594,7 +594,7 @@
 
 			logger.info('Cell created on server, waiting for server event...');
 		} catch (error) {
-			console.error('Error creating cell on server:', error);
+			logger.error('Error creating cell on server:', error);
 		}
 	}
 
@@ -604,7 +604,7 @@
 		// Get the server cell ID from the mapping
 		const serverCellId = cellIdMapping.get(cellId);
 		if (!serverCellId) {
-			console.error('No server cell ID found for client cell ID:', cellId);
+			logger.error('No server cell ID found for client cell ID:', cellId);
 			return;
 		}
 
@@ -619,7 +619,7 @@
 
 			logger.info('Cell deleted successfully, waiting for server event...');
 		} catch (error) {
-			console.error('Error deleting cell:', error);
+			logger.error('Error deleting cell:', error);
 		}
 	}
 
@@ -631,7 +631,7 @@
 		// Get the server cell ID from the mapping
 		const serverCellId = cellIdMapping.get(cellId);
 		if (!serverCellId) {
-			console.error('No server cell ID found for client cell ID:', cellId);
+			logger.error('No server cell ID found for client cell ID:', cellId);
 			return;
 		}
 
@@ -639,7 +639,7 @@
 			// Find the current position of the cell
 			const currentPosition = notebookStore.notebook.cells.findIndex((cell) => cell.id === cellId);
 			if (currentPosition === -1) {
-				console.error('Cell not found in notebook:', cellId);
+				logger.error('Cell not found in notebook:', cellId);
 				return;
 			}
 
@@ -679,7 +679,7 @@
 
 			logger.info(`Cell moved ${direction} successfully, waiting for server event...`);
 		} catch (error) {
-			console.error('Error moving cell:', error);
+			logger.error('Error moving cell:', error);
 		}
 	}
 
@@ -697,7 +697,7 @@
 
 			logger.info('Cell duplicated successfully, waiting for server event...');
 		} catch (error) {
-			console.error('Error duplicating cell:', error);
+			logger.error('Error duplicating cell:', error);
 		}
 	}
 </script>
