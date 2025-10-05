@@ -9,7 +9,8 @@
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
 	import { serverIdToClientId } from '$lib/client/model/cell';
-	import * as ServerCommand from '$lib/client/server-commands';
+	import * as ServerCommand from '$lib/client/server/server-commands';
+	import * as ServerQuery from '$lib/client/server/server-queries';
 
 	logger.configure({ enableInfo: true });
 
@@ -87,17 +88,7 @@
 			loading = true;
 			error = null;
 
-			// Fetch notebook data from API
-			const response = await fetch(`/api/notebooks/${id}`);
-
-			if (!response.ok) {
-				if (response.status === 404) {
-					throw new Error('Notebook not found');
-				}
-				throw new Error(`Failed to load notebook: ${response.statusText}`);
-			}
-
-			const notebookData = await response.json();
+			const notebookData = await ServerQuery.getNotebook(id);
 
 			// Create a new notebook with the fetched data
 			const notebook = new ReactiveNotebook({
@@ -106,19 +97,13 @@
 			});
 
 			// Add all cells from the API response to the notebook
-			if (notebookData.cells && Array.isArray(notebookData.cells)) {
-				const cells = notebookData.cells;
-
-				for (const cellData of cells) {
-					await notebook.addCell({
-						id: cellData.id,
-						kind: cellData.kind,
-						value: cellData.value,
-						focus: false // Don't focus on loaded cells
-					});
-				}
-			} else {
-				logger.error('Cell field not found in notebook data', notebookData);
+			for (const cellData of notebookData.cells) {
+				await notebook.addCell({
+					id: cellData.id,
+					kind: cellData.kind,
+					value: cellData.value,
+					focus: false // Don't focus on loaded cells
+				});
 			}
 
 			notebookStore = createNotebookStore(notebook);

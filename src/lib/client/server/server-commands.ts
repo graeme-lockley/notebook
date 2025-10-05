@@ -2,6 +2,32 @@ import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 import { clientIdToServerId } from '$lib/client/model/cell';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
+interface CreateNotebookResponse {
+	id: string;
+}
+
+export async function createNotebook(
+	name: string,
+	description: string | undefined
+): Promise<CreateNotebookResponse> {
+	const response = await fetch('/api/notebooks', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			title: name,
+			description: description || ''
+		})
+	});
+
+	if (!response.ok) {
+		throw new Error(`Failed to create notebook: ${response.statusText}`);
+	}
+
+	return await response.json();
+}
+
 export async function addCell(
 	notebookId: string | undefined,
 	kind: CellKind,

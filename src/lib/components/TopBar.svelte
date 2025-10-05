@@ -5,6 +5,7 @@
 	import CreateNotebookModal from './CreateNotebookModal.svelte';
 	import type { CreateNotebookEvent } from './event-types';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
+	import * as ServerCommand from '$lib/client/server/server-commands';
 
 	let { title = 'Untitled Notebook', lastEdited = new Date(), version = '1.0.0' } = $props();
 
@@ -59,25 +60,10 @@
 
 	async function handleCreateNotebook(event: CustomEvent<CreateNotebookEvent>) {
 		try {
-			const { name, description } = event.detail;
-
-			// Call the API to create the notebook
-			const response = await fetch('/api/notebooks', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					title: name,
-					description: description || ''
-				})
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to create notebook: ${response.statusText}`);
-			}
-
-			const result = await response.json();
+			const result = await ServerCommand.createNotebook(
+				event.detail.name,
+				event.detail.description
+			);
 
 			// Navigate to a clean page with the new notebook
 			await goto(`/notebook/${result.id}`);
