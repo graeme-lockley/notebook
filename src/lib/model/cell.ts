@@ -295,7 +295,7 @@ export class ReactiveNotebook {
 		const newCell = new ReactiveCell(this.generateCellId(), kind, value, this.module, this);
 
 		if (relativeToId) {
-			const refIndex = this._cells.findIndex((cell) => cell.id === relativeToId);
+			const refIndex = this.getCellIndex(relativeToId);
 			if (refIndex !== -1) {
 				const insertIndex = position === 'above' ? refIndex : refIndex + 1;
 				this._cells.splice(insertIndex, 0, newCell);
@@ -326,7 +326,7 @@ export class ReactiveNotebook {
 			`🔍 Current _cells before removal:`,
 			this._cells.map((c) => c.id)
 		);
-		const index = this._cells.findIndex((cell) => cell.id === id);
+		const index = this.getCellIndex(id);
 		logger.info(`🔍 Found cell at index: ${index}`);
 		if (index === -1) {
 			logger.info(`🔍 Cell not found, returning false`);
@@ -344,7 +344,7 @@ export class ReactiveNotebook {
 	}
 
 	async updateCell(id: string, updates: Partial<Omit<BaseCell, 'id'>>): Promise<boolean> {
-		const cell = this._cells.find((cell) => cell.id === id);
+		const cell = this.getCell(id);
 		if (!cell) return false;
 
 		// Check if the value is being updated
@@ -369,9 +369,13 @@ export class ReactiveNotebook {
 		return this._cells.find((cell) => cell.id === id) || null;
 	}
 
+	getCellIndex(id: string): number {
+		return this._cells.findIndex((cell) => cell.id === id);
+	}
+
 	// Focus management
 	setFocus(id: string): boolean {
-		const cell = this._cells.find((cell) => cell.id === id);
+		const cell = this.getCell(id);
 		if (!cell) return false;
 
 		// Clear focus from all cells
@@ -396,7 +400,7 @@ export class ReactiveNotebook {
 
 	// Cell operations
 	toggleClosed(id: string): boolean {
-		const cell = this._cells.find((cell) => cell.id === id);
+		const cell = this.getCell(id);
 		if (!cell) return false;
 
 		cell.isClosed = !cell.isClosed;
@@ -407,7 +411,7 @@ export class ReactiveNotebook {
 
 	// Cell reordering
 	moveCell(id: string, newIndex: number): boolean {
-		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
+		const currentIndex = this.getCellIndex(id);
 		if (currentIndex === -1 || newIndex < 0 || newIndex >= this._cells.length) {
 			return false;
 		}
@@ -420,21 +424,21 @@ export class ReactiveNotebook {
 	}
 
 	moveCellUp(id: string): boolean {
-		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
+		const currentIndex = this.getCellIndex(id);
 		if (currentIndex <= 0) return false;
 
 		return this.moveCell(id, currentIndex - 1);
 	}
 
 	moveCellDown(id: string): boolean {
-		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
+		const currentIndex = this.getCellIndex(id);
 		if (currentIndex === -1 || currentIndex >= this._cells.length - 1) return false;
 
 		return this.moveCell(id, currentIndex + 1);
 	}
 
 	async duplicateCell(id: string): Promise<ReactiveCell | null> {
-		const cell = this._cells.find((cell) => cell.id === id);
+		const cell = this.getCell(id);
 		if (!cell) return null;
 
 		const duplicatedCell = new ReactiveCell(
@@ -448,7 +452,7 @@ export class ReactiveNotebook {
 		// Copy properties
 		duplicatedCell.isClosed = cell.isClosed;
 
-		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
+		const currentIndex = this.getCellIndex(id);
 		this._cells.splice(currentIndex + 1, 0, duplicatedCell);
 
 		// Execute the duplicated cell
