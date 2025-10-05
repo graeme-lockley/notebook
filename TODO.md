@@ -3,9 +3,13 @@
 ## Defects
 
 - [ ] Duplicate does not have a server side route.
-- [ ] Create a new notebook does not create the notebook topic. The event is published however the consumers are not working.
+- [ ] Create a new notebook does not create the notebook topic. The event is published however the consumers are not working. It does appear that the new projections and the former approach are interfering which each other. This must be unified and cleaned up.
 
 ## Features
+
+### Projections
+
+- [ ] All notebook projections are loaded at start-up. This is aweful. I would like a notebook projection to be managed in a lazy manner. If no consumer has that notebook open, then the projection must be discarded. When a consumer opens a notebook, that notebook's projection should be hydrated. Projections will be shared between consumers. A reference counting scheme will need to be used here.
 
 ### Notebook
 
