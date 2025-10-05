@@ -11,7 +11,7 @@
 		MoveCellDownEvent,
 		DuplicateCellEvent
 	} from './event-types';
-	import type { NotebookStore } from '$lib/stores/notebook';
+	import type { NotebookStore } from '$lib/client/stores/notebook';
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 
 	interface Props {

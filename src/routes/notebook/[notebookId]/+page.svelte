@@ -2,7 +2,7 @@
 	import TopBar from '$lib/components/TopBar.svelte';
 	import FooterBar from '$lib/components/FooterBar.svelte';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
-	import { createNotebookStore, type NotebookStore } from '$lib/stores/notebook';
+	import { createNotebookStore, type NotebookStore } from '$lib/client/stores/notebook';
 	import { ReactiveNotebook } from '$lib/model/cell';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';

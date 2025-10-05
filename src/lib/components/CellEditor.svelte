@@ -13,7 +13,7 @@
 		SourceValueChangeEvent,
 		ToggleSourceViewEvent
 	} from './event-types';
-	import { type NotebookStore } from '$lib/stores/notebook';
+	import { type NotebookStore } from '$lib/client/stores/notebook';
 
 	interface Props {
 		notebookStore: NotebookStore;
