@@ -1,6 +1,6 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
 import type { LibraryReadModel, NotebookReadModel } from '../ports/inbound/read-models';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class LibraryProjector implements EventHandler {
 	constructor(

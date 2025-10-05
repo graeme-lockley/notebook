@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
 
 export async function GET(): Promise<Response> {

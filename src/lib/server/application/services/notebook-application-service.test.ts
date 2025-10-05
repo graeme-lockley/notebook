@@ -5,7 +5,6 @@ import type { EventStore } from '$lib/server/application/ports/outbound/event-st
 
 describe('NotebookApplicationService', () => {
 	let eventStore: EventStore;
-
 	let notebookService: NotebookApplicationService;
 
 	beforeEach(async () => {

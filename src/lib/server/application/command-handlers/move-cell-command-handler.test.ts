@@ -5,7 +5,6 @@ import { MoveCellCommandHandler } from './move-cell-command-handler';
 
 describe('MoveCellCommandHandler', () => {
 	let eventStore: EventStore;
-
 	let commandHandler: MoveCellCommandHandler;
 
 	beforeEach(async () => {

@@ -2,7 +2,7 @@ import type { EventStore } from '../ports/outbound/event-store';
 import type { EventBus } from '../ports/outbound/event-bus';
 import { NotebookApplicationService } from '../services/notebook-application-service';
 import type { DeleteCellCommand, DeleteCellCommandResult } from '../commands/delete-cell-command';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class DeleteCellCommandHandler {
 	constructor(
@@ -53,7 +53,7 @@ export class DeleteCellCommandHandler {
 				eventId
 			};
 		} catch (error) {
-			logger.error('DeleteCellCommandHandler: Error deleting cell:', error);
+			logger.info('DeleteCellCommandHandler: Error deleting cell:', error);
 			throw error;
 		}
 	}

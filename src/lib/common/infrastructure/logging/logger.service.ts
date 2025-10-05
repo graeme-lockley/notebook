@@ -7,7 +7,7 @@ export interface LoggerConfig {
 
 class Logger {
 	private config: LoggerConfig = {
-		enableInfo: true,
+		enableInfo: false,
 		enableWarn: true,
 		enableError: true,
 		enableDebug: process.env.NODE_ENV === 'development'

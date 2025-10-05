@@ -2,7 +2,7 @@ import type { EventStore } from '../ports/outbound/event-store';
 import type { EventBus } from '../ports/outbound/event-bus';
 import { NotebookApplicationService } from '../services/notebook-application-service';
 import type { UpdateCellCommand, UpdateCellCommandResult } from '../commands/update-cell-command';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class UpdateCellCommandHandler {
 	constructor(
@@ -53,7 +53,7 @@ export class UpdateCellCommandHandler {
 				eventId
 			};
 		} catch (error) {
-			logger.error('UpdateCellCommandHandler: Error updating cell:', error);
+			logger.info('UpdateCellCommandHandler: Error updating cell:', error);
 			throw error;
 		}
 	}

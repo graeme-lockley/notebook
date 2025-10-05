@@ -8,7 +8,7 @@ import type {
 	CellDeletedEvent,
 	CellMovedEvent
 } from '$lib/server/domain/events/notebook.events';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 /**
  * Application service that bridges between pure domain services and infrastructure.

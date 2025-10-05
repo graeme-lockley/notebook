@@ -3,7 +3,7 @@ import type {
 	WebSocketService,
 	WebSocketConnection
 } from '$lib/server/application/ports/outbound/websocket-service';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import { v4 as uuidv4 } from 'uuid';
 
 export class SvelteKitWebSocketServer {

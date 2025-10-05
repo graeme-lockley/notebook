@@ -2,7 +2,7 @@ import type { EventStore } from '../ports/outbound/event-store';
 import type { EventBus } from '../ports/outbound/event-bus';
 import { NotebookApplicationService } from '../services/notebook-application-service';
 import type { MoveCellCommand, MoveCellCommandResult } from '../commands/move-cell-command';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class MoveCellCommandHandler {
 	constructor(
@@ -53,7 +53,7 @@ export class MoveCellCommandHandler {
 				eventId
 			};
 		} catch (error) {
-			logger.error('MoveCellCommandHandler: Error moving cell:', error);
+			logger.info('MoveCellCommandHandler: Error moving cell:', error);
 			throw error;
 		}
 	}

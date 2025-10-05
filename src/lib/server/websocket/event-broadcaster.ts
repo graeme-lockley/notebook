@@ -3,7 +3,7 @@
 
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 import type { NotebookWebSocketServer } from './websocket-server';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export interface EventBroadcastMessage {
 	type: string;

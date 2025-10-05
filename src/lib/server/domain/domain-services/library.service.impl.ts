@@ -1,4 +1,4 @@
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type {
 	LibraryEvent,
 	NotebookCreatedEvent,

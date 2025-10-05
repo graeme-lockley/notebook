@@ -5,7 +5,6 @@ import type { EventStore } from '$lib/server/application/ports/outbound/event-st
 
 describe('LibraryApplicationService', () => {
 	let eventStore: EventStore;
-
 	let libraryService: LibraryApplicationService;
 
 	beforeEach(async () => {

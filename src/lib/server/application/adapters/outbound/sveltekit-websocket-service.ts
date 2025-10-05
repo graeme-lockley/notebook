@@ -1,5 +1,5 @@
 import type { WebSocketService, WebSocketConnection } from '../../ports/outbound/websocket-service';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class SvelteKitWebSocketService implements WebSocketService {
 	private connections: Map<string, WebSocketConnection> = new Map();

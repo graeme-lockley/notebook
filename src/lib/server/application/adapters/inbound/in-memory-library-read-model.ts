@@ -1,6 +1,6 @@
 import type { LibraryReadModel } from '../../ports/inbound/read-models';
 import type { Notebook } from '$lib/server/domain/value-objects';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class InMemoryLibraryReadModel implements LibraryReadModel {
 	private notebooks: Map<string, Notebook> = new Map();

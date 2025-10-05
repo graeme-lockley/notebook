@@ -2,7 +2,7 @@
 // Provides bidirectional communication for notebook updates
 
 import { WebSocketServer, WebSocket } from 'ws';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export interface WebSocketMessage {
 	type: string;

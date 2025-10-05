@@ -1,7 +1,7 @@
 import type { EventStore } from '../ports/outbound/event-store';
 import { NotebookServiceImpl } from '$lib/server/domain/domain-services/notebook.service.impl';
 import type { CellKind } from '$lib/server/domain/value-objects';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 /**
  * Application service that bridges between pure domain services and infrastructure.

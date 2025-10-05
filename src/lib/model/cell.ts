@@ -7,6 +7,7 @@ import {
 	type IVariable
 } from '../../runtime';
 import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 import { executeHtml } from './cell/html';
 import { executeJavaScript } from './cell/javascript';
@@ -320,22 +321,22 @@ export class ReactiveNotebook {
 	}
 
 	removeCell(id: string): boolean {
-		console.log(`🔍 ReactiveNotebook.removeCell called with id: ${id}`);
-		console.log(
+		logger.info(`🔍 ReactiveNotebook.removeCell called with id: ${id}`);
+		logger.info(
 			`🔍 Current _cells before removal:`,
 			this._cells.map((c) => c.id)
 		);
 		const index = this._cells.findIndex((cell) => cell.id === id);
-		console.log(`🔍 Found cell at index: ${index}`);
+		logger.info(`🔍 Found cell at index: ${index}`);
 		if (index === -1) {
-			console.log(`🔍 Cell not found, returning false`);
+			logger.info(`🔍 Cell not found, returning false`);
 			return false;
 		}
 
 		this._cells.splice(index, 1);
 		this._updatedAt = new Date();
 		this._version++;
-		console.log(
+		logger.info(
 			`🔍 Cell removed, new _cells:`,
 			this._cells.map((c) => c.id)
 		);

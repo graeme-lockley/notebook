@@ -5,7 +5,6 @@ import { UpdateCellCommandHandler } from './update-cell-command-handler';
 
 describe('UpdateCellCommandHandler', () => {
 	let eventStore: EventStore;
-
 	let commandHandler: UpdateCellCommandHandler;
 
 	beforeEach(async () => {

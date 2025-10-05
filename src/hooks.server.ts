@@ -1,4 +1,4 @@
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import { eventStoreClient } from '$lib/server/adapters/outbound/event-store/remote/config';
 import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
 import { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
@@ -48,6 +48,7 @@ export async function handle({ event, resolve }) {
 
 async function initializeServices() {
 	try {
+		logger.configure({ enableInfo: true });
 		logger.info('Initializing services...');
 
 		// Initialize event bus and read models

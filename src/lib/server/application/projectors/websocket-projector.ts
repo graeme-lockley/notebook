@@ -1,6 +1,6 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
 import type { WebSocketService } from '../ports/outbound/websocket-service';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class WebSocketProjector implements EventHandler {
 	constructor(private webSocketService: WebSocketService) {}

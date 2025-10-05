@@ -2,7 +2,7 @@ import type { EventStore } from '../ports/outbound/event-store';
 import type { EventBus } from '../ports/outbound/event-bus';
 import { NotebookApplicationService } from '../services/notebook-application-service';
 import type { AddCellCommand, AddCellCommandResult } from '../commands/add-cell-command';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class AddCellCommandHandler {
 	constructor(
@@ -58,7 +58,7 @@ export class AddCellCommandHandler {
 				eventId
 			};
 		} catch (error) {
-			logger.error('AddCellCommandHandler: Error adding cell:', error);
+			logger.info('AddCellCommandHandler: Error adding cell:', error);
 			throw error;
 		}
 	}

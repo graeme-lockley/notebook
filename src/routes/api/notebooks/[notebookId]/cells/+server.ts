@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
 import { AddCellCommandHandler } from '$lib/server/application/command-handlers/add-cell-command-handler';

@@ -1,5 +1,5 @@
 import type { EventBus, DomainEvent, EventHandler } from '../../ports/outbound/event-bus';
-import { logger } from '$lib/server/infrastructure/logging/logger.service';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class SimpleEventBus implements EventBus {
 	private handlers: Map<string, Set<EventHandler>> = new Map();
