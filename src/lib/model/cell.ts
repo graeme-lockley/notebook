@@ -405,17 +405,6 @@ export class ReactiveNotebook {
 		return true;
 	}
 
-	async runCell(id: string): Promise<void> {
-		const cell = this._cells.find((cell) => cell.id === id);
-		if (cell) {
-			await cell.execute();
-		}
-	}
-
-	async runAllCells(): Promise<void> {
-		await Promise.all(this._cells.map((cell) => cell.execute()));
-	}
-
 	// Cell reordering
 	moveCell(id: string, newIndex: number): boolean {
 		const currentIndex = this._cells.findIndex((cell) => cell.id === id);
