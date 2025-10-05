@@ -1,5 +1,6 @@
 import { writable, derived, type Readable } from 'svelte/store';
 import type { ReactiveNotebook, ReactiveCell, AddCellOptions } from '$lib/model/cell';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 // Define the store interface - export it properly
 export interface NotebookStore {
@@ -45,19 +46,19 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 	}
 
 	async function removeCell(id: string) {
-		console.log(`🔍 Store removeCell called with id: ${id}`);
-		console.log(
+		logger.info(`🔍 Store removeCell called with id: ${id}`);
+		logger.info(
 			`🔍 Current cells before removal:`,
 			currentNotebook.cells.map((c) => c.id)
 		);
 		const result = await currentNotebook.removeCell(id);
-		console.log(`🔍 ReactiveNotebook.removeCell result:`, result);
-		console.log(
+		logger.info(`🔍 ReactiveNotebook.removeCell result:`, result);
+		logger.info(
 			`🔍 Current cells after removal:`,
 			currentNotebook.cells.map((c) => c.id)
 		);
 		set(currentNotebook);
-		console.log(`🔍 Store set() called after removal`);
+		logger.info(`🔍 Store set() called after removal`);
 	}
 
 	async function updateCell(id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) {

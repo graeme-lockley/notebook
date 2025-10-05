@@ -1,5 +1,6 @@
 import type { ReactiveCell } from '../cell';
 import { parse } from '../../parser';
+import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 // Extract JavaScript expressions from markdown/HTML
 export function extractExpressions(content: string): {
@@ -74,7 +75,7 @@ export async function makeReactive(cell: ReactiveCell): Promise<void> {
 
 		cell.assignVariables([{ name: undefined, dependencies, body: evaluator }]);
 	} catch (error) {
-		console.log('Error: ', error);
+		logger.info('Error', error);
 		cell.handleError(error);
 	}
 }

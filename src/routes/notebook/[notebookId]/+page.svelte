@@ -8,6 +8,9 @@
 	import { page } from '$app/stores';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
+	import { logger } from '$lib/common/infrastructure/logging/logger.service';
+
+	logger.configure({ enableInfo: true });
 
 	let notebookStore: NotebookStore | undefined;
 	let loading = true;
@@ -27,7 +30,7 @@
 	// Protect notebook store from reactive updates during reload
 	$: if (notebookStore && !isReloading) {
 		// This reactive statement ensures the notebook store is only updated when not reloading
-		console.log('📊 Notebook store updated, cells:', notebookStore.notebook?.cells?.length || 0);
+		logger.info('📊 Notebook store updated, cells:', notebookStore.notebook?.cells?.length || 0);
 	}
 
 	// Helper function to extract sequence number from event ID
@@ -59,7 +62,7 @@
 	}
 
 	onMount(async () => {
-		console.log('🚀 Notebook page mounted for:', notebookId);
+		logger.info('🚀 Notebook page mounted for:', notebookId);
 		if (notebookId) {
 			await loadNotebook(notebookId);
 		}
@@ -90,7 +93,7 @@
 			mouseMoveTimeout = setTimeout(() => {
 				if (mouseMoveCount % 10 === 0) {
 					// Log every 10th mouse move to avoid spam
-					console.log('🖱️ Mouse moved, count:', mouseMoveCount, 'isReloading:', isReloading);
+					logger.info('🖱️ Mouse moved, count:', mouseMoveCount, 'isReloading:', isReloading);
 				}
 			}, 50); // 50ms debounce
 		});
@@ -100,10 +103,10 @@
 			const notebookContainer = document.querySelector('[data-testid="notebook-editor"]');
 			if (notebookContainer) {
 				notebookContainer.addEventListener('mouseenter', () => {
-					console.log('🖱️ Mouse entered notebook container');
+					logger.info('🖱️ Mouse entered notebook container');
 				});
 				notebookContainer.addEventListener('mouseleave', () => {
-					console.log('🖱️ Mouse left notebook container');
+					logger.info('🖱️ Mouse left notebook container');
 				});
 			}
 		});
@@ -174,7 +177,7 @@
 		websocket = new WebSocket(wsUrl);
 
 		websocket.onopen = () => {
-			console.log('WebSocket connected');
+			logger.info('WebSocket connected');
 			reconnectAttempts = 0;
 			reconnectDelay = 1000;
 
@@ -186,7 +189,7 @@
 		websocket.onmessage = (event) => {
 			try {
 				const data = JSON.parse(event.data);
-				console.log('🔌 WebSocket message received:', data);
+				logger.info('🔌 WebSocket message received:', data);
 				handleWebSocketMessage(data);
 			} catch (err) {
 				console.error('Error parsing WebSocket message:', err);
@@ -194,7 +197,7 @@
 		};
 
 		websocket.onclose = (event) => {
-			console.log('WebSocket disconnected:', event.code, event.reason);
+			logger.info('WebSocket disconnected:', event.code, event.reason);
 			attemptReconnect(notebookId);
 		};
 
@@ -214,36 +217,36 @@
 
 		switch (message.type) {
 			case 'connected':
-				console.log('WebSocket connection confirmed for notebook:', message.data);
+				logger.info('WebSocket connection confirmed for notebook:', message.data);
 				break;
 			case 'pong':
 				// Handle heartbeat response
-				console.log('WebSocket heartbeat received');
+				logger.info('WebSocket heartbeat received');
 				break;
 			case 'server_ready':
-				console.log('Server ready for notebook:', message.data);
+				logger.info('Server ready for notebook:', message.data);
 				break;
 			case 'cell.created':
 			case 'cell.updated':
 			case 'cell.deleted':
 			case 'cell.moved':
 				// Handle cell events
-				console.log('📨 Received WebSocket cell event:', message.type, message.payload);
+				logger.info('📨 Received WebSocket cell event:', message.type, message.payload);
 				handleCellEvent(message);
 				break;
 			case 'notebook.updated':
 			case 'notebook.initialized':
 				// Use existing event handling logic
-				console.log('📨 Received WebSocket event:', message.type, message.data);
+				logger.info('📨 Received WebSocket event:', message.type, message.data);
 				handleServerEvent(data);
 				break;
 			default:
-				console.log('Unknown WebSocket message type:', message.type);
+				logger.info('Unknown WebSocket message type:', message.type);
 		}
 	}
 
 	function handleCellEvent(message: { type: string; payload?: unknown; eventId?: string }) {
-		console.log('🎯 Handling cell event:', message.type, message.payload);
+		logger.info('🎯 Handling cell event:', message.type, message.payload);
 
 		if (!notebookStore || !notebookStore.notebook) {
 			console.error('❌ No notebookStore or notebook instance available for cell event');
@@ -260,7 +263,7 @@
 				const position = payload.position as number;
 				// const createdAt = payload.createdAt as string; // Not used in current implementation
 
-				console.log(`➕ Adding cell ${cellId} at position ${position}`);
+				logger.info(`➕ Adding cell ${cellId} at position ${position}`);
 
 				// Use the store's addCell method to trigger reactivity
 				notebookStore
@@ -280,7 +283,7 @@
 						// Update the cell ID mapping: client ID -> server ID
 						// The newCell.id is the client-generated ID, cellId is the server ID
 						cellIdMapping.set(newCell.id, cellId);
-						console.log(`🔗 Mapped client ID ${newCell.id} to server ID ${cellId}`);
+						logger.info(`🔗 Mapped client ID ${newCell.id} to server ID ${cellId}`);
 
 						// Move the cell to the correct position if needed
 						if (position !== notebookStore.notebook.cells.length - 1) {
@@ -298,14 +301,14 @@
 				const serverCellId = payload.cellId as string;
 				const changes = payload.changes as { kind?: CellKind; value?: string };
 
-				console.log(`✏️ Updating cell ${serverCellId}:`, changes);
+				logger.info(`✏️ Updating cell ${serverCellId}:`, changes);
 
 				// Find the client ID that maps to this server ID
 				let clientCellId = serverCellId;
 				for (const [clientId, serverId] of cellIdMapping.entries()) {
 					if (serverId === serverCellId) {
 						clientCellId = clientId;
-						console.log(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
+						logger.info(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
 						break;
 					}
 				}
@@ -317,8 +320,8 @@
 			case 'cell.deleted': {
 				const serverCellId = payload.cellId as string;
 
-				console.log(`🗑️ Deleting cell ${serverCellId}`);
-				console.log(
+				logger.info(`🗑️ Deleting cell ${serverCellId}`);
+				logger.info(
 					`🔍 Current cells before deletion:`,
 					notebookStore.notebook.cells.map((c) => c.id)
 				);
@@ -328,36 +331,36 @@
 				for (const [clientId, serverId] of cellIdMapping.entries()) {
 					if (serverId === serverCellId) {
 						clientCellId = clientId;
-						console.log(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
+						logger.info(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
 						break;
 					}
 				}
 
 				// Use the store's removeCell method to trigger reactivity
 				const result = notebookStore.removeCell(clientCellId);
-				console.log(`🔍 Remove cell result:`, result);
-				console.log(
+				logger.info(`🔍 Remove cell result:`, result);
+				logger.info(
 					`🔍 Current cells after deletion:`,
 					notebookStore.notebook.cells.map((c) => c.id)
 				);
 
 				// Clean up the mapping
 				cellIdMapping.delete(clientCellId);
-				console.log(`🧹 Cleaned up mapping for client ID ${clientCellId}`);
+				logger.info(`🧹 Cleaned up mapping for client ID ${clientCellId}`);
 				break;
 			}
 			case 'cell.moved': {
 				const serverCellId = payload.cellId as string;
 				const position = payload.position as number;
 
-				console.log(`↕️ Moving cell ${serverCellId} to position ${position}`);
+				logger.info(`↕️ Moving cell ${serverCellId} to position ${position}`);
 
 				// Find the client ID that maps to this server ID
 				let clientCellId = serverCellId;
 				for (const [clientId, serverId] of cellIdMapping.entries()) {
 					if (serverId === serverCellId) {
 						clientCellId = clientId;
-						console.log(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
+						logger.info(`🔗 Found client ID ${clientCellId} for server ID ${serverCellId}`);
 						break;
 					}
 				}
@@ -369,7 +372,7 @@
 			}
 		}
 
-		console.log(
+		logger.info(
 			'✅ Cell event handled directly, current cells:',
 			notebookStore.notebook.cells.length
 		);
@@ -380,7 +383,7 @@
 	function attemptReconnect(notebookId: string) {
 		if (reconnectAttempts < maxReconnectAttempts) {
 			reconnectAttempts++;
-			console.log(
+			logger.info(
 				`Attempting to reconnect WebSocket (${reconnectAttempts}/${maxReconnectAttempts})...`
 			);
 
@@ -402,30 +405,30 @@
 		switch (eventData.type) {
 			case 'notebook.initialized': {
 				// Initial data - cells are already loaded from the API
-				console.log('Notebook initialized with', eventData.data.cells.length, 'cells');
+				logger.info('Notebook initialized with', eventData.data.cells.length, 'cells');
 				break;
 			}
 			case 'notebook.updated': {
 				// Update cells from server
 				const eventId = eventData.data.event?.id;
-				console.log('Received notebook.updated event:', eventData.data.event);
+				logger.info('Received notebook.updated event:', eventData.data.event);
 
 				if (eventId && isEventNewer(eventId)) {
-					console.log('Processing newer event:', eventId);
+					logger.info('Processing newer event:', eventId);
 					updateCellsFromServer(eventData.data.cells);
 					lastProcessedEventId = eventId;
 				} else {
-					console.log('Skipping older event:', eventId, 'last processed:', lastProcessedEventId);
+					logger.info('Skipping older event:', eventId, 'last processed:', lastProcessedEventId);
 				}
 				break;
 			}
 			case 'heartbeat': {
 				// Just a heartbeat to keep connection alive
-				console.log('Event stream heartbeat received');
+				logger.info('Event stream heartbeat received');
 				break;
 			}
 			default:
-				console.log('Unknown event type:', eventData.type);
+				logger.info('Unknown event type:', eventData.type);
 		}
 	}
 
@@ -433,9 +436,9 @@
 	function updateCellsFromServer(serverCells: any[]) {
 		if (!notebookStore) return;
 
-		console.log('🔄 Updating cells from server:', serverCells.length, 'cells');
-		console.log('📊 Current cell mapping:', Array.from(cellIdMapping.entries()));
-		console.log('📋 Current cells:', notebookStore.notebook.cells.length);
+		logger.info('🔄 Updating cells from server:', serverCells.length, 'cells');
+		logger.info('📊 Current cell mapping:', Array.from(cellIdMapping.entries()));
+		logger.info('📋 Current cells:', notebookStore.notebook.cells.length);
 
 		// Simple approach: clear all cells and rebuild from server
 		const currentCells = [...notebookStore.notebook.cells];
@@ -450,7 +453,7 @@
 
 		// Add all cells from server
 		serverCells.forEach((serverCell) => {
-			console.log(
+			logger.info(
 				'➕ Adding cell from server:',
 				serverCell.id,
 				'kind:',
@@ -468,7 +471,7 @@
 				.then((clientCell) => {
 					// Map the new client cell ID to the server cell ID
 					cellIdMapping.set(clientCell.id, serverCell.id);
-					console.log('🔗 Mapped cell:', clientCell.id, '->', serverCell.id);
+					logger.info('🔗 Mapped cell:', clientCell.id, '->', serverCell.id);
 				});
 		});
 	}
@@ -489,7 +492,7 @@
 	function handleNewNotebook(event: CustomEvent) {
 		// Handle new notebook creation - redirect to the new notebook
 		const { name, description } = event.detail;
-		console.log('Creating new notebook:', { name, description });
+		logger.info('Creating new notebook:', { name, description });
 		// The TopBar component will handle the API call and navigation
 	}
 
@@ -514,7 +517,7 @@
 			}
 
 			// The event stream will handle updating the UI
-			console.log('Cell added successfully, waiting for server event...');
+			logger.info('Cell added successfully, waiting for server event...');
 		} catch (error) {
 			console.error('Error adding cell:', error);
 			// You might want to show an error message to the user
@@ -524,7 +527,7 @@
 	async function updateCellOnServer(cellId: string, updates: { kind?: string; value?: string }) {
 		if (!notebookId) return;
 
-		console.log('Updating cell on server:', cellId, updates);
+		logger.info('Updating cell on server:', cellId, updates);
 
 		// Get the server cell ID from the mapping
 		const serverCellId = cellIdMapping.get(cellId);
@@ -549,7 +552,7 @@
 				throw new Error(`Failed to update cell: ${response.statusText}`);
 			}
 
-			console.log('Cell updated successfully, waiting for server event...');
+			logger.info('Cell updated successfully, waiting for server event...');
 		} catch (error) {
 			console.error('Error updating cell:', error);
 		}
@@ -589,7 +592,7 @@
 				throw new Error(`Failed to create cell: ${response.statusText}`);
 			}
 
-			console.log('Cell created on server, waiting for server event...');
+			logger.info('Cell created on server, waiting for server event...');
 		} catch (error) {
 			console.error('Error creating cell on server:', error);
 		}
@@ -614,7 +617,7 @@
 				throw new Error(`Failed to delete cell: ${response.statusText}`);
 			}
 
-			console.log('Cell deleted successfully, waiting for server event...');
+			logger.info('Cell deleted successfully, waiting for server event...');
 		} catch (error) {
 			console.error('Error deleting cell:', error);
 		}
@@ -623,7 +626,7 @@
 	async function moveCellOnServer(cellId: string, direction: 'up' | 'down') {
 		if (!notebookId || !notebookStore) return;
 
-		console.log(`Attempting to move cell ${cellId} ${direction}`);
+		logger.info(`Attempting to move cell ${cellId} ${direction}`);
 
 		// Get the server cell ID from the mapping
 		const serverCellId = cellIdMapping.get(cellId);
@@ -640,7 +643,7 @@
 				return;
 			}
 
-			console.log(
+			logger.info(
 				`Current position: ${currentPosition}, Total cells: ${notebookStore.notebook.cells.length}`
 			);
 
@@ -652,15 +655,15 @@
 				newPosition = Math.min(notebookStore.notebook.cells.length - 1, currentPosition + 1);
 			}
 
-			console.log(`Calculated new position: ${newPosition}`);
+			logger.info(`Calculated new position: ${newPosition}`);
 
 			// Don't move if already at the boundary
 			if (newPosition === currentPosition) {
-				console.log('Cell already at boundary, no move needed');
+				logger.info('Cell already at boundary, no move needed');
 				return;
 			}
 
-			console.log(`Sending move request: cellId=${serverCellId}, position=${newPosition}`);
+			logger.info(`Sending move request: cellId=${serverCellId}, position=${newPosition}`);
 
 			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
 				method: 'PATCH',
@@ -674,7 +677,7 @@
 				throw new Error(`Failed to move cell: ${response.statusText}`);
 			}
 
-			console.log(`Cell moved ${direction} successfully, waiting for server event...`);
+			logger.info(`Cell moved ${direction} successfully, waiting for server event...`);
 		} catch (error) {
 			console.error('Error moving cell:', error);
 		}
@@ -692,7 +695,7 @@
 				throw new Error(`Failed to duplicate cell: ${response.statusText}`);
 			}
 
-			console.log('Cell duplicated successfully, waiting for server event...');
+			logger.info('Cell duplicated successfully, waiting for server event...');
 		} catch (error) {
 			console.error('Error duplicating cell:', error);
 		}

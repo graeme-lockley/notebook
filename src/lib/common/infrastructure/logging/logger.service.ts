@@ -3,6 +3,7 @@ export interface LoggerConfig {
 	enableWarn: boolean;
 	enableError: boolean;
 	enableDebug: boolean;
+	showPrefix: boolean;
 }
 
 class Logger {
@@ -10,7 +11,8 @@ class Logger {
 		enableInfo: false,
 		enableWarn: true,
 		enableError: true,
-		enableDebug: process.env.NODE_ENV === 'development'
+		enableDebug: process.env.NODE_ENV === 'development',
+		showPrefix: typeof process !== 'undefined' // only show prefix if running server side
 	};
 
 	configure(config: Partial<LoggerConfig>): LoggerConfig {
@@ -24,7 +26,11 @@ class Logger {
 			const formattedArgs = args.map((arg) =>
 				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
 			);
-			console.log(`[INFO] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			if (this.config.showPrefix) {
+				console.log(`[INFO] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			} else {
+				console.log(message, ...formattedArgs);
+			}
 		}
 	}
 
@@ -33,7 +39,11 @@ class Logger {
 			const formattedArgs = args.map((arg) =>
 				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
 			);
-			console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			if (this.config.showPrefix) {
+				console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			} else {
+				console.warn(message, ...formattedArgs);
+			}
 		}
 	}
 
@@ -42,7 +52,11 @@ class Logger {
 			const formattedArgs = args.map((arg) =>
 				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
 			);
-			console.error(`[ERROR] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			if (this.config.showPrefix) {
+				console.error(`[ERROR] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			} else {
+				console.error(message, ...formattedArgs);
+			}
 		}
 	}
 
@@ -51,7 +65,11 @@ class Logger {
 			const formattedArgs = args.map((arg) =>
 				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
 			);
-			console.log(`[DEBUG] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			if (this.config.showPrefix) {
+				console.log(`[DEBUG] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
+			} else {
+				console.log(message, ...formattedArgs);
+			}
 		}
 	}
 }
