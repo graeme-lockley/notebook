@@ -1,6 +1,5 @@
 import { writable, derived, type Readable } from 'svelte/store';
 import type { ReactiveNotebook, ReactiveCell, AddCellOptions } from '$lib/client/model/cell';
-import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 // Define the store interface - export it properly
 export interface NotebookStore {
@@ -12,14 +11,16 @@ export interface NotebookStore {
 	version: Readable<number>;
 	addCell: (options: AddCellOptions) => Promise<ReactiveCell>;
 	removeCell: (id: string) => Promise<void>;
+	moveCell: (id: string, position: number) => Promise<void>;
 	updateCell: (id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) => Promise<void>;
 	setFocus: (id: string) => void;
 	toggleClosed: (id: string) => void;
-	moveCellUp: (id: string) => void;
-	moveCellDown: (id: string) => void;
 	duplicateCell: (id: string) => Promise<void>;
 	updateTitle: (title: string) => void;
 	notebook: ReactiveNotebook;
+
+	findCellIndex: (id: string) => number;
+	length: () => number;
 }
 
 // Create a reactive notebook store
@@ -47,20 +48,14 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 		return newCell;
 	}
 
-	async function removeCell(id: string) {
-		logger.info(`🔍 Store removeCell called with id: ${id}`);
-		logger.info(
-			`🔍 Current cells before removal:`,
-			currentNotebook.cells.map((c) => c.id)
-		);
-		const result = await currentNotebook.removeCell(id);
-		logger.info(`🔍 ReactiveNotebook.removeCell result:`, result);
-		logger.info(
-			`🔍 Current cells after removal:`,
-			currentNotebook.cells.map((c) => c.id)
-		);
+	async function moveCell(id: string, position: number) {
+		currentNotebook.moveCell(id, position);
 		set(currentNotebook);
-		logger.info(`🔍 Store set() called after removal`);
+	}
+
+	async function removeCell(id: string) {
+		currentNotebook.removeCell(id);
+		set(currentNotebook);
 	}
 
 	async function updateCell(id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) {
@@ -77,16 +72,6 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 
 	function toggleClosed(id: string) {
 		currentNotebook.toggleClosed(id);
-		set(currentNotebook);
-	}
-
-	function moveCellUp(id: string) {
-		currentNotebook.moveCellUp(id);
-		set(currentNotebook);
-	}
-
-	function moveCellDown(id: string) {
-		currentNotebook.moveCellDown(id);
 		set(currentNotebook);
 	}
 
@@ -109,16 +94,22 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 		version,
 		addCell,
 		removeCell,
+		moveCell,
 		updateCell,
 		setFocus,
 		toggleClosed,
-		moveCellUp,
-		moveCellDown,
 		duplicateCell,
 		updateTitle,
 		// Expose the current notebook value (SSR compatible)
 		get notebook() {
 			return currentNotebook;
+		},
+
+		findCellIndex(id: string): number {
+			return this.notebook.cells.findIndex((cell) => cell.id === id);
+		},
+		length(): number {
+			return this.notebook.cells.length;
 		}
 	};
 

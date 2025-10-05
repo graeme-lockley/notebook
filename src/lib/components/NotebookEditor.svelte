@@ -16,23 +16,23 @@
 
 	interface Props {
 		notebookStore: NotebookStore;
-		addCellToServer: (kind: CellKind, value: string, position: number) => Promise<void>;
-		updateCellOnServer: (
+		handleAddCellToServer: (kind: CellKind, value: string, position: number) => Promise<void>;
+		handleUpdateCellOnServer: (
 			cellId: string,
 			updates: { kind?: string; value?: string }
 		) => Promise<void>;
-		deleteCellOnServer: (cellId: string) => Promise<void>;
-		moveCellOnServer: (cellId: string, direction: 'up' | 'down') => Promise<void>;
-		duplicateCellOnServer: (cellId: string) => Promise<void>;
+		handleDeleteCellOnServer: (cellId: string) => Promise<void>;
+		handleMoveCellOnServer: (cellId: string, direction: 'up' | 'down') => Promise<void>;
+		handleDuplicateCellOnServer: (cellId: string) => Promise<void>;
 	}
 
 	let {
 		notebookStore,
-		addCellToServer,
-		updateCellOnServer,
-		deleteCellOnServer,
-		moveCellOnServer,
-		duplicateCellOnServer
+		handleAddCellToServer,
+		handleUpdateCellOnServer,
+		handleDeleteCellOnServer,
+		handleMoveCellOnServer,
+		handleDuplicateCellOnServer
 	}: Props = $props();
 
 	async function handleCellCreated(event: CustomEvent<CellCreatedEvent>) {
@@ -61,7 +61,7 @@
 		const defaultContent = getDefaultCellContent(cellKind);
 
 		// Call server API - the event stream will update the UI
-		await addCellToServer(cellKind, defaultContent, position);
+		await handleAddCellToServer(cellKind, defaultContent, position);
 	}
 
 	function getDefaultCellContent(kind: CellKind): string {
@@ -82,27 +82,27 @@
 	}
 
 	async function handleSourceKindChange(event: CustomEvent<SourceKindChangeEvent>) {
-		await updateCellOnServer(event.detail.id, { kind: event.detail.kind });
+		await handleUpdateCellOnServer(event.detail.id, { kind: event.detail.kind });
 	}
 
 	async function handleSourceValueChange(event: CustomEvent<SourceValueChangeEvent>) {
-		await updateCellOnServer(event.detail.id, { value: event.detail.value });
+		await handleUpdateCellOnServer(event.detail.id, { value: event.detail.value });
 	}
 
 	async function handleDeleteCell(event: CustomEvent<DeleteCellEvent>) {
-		await deleteCellOnServer(event.detail.id);
+		await handleDeleteCellOnServer(event.detail.id);
 	}
 
 	async function handleMoveCellUp(event: CustomEvent<MoveCellUpEvent>) {
-		await moveCellOnServer(event.detail.id, 'up');
+		await handleMoveCellOnServer(event.detail.id, 'up');
 	}
 
 	async function handleMoveCellDown(event: CustomEvent<MoveCellDownEvent>) {
-		await moveCellOnServer(event.detail.id, 'down');
+		await handleMoveCellOnServer(event.detail.id, 'down');
 	}
 
 	async function handleDuplicateCell(event: CustomEvent<DuplicateCellEvent>) {
-		await duplicateCellOnServer(event.detail.id);
+		await handleDuplicateCellOnServer(event.detail.id);
 	}
 </script>
 

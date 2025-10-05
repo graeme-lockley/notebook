@@ -8,7 +8,8 @@
 	import { page } from '$app/stores';
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
-	import { clientIdToServerId, serverIdToClientId } from '$lib/client/model/cell';
+	import { serverIdToClientId } from '$lib/client/model/cell';
+	import * as ServerCommand from '$lib/client/server-commands';
 
 	logger.configure({ enableInfo: true });
 
@@ -285,8 +286,7 @@
 				let clientCellId = serverIdToClientId(serverCellId);
 
 				// Move cell and trigger reactivity
-				notebookStore.notebook.moveCell(clientCellId, position);
-				notebookStore.set(notebookStore.notebook);
+				notebookStore.moveCell(clientCellId, position);
 				break;
 			}
 		}
@@ -404,152 +404,49 @@
 		// The TopBar component will handle the API call and navigation
 	}
 
-	async function addCellToServer(kind: CellKind, value: string, position: number) {
-		if (!notebookId) return;
-
-		try {
-			const response = await fetch(`/api/notebooks/${notebookId}/cells`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					kind,
-					value,
-					position
-				})
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to add cell: ${response.statusText}`);
-			}
-
-			logger.info('Cell added successfully, waiting for server event...');
-		} catch (error) {
-			logger.error('Error adding cell:', error);
-		}
+	async function handleAddCellToServer(kind: CellKind, value: string, position: number) {
+		await ServerCommand.addCell(notebookId, kind, value, position);
 	}
 
-	async function updateCellOnServer(cellId: string, updates: { kind?: string; value?: string }) {
-		if (!notebookId) return;
-
-		logger.info('Updating cell on server:', cellId, updates);
-
-		// Get the server cell ID from the mapping
-		const serverCellId = clientIdToServerId(cellId);
-
-		try {
-			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(updates)
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to update cell: ${response.statusText}`);
-			}
-
-			logger.info('Cell updated successfully, waiting for server event...');
-		} catch (error) {
-			logger.error('Error updating cell:', error);
-		}
+	async function handleUpdateCellOnServer(
+		cellId: string,
+		updates: { kind?: string; value?: string }
+	) {
+		await ServerCommand.updateCell(notebookId, cellId, updates);
 	}
 
-	async function deleteCellOnServer(cellId: string) {
-		if (!notebookId) return;
-
-		// Get the server cell ID from the mapping
-		const serverCellId = clientIdToServerId(cellId);
-
-		try {
-			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
-				method: 'DELETE'
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to delete cell: ${response.statusText}`);
-			}
-
-			logger.info('Cell deleted successfully, waiting for server event...');
-		} catch (error) {
-			logger.error('Error deleting cell:', error);
-		}
+	async function handleDeleteCellOnServer(cellId: string) {
+		await ServerCommand.deleteCell(notebookId, cellId);
 	}
 
-	async function moveCellOnServer(cellId: string, direction: 'up' | 'down') {
+	async function handleMoveCellOnServer(cellId: string, direction: 'up' | 'down') {
 		if (!notebookId || !notebookStore) return;
 
-		logger.info(`Attempting to move cell ${cellId} ${direction}`);
-
-		// Get the server cell ID from the mapping
-		const serverCellId = clientIdToServerId(cellId);
-
-		try {
-			// Find the current position of the cell
-			const currentPosition = notebookStore.notebook.cells.findIndex((cell) => cell.id === cellId);
-			if (currentPosition === -1) {
-				logger.error('Cell not found in notebook:', cellId);
-				return;
-			}
-
-			logger.info(
-				`Current position: ${currentPosition}, Total cells: ${notebookStore.notebook.cells.length}`
-			);
-
-			// Calculate new position
-			let newPosition: number;
-			if (direction === 'up') {
-				newPosition = Math.max(0, currentPosition - 1);
-			} else {
-				newPosition = Math.min(notebookStore.notebook.cells.length - 1, currentPosition + 1);
-			}
-
-			logger.info(`Calculated new position: ${newPosition}`);
-
-			// Don't move if already at the boundary
-			if (newPosition === currentPosition) {
-				logger.info('Cell already at boundary, no move needed');
-				return;
-			}
-
-			logger.info(`Sending move request: cellId=${serverCellId}, position=${newPosition}`);
-
-			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ position: newPosition })
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to move cell: ${response.statusText}`);
-			}
-
-			logger.info(`Cell moved ${direction} successfully, waiting for server event...`);
-		} catch (error) {
-			logger.error('Error moving cell:', error);
+		// Find the current position of the cell
+		const currentPosition = notebookStore.findCellIndex(cellId);
+		if (currentPosition === -1) {
+			logger.error('Cell not found in notebook:', cellId);
+			return;
 		}
+
+		// Calculate new position
+		let newPosition: number;
+		if (direction === 'up') {
+			newPosition = Math.max(0, currentPosition - 1);
+		} else {
+			newPosition = Math.min(notebookStore.length() - 1, currentPosition + 1);
+		}
+
+		if (newPosition === currentPosition) {
+			// Cell already at boundary, no move needed
+			return;
+		}
+
+		await ServerCommand.moveCell(notebookId, cellId, newPosition);
 	}
 
-	async function duplicateCellOnServer(cellId: string) {
-		if (!notebookId) return;
-
-		try {
-			const response = await fetch(`/api/notebooks/${notebookId}/cells/${cellId}/duplicate`, {
-				method: 'POST'
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to duplicate cell: ${response.statusText}`);
-			}
-
-			logger.info('Cell duplicated successfully, waiting for server event...');
-		} catch (error) {
-			logger.error('Error duplicating cell:', error);
-		}
+	async function handleDuplicateCellOnServer(cellId: string) {
+		await ServerCommand.duplicateCell(notebookId, cellId);
 	}
 </script>
 
@@ -576,11 +473,11 @@
 			<div class="notebook-container">
 				<NotebookEditor
 					{notebookStore}
-					{addCellToServer}
-					{updateCellOnServer}
-					{deleteCellOnServer}
-					{moveCellOnServer}
-					{duplicateCellOnServer}
+					{handleAddCellToServer}
+					{handleUpdateCellOnServer}
+					{handleDeleteCellOnServer}
+					{handleMoveCellOnServer}
+					{handleDuplicateCellOnServer}
 				/>
 			</div>
 		</main>
