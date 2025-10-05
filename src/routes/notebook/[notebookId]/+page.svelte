@@ -6,9 +6,9 @@
 	import { ReactiveNotebook } from '$lib/model/cell';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
-	import { SvelteMap } from 'svelte/reactivity';
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
+	import { clientIdToServerId, serverIdToClientId } from '$lib/model/cell';
 
 	logger.configure({ enableInfo: true });
 
@@ -19,7 +19,6 @@
 	let reconnectAttempts = 0;
 	let maxReconnectAttempts = 5;
 	let reconnectDelay = 1000; // Start with 1 second
-	let cellIdMapping: Map<string, string> = new SvelteMap(); // Maps client cell IDs to server cell IDs
 	let lastProcessedEventId: string | null = null; // Track the last processed event ID
 	let isReloading = false; // Track if we're currently reloading to prevent interference
 	// let reloadTimeout: NodeJS.Timeout | null = null; // Debounce reload requests - no longer needed
@@ -35,9 +34,6 @@
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	$: (globalThis as any).notebookStore = notebookStore;
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).cellIdMapping = cellIdMapping;
 
 	// Helper function to extract sequence number from event ID
 	function extractSequenceNumber(eventId: string): number | null {
@@ -146,14 +142,12 @@
 				const cells = notebookData.cells;
 
 				for (const cellData of cells) {
-					const clientCell = await notebook.addCell({
+					await notebook.addCell({
+						id: cellData.id,
 						kind: cellData.kind,
 						value: cellData.value,
 						focus: false // Don't focus on loaded cells
 					});
-
-					// Map the client-generated ID to the server ID
-					cellIdMapping.set(clientCell.id, cellData.id);
 				}
 			} else {
 				logger.error('Cell field not found in notebook data', notebookData);
@@ -192,11 +186,11 @@
 			websocket?.send(JSON.stringify({ type: 'client_ready', data: { notebookId } }));
 		};
 
-		websocket.onmessage = (event) => {
+		websocket.onmessage = async (event) => {
 			try {
 				const data = JSON.parse(event.data);
 				logger.info('🔌 WebSocket message received:', data);
-				handleWebSocketMessage(data);
+				await handleWebSocketMessage(data);
 			} catch (err) {
 				logger.error('Error parsing WebSocket message:', err);
 			}
@@ -212,7 +206,7 @@
 		};
 	}
 
-	function handleWebSocketMessage(data: unknown) {
+	async function handleWebSocketMessage(data: unknown) {
 		// Type guard to ensure data is an object with a type property
 		if (typeof data !== 'object' || data === null || !('type' in data)) {
 			logger.error('Invalid WebSocket message format:', data);
@@ -238,20 +232,20 @@
 			case 'cell.moved':
 				// Handle cell events
 				logger.info('📨 Received WebSocket cell event:', message.type, message.payload);
-				handleCellEvent(message);
+				await handleCellEvent(message);
 				break;
 			case 'notebook.updated':
 			case 'notebook.initialized':
 				// Use existing event handling logic
 				logger.info('📨 Received WebSocket event:', message.type, message.data);
-				handleServerEvent(data);
+				await handleServerEvent(data);
 				break;
 			default:
 				logger.info('Unknown WebSocket message type:', message.type);
 		}
 	}
 
-	function handleCellEvent(message: { type: string; payload?: unknown; eventId?: string }) {
+	async function handleCellEvent(message: { type: string; payload?: unknown; eventId?: string }) {
 		logger.info('🎯 Handling cell event:', message.type, message.payload);
 
 		if (!notebookStore || !notebookStore.notebook) {
@@ -272,23 +266,12 @@
 				logger.info(`➕ Adding cell ${cellId} at position ${position}`);
 
 				// Use the store's addCell method to trigger reactivity
-				notebookStore
-					.addCell({
-						kind,
-						value,
-						position
-					})
-					.then((newCell) => {
-						if (!notebookStore) {
-							logger.error('❌ No notebookStore available for cell mapping');
-							return;
-						}
-
-						// Update the cell ID mapping: client ID -> server ID
-						// The newCell.id is the client-generated ID, cellId is the server ID
-						cellIdMapping.set(newCell.id, cellId);
-						logger.info(`🔗 Mapped client ID ${newCell.id} to server ID ${cellId}`);
-					});
+				await notebookStore.addCell({
+					id: cellId,
+					kind,
+					value,
+					position
+				});
 				break;
 			}
 			case 'cell.updated': {
@@ -298,7 +281,7 @@
 				logger.info(`✏️ Updating cell ${serverCellId}:`, changes);
 
 				// Find the client ID that maps to this server ID
-				let clientCellId = serverCellIdToClientId(serverCellId) || serverCellId;
+				let clientCellId = serverIdToClientId(serverCellId);
 
 				// Use the store's updateCell method to trigger reactivity
 				notebookStore.updateCell(clientCellId, changes);
@@ -314,7 +297,7 @@
 				);
 
 				// Find the client ID that maps to this server ID
-				let clientCellId = serverCellIdToClientId(serverCellId) || serverCellId;
+				let clientCellId = serverIdToClientId(serverCellId);
 
 				// Use the store's removeCell method to trigger reactivity
 				const result = notebookStore.removeCell(clientCellId);
@@ -323,10 +306,6 @@
 					`🔍 Current cells after deletion:`,
 					notebookStore.notebook.cells.map((c) => c.id)
 				);
-
-				// Clean up the mapping
-				cellIdMapping.delete(clientCellId);
-				logger.info(`🧹 Cleaned up mapping for client ID ${clientCellId}`);
 				break;
 			}
 			case 'cell.moved': {
@@ -336,7 +315,7 @@
 				logger.info(`↕️ Moving cell ${serverCellId} to position ${position}`);
 
 				// Find the client ID that maps to this server ID
-				let clientCellId = serverCellIdToClientId(serverCellId) || serverCellId;
+				let clientCellId = serverIdToClientId(serverCellId);
 
 				// Move cell and trigger reactivity
 				notebookStore.notebook.moveCell(clientCellId, position);
@@ -350,19 +329,6 @@
 			notebookStore.notebook.cells.length
 		);
 	}
-
-	function serverCellIdToClientId(serverCellId: string): string | undefined {
-		for (const [clientId, serverId] of cellIdMapping.entries()) {
-			if (serverId === serverCellId) {
-				logger.info(`🔗 Found client ID ${clientId} for server ID ${serverCellId}`);
-				return clientId;
-			}
-		}
-
-		return undefined;
-	}
-
-	// reloadNotebook and performReload functions removed - we now use direct cell manipulation instead of full reloads
 
 	function attemptReconnect(notebookId: string) {
 		if (reconnectAttempts < maxReconnectAttempts) {
@@ -383,7 +349,7 @@
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	function handleServerEvent(eventData: any) {
+	async function handleServerEvent(eventData: any) {
 		if (!notebookStore) return;
 
 		switch (eventData.type) {
@@ -399,7 +365,7 @@
 
 				if (eventId && isEventNewer(eventId)) {
 					logger.info('Processing newer event:', eventId);
-					updateCellsFromServer(eventData.data.cells);
+					await updateCellsFromServer(eventData.data.cells);
 					lastProcessedEventId = eventId;
 				} else {
 					logger.info('Skipping older event:', eventId, 'last processed:', lastProcessedEventId);
@@ -417,11 +383,10 @@
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	function updateCellsFromServer(serverCells: any[]) {
+	async function updateCellsFromServer(serverCells: any[]) {
 		if (!notebookStore) return;
 
 		logger.info('🔄 Updating cells from server:', serverCells.length, 'cells');
-		logger.info('📊 Current cell mapping:', Array.from(cellIdMapping.entries()));
 		logger.info('📋 Current cells:', notebookStore.notebook.cells.length);
 
 		// Simple approach: clear all cells and rebuild from server
@@ -432,11 +397,8 @@
 			notebookStore?.notebook.removeCell(cell.id);
 		});
 
-		// Clear the mapping
-		cellIdMapping.clear();
-
 		// Add all cells from server
-		serverCells.forEach((serverCell) => {
+		serverCells.forEach(async (serverCell) => {
 			logger.info(
 				'➕ Adding cell from server:',
 				serverCell.id,
@@ -446,17 +408,12 @@
 				serverCell.value.substring(0, 50)
 			);
 
-			notebookStore?.notebook
-				.addCell({
-					kind: serverCell.kind,
-					value: serverCell.value,
-					focus: false
-				})
-				.then((clientCell) => {
-					// Map the new client cell ID to the server cell ID
-					cellIdMapping.set(clientCell.id, serverCell.id);
-					logger.info('🔗 Mapped cell:', clientCell.id, '->', serverCell.id);
-				});
+			await notebookStore?.notebook.addCell({
+				id: serverCell.id,
+				kind: serverCell.kind,
+				value: serverCell.value,
+				focus: false
+			});
 		});
 	}
 
@@ -500,11 +457,9 @@
 				throw new Error(`Failed to add cell: ${response.statusText}`);
 			}
 
-			// The event stream will handle updating the UI
 			logger.info('Cell added successfully, waiting for server event...');
 		} catch (error) {
 			logger.error('Error adding cell:', error);
-			// You might want to show an error message to the user
 		}
 	}
 
@@ -514,14 +469,7 @@
 		logger.info('Updating cell on server:', cellId, updates);
 
 		// Get the server cell ID from the mapping
-		const serverCellId = cellIdMapping.get(cellId);
-		if (!serverCellId) {
-			logger.error('No server cell ID found for client cell ID:', cellId);
-			// For cells that don't have a server ID (like the welcome cell),
-			// we need to create them on the server first
-			await createCellOnServer(cellId, updates);
-			return;
-		}
+		const serverCellId = clientIdToServerId(cellId);
 
 		try {
 			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
@@ -542,55 +490,11 @@
 		}
 	}
 
-	async function createCellOnServer(
-		clientCellId: string,
-		updates: { kind?: string; value?: string }
-	) {
-		if (!notebookId || !notebookStore) return;
-
-		try {
-			// Find the cell in the notebook to get its current state
-			const cell = notebookStore.notebook.cells.find((c) => c.id === clientCellId);
-			if (!cell) {
-				logger.error('Cell not found in notebook:', clientCellId);
-				return;
-			}
-
-			// Get the position of the cell
-			const position = notebookStore.notebook.cells.findIndex((c) => c.id === clientCellId);
-
-			// Create the cell on the server
-			const response = await fetch(`/api/notebooks/${notebookId}/cells`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					kind: updates.kind || cell.kind,
-					value: updates.value !== undefined ? updates.value : cell.value,
-					position
-				})
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to create cell: ${response.statusText}`);
-			}
-
-			logger.info('Cell created on server, waiting for server event...');
-		} catch (error) {
-			logger.error('Error creating cell on server:', error);
-		}
-	}
-
 	async function deleteCellOnServer(cellId: string) {
 		if (!notebookId) return;
 
 		// Get the server cell ID from the mapping
-		const serverCellId = cellIdMapping.get(cellId);
-		if (!serverCellId) {
-			logger.error('No server cell ID found for client cell ID:', cellId);
-			return;
-		}
+		const serverCellId = clientIdToServerId(cellId);
 
 		try {
 			const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
@@ -613,11 +517,7 @@
 		logger.info(`Attempting to move cell ${cellId} ${direction}`);
 
 		// Get the server cell ID from the mapping
-		const serverCellId = cellIdMapping.get(cellId);
-		if (!serverCellId) {
-			logger.error('No server cell ID found for client cell ID:', cellId);
-			return;
-		}
+		const serverCellId = clientIdToServerId(cellId);
 
 		try {
 			// Find the current position of the cell

@@ -10,7 +10,7 @@ export interface NotebookStore {
 	cells: Readable<readonly ReactiveCell[]>;
 	focusedCell: Readable<ReactiveCell | null>;
 	version: Readable<number>;
-	addCell: (options?: AddCellOptions) => Promise<ReactiveCell>;
+	addCell: (options: AddCellOptions) => Promise<ReactiveCell>;
 	removeCell: (id: string) => Promise<void>;
 	updateCell: (id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) => Promise<void>;
 	setFocus: (id: string) => void;
@@ -40,7 +40,7 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 	});
 
 	// Wrapper methods that trigger reactivity
-	async function addCell(options: AddCellOptions = {}): Promise<ReactiveCell> {
+	async function addCell(options: AddCellOptions): Promise<ReactiveCell> {
 		const newCell = await currentNotebook.addCell(options);
 		set(currentNotebook);
 

@@ -44,6 +44,7 @@ export interface NotebookOptions {
 }
 
 export interface AddCellOptions {
+	id: string;
 	kind?: CellKind;
 	value?: string;
 	position?: number;
@@ -282,10 +283,17 @@ export class ReactiveNotebook {
 	}
 
 	// Cell management methods
-	async addCell(options: AddCellOptions = {}): Promise<ReactiveCell> {
-		const { kind = 'js', value = this.getDefaultValue(kind), position, focus = false } = options;
+	async addCell(options: AddCellOptions): Promise<ReactiveCell> {
+		const {
+			id,
+			kind = 'js',
+			value = this.getDefaultValue(kind),
+			position,
+			focus = false
+		} = options;
 
-		const newCell = new ReactiveCell(this.generateCellId(), kind, value, this.module, this);
+		const clientId = serverIdToClientId(id);
+		const newCell = new ReactiveCell(clientId, kind, value, this.module, this);
 
 		if (position !== undefined) {
 			if (position < this._cells.length) {
@@ -509,6 +517,7 @@ export class ReactiveNotebook {
 		if (Array.isArray(data.cells)) {
 			for (const cellData of data.cells) {
 				await notebook.addCell({
+					id: cellData.id as string,
 					kind: cellData.kind as CellKind,
 					value: cellData.value as string
 				});
@@ -552,4 +561,23 @@ export class ReactiveNotebook {
 		this._cells.forEach((cell) => cell.dispose());
 		this._cells = [];
 	}
+}
+
+// cell-1757076572584-48gnae
+// 0         1         2
+// 0123456789012345678901234
+export function serverIdToClientId(serverId: string): string {
+	if (serverId.startsWith('cell-')) {
+		return `${CELL_ID_PREFIX}${serverId.substring(5, 18)}${serverId.substring(19)}`;
+	} else {
+		return `${CELL_ID_PREFIX}${serverId}`;
+	}
+}
+
+// __v175707657258448gnae
+//                 |
+// 0         1         2
+// 0123456789012345678901
+export function clientIdToServerId(clientId: string): string {
+	return `cell-${clientId.substring(3, 16)}-${clientId.substring(16)}`;
 }

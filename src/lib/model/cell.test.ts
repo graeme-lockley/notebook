@@ -25,6 +25,7 @@ describe('ReactiveNotebook', () => {
 
 		it('should add cells correctly', async () => {
 			const cell = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 42; x'
 			});
@@ -37,6 +38,7 @@ describe('ReactiveNotebook', () => {
 
 		it('should remove cells correctly', async () => {
 			const cell = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 42; x'
 			});
@@ -49,6 +51,7 @@ describe('ReactiveNotebook', () => {
 
 		it('should update cell content', async () => {
 			const cell = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 42; x'
 			});
@@ -59,10 +62,12 @@ describe('ReactiveNotebook', () => {
 
 		it('should set focus correctly', async () => {
 			const cell1 = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 42; x'
 			});
 			const cell2 = await notebook.addCell({
+				id: 'cell-1757076572584-48gnaf',
 				kind: 'js',
 				value: 'const y = 100; y'
 			});
@@ -77,10 +82,12 @@ describe('ReactiveNotebook', () => {
 	describe('Cell management', () => {
 		it('should move cells up and down', async () => {
 			const cell1 = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 1; x'
 			});
 			const cell2 = await notebook.addCell({
+				id: 'cell-1757076572584-48gnaf',
 				kind: 'js',
 				value: 'const y = 2; y'
 			});
@@ -99,6 +106,7 @@ describe('ReactiveNotebook', () => {
 
 		it('should duplicate cells', async () => {
 			const originalCell = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 42; x'
 			});
@@ -113,6 +121,7 @@ describe('ReactiveNotebook', () => {
 
 		it('should toggle cell closed state', async () => {
 			const cell = await notebook.addCell({
+				id: 'cell-1757076572584-48gnae',
 				kind: 'js',
 				value: 'const x = 42; x'
 			});
