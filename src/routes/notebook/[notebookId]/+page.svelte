@@ -33,6 +33,9 @@
 		logger.info('📊 Notebook store updated, cells:', notebookStore.notebook?.cells?.length || 0);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	$: (globalThis as any).notebookStore = notebookStore;
+
 	// Helper function to extract sequence number from event ID
 	function extractSequenceNumber(eventId: string): number | null {
 		// Event ID format: <topic>-<number>
