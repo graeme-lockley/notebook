@@ -45,8 +45,8 @@ export interface NotebookOptions {
 
 export interface AddCellOptions {
 	id: string;
-	kind?: CellKind;
-	value?: string;
+	kind: CellKind;
+	value: string;
 	position?: number;
 	focus?: boolean;
 }
@@ -88,7 +88,7 @@ export class Observers implements Observer {
 	}
 }
 
-const CELL_ID_PREFIX = 'cell-';
+const CELL_ID_PREFIX = 'cell_';
 
 export class ReactiveCell implements Cell {
 	id: string;
@@ -284,23 +284,13 @@ export class ReactiveNotebook {
 
 	// Cell management methods
 	async addCell(options: AddCellOptions): Promise<ReactiveCell> {
-		const {
-			id,
-			kind = 'js',
-			value = this.getDefaultValue(kind),
-			position,
-			focus = false
-		} = options;
+		const { id, kind, value, position, focus = false } = options;
 
 		const clientId = serverIdToClientId(id);
 		const newCell = new ReactiveCell(clientId, kind, value, this.module, this);
 
-		if (position !== undefined) {
-			if (position < this._cells.length) {
-				this._cells.splice(position, 0, newCell);
-			} else {
-				this._cells.push(newCell);
-			}
+		if (position && position < this._cells.length) {
+			this._cells.splice(position, 0, newCell);
 		} else {
 			this._cells.push(newCell);
 		}
@@ -479,81 +469,6 @@ export class ReactiveNotebook {
 	// Utility methods
 	private generateCellId(): string {
 		return `${CELL_ID_PREFIX}${Math.random().toString(36).substring(2, 15)}`;
-	}
-
-	private getDefaultValue(kind: CellKind): string {
-		switch (kind) {
-			case 'js':
-				return 'Math.PI';
-			case 'md':
-				return '# New Markdown Cell\n\nStart typing here...';
-			case 'html':
-				return '<div>New HTML Cell</div>';
-			default:
-				return '';
-		}
-	}
-
-	// Serialization
-	toJSON(): object {
-		return {
-			title: this._title,
-			description: this._description,
-			createdAt: this._createdAt.toISOString(),
-			updatedAt: this._updatedAt.toISOString(),
-			cells: this._cells
-		};
-	}
-
-	static async fromJSON(data: Record<string, unknown>): Promise<ReactiveNotebook> {
-		const notebook = new ReactiveNotebook({
-			title: data.title as string,
-			description: data.description as string,
-			createdAt: new Date(data.createdAt as string),
-			updatedAt: new Date(data.updatedAt as string)
-		});
-
-		// Restore cells
-		if (Array.isArray(data.cells)) {
-			for (const cellData of data.cells) {
-				await notebook.addCell({
-					id: cellData.id as string,
-					kind: cellData.kind as CellKind,
-					value: cellData.value as string
-				});
-			}
-		}
-
-		return notebook;
-	}
-
-	// Validation
-	validate(): { isValid: boolean; errors: string[] } {
-		const errors: string[] = [];
-
-		// Check for duplicate cell IDs
-		const cellIds = this._cells.map((cell) => cell.id);
-		const duplicateIds = cellIds.filter((id, index) => cellIds.indexOf(id) !== index);
-		if (duplicateIds.length > 0) {
-			errors.push(`Duplicate cell IDs found: ${duplicateIds.join(', ')}`);
-		}
-
-		// Check for invalid cell kinds
-		const invalidCells = this._cells.filter((cell) => !['js', 'md', 'html'].includes(cell.kind));
-		if (invalidCells.length > 0) {
-			errors.push(`Invalid cell kinds found: ${invalidCells.map((cell) => cell.kind).join(', ')}`);
-		}
-
-		// Check for multiple focused cells
-		const focusedCells = this._cells.filter((cell) => cell.isFocused);
-		if (focusedCells.length > 1) {
-			errors.push('Multiple cells are focused');
-		}
-
-		return {
-			isValid: errors.length === 0,
-			errors
-		};
 	}
 
 	// Dispose of all resources
