@@ -6,6 +6,10 @@ export interface LoggerConfig {
 	showPrefix: boolean;
 }
 
+function formatArg(arg: unknown): unknown {
+	return typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg;
+}
+
 class Logger {
 	private config: LoggerConfig = {
 		enableInfo: false,
@@ -23,9 +27,7 @@ class Logger {
 
 	info(message: string, ...args: unknown[]): void {
 		if (this.config.enableInfo) {
-			const formattedArgs = args.map((arg) =>
-				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
-			);
+			const formattedArgs: unknown[] = args.map(formatArg);
 			if (this.config.showPrefix) {
 				console.log(`[INFO] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 			} else {
@@ -36,9 +38,7 @@ class Logger {
 
 	warn(message: string, ...args: unknown[]): void {
 		if (this.config.enableWarn) {
-			const formattedArgs = args.map((arg) =>
-				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
-			);
+			const formattedArgs: unknown[] = args.map(formatArg);
 			if (this.config.showPrefix) {
 				console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 			} else {
@@ -49,9 +49,7 @@ class Logger {
 
 	error(message: string, ...args: unknown[]): void {
 		if (this.config.enableError) {
-			const formattedArgs = args.map((arg) =>
-				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
-			);
+			const formattedArgs: unknown[] = args.map(formatArg);
 			if (this.config.showPrefix) {
 				console.error(`[ERROR] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 			} else {
@@ -62,9 +60,7 @@ class Logger {
 
 	debug(message: string, ...args: unknown[]): void {
 		if (this.config.enableDebug) {
-			const formattedArgs = args.map((arg) =>
-				typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg
-			);
+			const formattedArgs: unknown[] = args.map(formatArg);
 			if (this.config.showPrefix) {
 				console.log(`[DEBUG] ${new Date().toISOString()}: ${message}`, ...formattedArgs);
 			} else {
