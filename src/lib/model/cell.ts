@@ -88,7 +88,7 @@ export class Observers implements Observer {
 	}
 }
 
-const CELL_ID_PREFIX = '__v';
+const CELL_ID_PREFIX = 'cell-';
 
 export class ReactiveCell implements Cell {
 	id: string;
@@ -563,21 +563,10 @@ export class ReactiveNotebook {
 	}
 }
 
-// cell-1757076572584-48gnae
-// 0         1         2
-// 0123456789012345678901234
 export function serverIdToClientId(serverId: string): string {
-	if (serverId.startsWith('cell-')) {
-		return `${CELL_ID_PREFIX}${serverId.substring(5, 18)}${serverId.substring(19)}`;
-	} else {
-		return `${CELL_ID_PREFIX}${serverId}`;
-	}
+	return serverId.replaceAll('-', '_');
 }
 
-// __v175707657258448gnae
-//                 |
-// 0         1         2
-// 0123456789012345678901
 export function clientIdToServerId(clientId: string): string {
-	return `cell-${clientId.substring(3, 16)}-${clientId.substring(16)}`;
+	return clientId.replaceAll('_', '-');
 }
