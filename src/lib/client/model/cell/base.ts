@@ -1,5 +1,5 @@
 import type { ReactiveCell } from '../cell';
-import { parse } from '../../parser';
+import { parse } from '$lib/common/lib/parser';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 // Extract JavaScript expressions from markdown/HTML

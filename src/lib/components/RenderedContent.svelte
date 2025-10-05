@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { Observers, ReactiveCell } from '$lib/model/cell';
+	import type { Observers, ReactiveCell } from '$lib/client/model/cell';
 	import { onDestroy } from 'svelte';
 	import ObservableHTMLRenderer from './ObservableHTMLRenderer.svelte';
 	import ObservableMarkdownRenderer from './ObservableMarkdownRenderer.svelte';
 	import ObservableJavascriptRenderer from './ObservableJavascriptRenderer.svelte';
-	import type { ObservableValue } from '../../runtime';
+	import type { ObservableValue } from '$lib/common/lib/runtime';
 
 	interface Props {
 		cell: ReactiveCell;

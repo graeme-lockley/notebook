@@ -4,7 +4,7 @@
 	import RenderedPopupGutter from './RenderedPopupGutter.svelte';
 	import RenderedContent from './RenderedContent.svelte';
 
-	import type { ReactiveCell } from '$lib/model/cell';
+	import type { ReactiveCell } from '$lib/client/model/cell';
 
 	import type {
 		ToggleSourceViewEvent,

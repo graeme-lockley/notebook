@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import RenderedCell from './RenderedCell.svelte';
 	import SourceCell from './SourceCell.svelte';
-	import type { ReactiveCell } from '$lib/model/cell';
+	import type { ReactiveCell } from '$lib/client/model/cell';
 	import type {
 		DeleteCellEvent,
 		DuplicateCellEvent,

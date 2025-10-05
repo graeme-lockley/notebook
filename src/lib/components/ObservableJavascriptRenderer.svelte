@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import { Inspector } from '@observablehq/inspector';
-	import type { ReactiveCell } from '$lib/model/cell';
-	import type { ObservableValue } from '../../runtime';
+	import type { ReactiveCell } from '$lib/client/model/cell';
+	import type { ObservableValue } from '$lib/common/lib/runtime';
 
 	let { cell } = $props<{
 		cell: ReactiveCell;

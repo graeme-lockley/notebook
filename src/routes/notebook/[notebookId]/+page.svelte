@@ -3,12 +3,12 @@
 	import FooterBar from '$lib/components/FooterBar.svelte';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
 	import { createNotebookStore, type NotebookStore } from '$lib/client/stores/notebook';
-	import { ReactiveNotebook } from '$lib/model/cell';
+	import { ReactiveNotebook } from '$lib/client/model/cell';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
-	import { clientIdToServerId, serverIdToClientId } from '$lib/model/cell';
+	import { clientIdToServerId, serverIdToClientId } from '$lib/client/model/cell';
 
 	logger.configure({ enableInfo: true });
 

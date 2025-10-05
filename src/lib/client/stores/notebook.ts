@@ -1,5 +1,5 @@
 import { writable, derived, type Readable } from 'svelte/store';
-import type { ReactiveNotebook, ReactiveCell, AddCellOptions } from '$lib/model/cell';
+import type { ReactiveNotebook, ReactiveCell, AddCellOptions } from '$lib/client/model/cell';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 // Define the store interface - export it properly

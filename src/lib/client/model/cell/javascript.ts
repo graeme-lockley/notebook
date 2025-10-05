@@ -1,5 +1,5 @@
 import type { ReactiveCell } from '../cell';
-import { parse } from '../../parser';
+import { parse } from '$lib/common/lib/parser';
 
 export async function executeJavaScript(cell: ReactiveCell): Promise<void> {
 	const pr = parse(cell.value);

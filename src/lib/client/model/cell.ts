@@ -5,7 +5,7 @@ import {
 	type Observer,
 	type ObservableValue,
 	type IVariable
-} from '../../runtime';
+} from '$lib/common/lib/runtime';
 import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
