@@ -31,7 +31,7 @@ describe('NotebookLoaderService', () => {
 				title: 'Test Notebook',
 				description: 'Test Description',
 				cells: [
-					{ id: 'cell-1', kind: 'js', value: 'console.log("test")' },
+					{ id: 'cell-1', kind: 'js', value: 'Math.PI' },
 					{ id: 'cell-2', kind: 'md', value: '# Hello' }
 				]
 			};
