@@ -2,73 +2,44 @@
 	import TopBar from '$lib/components/TopBar.svelte';
 	import FooterBar from '$lib/components/FooterBar.svelte';
 	import NotebookEditor from '$lib/components/NotebookEditor.svelte';
-	import { createNotebookStore, type NotebookStore } from '$lib/client/stores/notebook';
-	import { ReactiveNotebook } from '$lib/client/model/cell';
+	import type { NotebookStore } from '$lib/client/stores/notebook';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
-	import { serverIdToClientId } from '$lib/client/model/cell';
-	import * as ServerCommand from '$lib/client/server/server-commands';
-	import * as ServerQuery from '$lib/client/server/server-queries';
+
+	// Services
+	import { WebSocketConnectionService } from '$lib/client/services/websocket-connection.service';
+	import { WebSocketMessageHandler } from '$lib/client/services/websocket-message-handler';
+	import { NotebookSyncService } from '$lib/client/services/notebook-sync.service';
+	import { NotebookLoaderService } from '$lib/client/services/notebook-loader.service';
+	import { NotebookCommandService } from '$lib/client/services/notebook-command.service';
 
 	logger.configure({ enableInfo: true });
 
+	// UI State
 	let notebookStore: NotebookStore | undefined;
 	let loading = true;
 	let error: string | null = null;
-	let websocket: WebSocket | null = null;
-	let reconnectAttempts = 0;
-	let maxReconnectAttempts = 5;
-	let reconnectDelay = 1000; // Start with 1 second
-	let lastProcessedEventId: string | null = null; // Track the last processed event ID
-	let isReloading = false; // Track if we're currently reloading to prevent interference
-	// let reloadTimeout: NodeJS.Timeout | null = null; // Debounce reload requests - no longer needed
+
+	// Services (initialized in onMount)
+	let wsConnection: WebSocketConnectionService;
+	let wsMessageHandler: WebSocketMessageHandler;
+	let syncService: NotebookSyncService;
+	let loaderService: NotebookLoaderService;
+	let commandService: NotebookCommandService;
 
 	// Get the notebookId from the URL parameters
 	$: notebookId = $page.params.notebookId;
 
-	// Protect notebook store from reactive updates during reload
-	$: if (notebookStore && !isReloading) {
-		// This reactive statement ensures the notebook store is only updated when not reloading
-		logger.info('📊 Notebook store updated, cells:', notebookStore.notebook?.cells?.length || 0);
-	}
-
+	// Expose notebook store for debugging
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	$: (globalThis as any).notebookStore = notebookStore;
-
-	// Helper function to extract sequence number from event ID
-	function extractSequenceNumber(eventId: string): number | null {
-		// Event ID format: <topic>-<number>
-		const parts = eventId.split('-');
-		if (parts.length < 2) {
-			return null;
-		}
-		const sequenceStr = parts[parts.length - 1];
-		const sequence = parseInt(sequenceStr, 10);
-		return isNaN(sequence) ? null : sequence;
-	}
-
-	// Helper function to check if an event is newer than the last processed one
-	function isEventNewer(eventId: string): boolean {
-		if (!lastProcessedEventId) {
-			return true; // First event is always newer
-		}
-
-		const currentSeq = extractSequenceNumber(eventId);
-		const lastSeq = extractSequenceNumber(lastProcessedEventId);
-
-		if (currentSeq === null || lastSeq === null) {
-			return true; // If we can't parse, assume it's newer
-		}
-
-		return currentSeq > lastSeq;
-	}
 
 	onMount(async () => {
 		logger.info('🚀 Notebook page mounted for:', notebookId);
 		if (notebookId) {
-			await loadNotebook(notebookId);
+			await initializeNotebook();
 		}
 	});
 
@@ -83,295 +54,94 @@
 		});
 	}
 
-	async function loadNotebook(id: string) {
+	async function initializeNotebook() {
 		try {
 			loading = true;
 			error = null;
 
-			const notebookData = await ServerQuery.getNotebook(id);
-
-			// Create a new notebook with the fetched data
-			const notebook = new ReactiveNotebook({
-				title: notebookData.title,
-				description: notebookData.description || ''
-			});
-
-			// Add all cells from the API response to the notebook
-			for (const cellData of notebookData.cells) {
-				await notebook.addCell({
-					id: cellData.id,
-					kind: cellData.kind,
-					value: cellData.value,
-					focus: false // Don't focus on loaded cells
-				});
+			if (!notebookId) {
+				throw new Error('Notebook ID is required');
 			}
 
-			notebookStore = createNotebookStore(notebook);
+			// Initialize loader service and load notebook
+			loaderService = new NotebookLoaderService();
+			const result = await loaderService.loadNotebook(notebookId);
+			notebookStore = result.store;
 
-			// Set up WebSocket connection for real-time updates
-			if (notebookId) {
-				setupWebSocketConnection(notebookId);
-			}
+			// Initialize sync service
+			syncService = new NotebookSyncService(notebookStore);
+
+			// Initialize command service
+			commandService = new NotebookCommandService(notebookId, notebookStore);
+
+			// Setup WebSocket connection
+			wsConnection = new WebSocketConnectionService();
+			wsMessageHandler = new WebSocketMessageHandler();
+
+			// Register message handlers
+			registerWebSocketHandlers();
+
+			// Connect WebSocket and start receiving messages
+			wsConnection.onMessage((data) => wsMessageHandler.handleMessage(data));
+			wsConnection.connect(notebookId);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load notebook';
-			logger.error('Error loading notebook:', err);
+			logger.error('Error initializing notebook:', err);
 		} finally {
 			loading = false;
 		}
 	}
 
-	function setupWebSocketConnection(notebookId: string) {
-		if (websocket) {
-			websocket.close();
-		}
-
-		// Use WebSocket URL with notebook ID as query parameter
-		const wsUrl = `ws://localhost:3001?notebookId=${notebookId}`;
-		websocket = new WebSocket(wsUrl);
-
-		websocket.onopen = () => {
-			logger.info('WebSocket connected');
-			reconnectAttempts = 0;
-			reconnectDelay = 1000;
-
-			// Send initial ping and ready signal
-			websocket?.send(JSON.stringify({ type: 'ping' }));
-			websocket?.send(JSON.stringify({ type: 'client_ready', data: { notebookId } }));
-		};
-
-		websocket.onmessage = async (event) => {
-			try {
-				const data = JSON.parse(event.data);
-				logger.info('🔌 WebSocket message received:', data);
-				await handleWebSocketMessage(data);
-			} catch (err) {
-				logger.error('Error parsing WebSocket message:', err);
-			}
-		};
-
-		websocket.onclose = (event) => {
-			logger.info('WebSocket disconnected:', event.code, event.reason);
-			attemptReconnect(notebookId);
-		};
-
-		websocket.onerror = (error) => {
-			logger.error('WebSocket error:', error);
-		};
-	}
-
-	async function handleWebSocketMessage(data: unknown) {
-		// Type guard to ensure data is an object with a type property
-		if (typeof data !== 'object' || data === null || !('type' in data)) {
-			logger.error('Invalid WebSocket message format:', data);
-			return;
-		}
-
-		const message = data as { type: string; data?: unknown; payload?: unknown; eventId?: string };
-
-		switch (message.type) {
-			case 'connected':
-				logger.info('WebSocket connection confirmed for notebook:', message.data);
-				break;
-			case 'pong':
-				// Handle heartbeat response
-				logger.info('WebSocket heartbeat received');
-				break;
-			case 'server_ready':
-				logger.info('Server ready for notebook:', message.data);
-				break;
-			case 'cell.created':
-			case 'cell.updated':
-			case 'cell.deleted':
-			case 'cell.moved':
-				// Handle cell events
-				logger.info('📨 Received WebSocket cell event:', message.type, message.payload);
-				await handleCellEvent(message);
-				break;
-			case 'notebook.updated':
-			case 'notebook.initialized':
-				// Use existing event handling logic
-				logger.info('📨 Received WebSocket event:', message.type, message.data);
-				await handleServerEvent(data);
-				break;
-			default:
-				logger.info('Unknown WebSocket message type:', message.type);
-		}
-	}
-
-	async function handleCellEvent(message: { type: string; payload?: unknown; eventId?: string }) {
-		logger.info('🎯 Handling cell event:', message.type, message.payload);
-
-		if (!notebookStore || !notebookStore.notebook) {
-			logger.error('❌ No notebookStore or notebook instance available for cell event');
-			return;
-		}
-
-		const payload = message.payload as Record<string, unknown>;
-
-		switch (message.type) {
-			case 'cell.created': {
-				const cellId = payload.cellId as string;
-				const kind = payload.kind as CellKind;
-				const value = payload.value as string;
-				const position = payload.position as number;
-				// const createdAt = payload.createdAt as string; // Not used in current implementation
-
-				logger.info(`➕ Adding cell ${cellId} at position ${position}`);
-
-				// Use the store's addCell method to trigger reactivity
-				await notebookStore.addCell({
-					id: cellId,
-					kind,
-					value,
-					position
-				});
-				break;
-			}
-			case 'cell.updated': {
-				const serverCellId = payload.cellId as string;
-				const changes = payload.changes as { kind?: CellKind; value?: string };
-
-				logger.info(`✏️ Updating cell ${serverCellId}:`, changes);
-
-				// Find the client ID that maps to this server ID
-				let clientCellId = serverIdToClientId(serverCellId);
-
-				// Use the store's updateCell method to trigger reactivity
-				notebookStore.updateCell(clientCellId, changes);
-				break;
-			}
-			case 'cell.deleted': {
-				const serverCellId = payload.cellId as string;
-
-				logger.info(`🗑️ Deleting cell ${serverCellId}`);
-				logger.info(
-					`🔍 Current cells before deletion:`,
-					notebookStore.notebook.cells.map((c) => c.id)
-				);
-
-				// Find the client ID that maps to this server ID
-				let clientCellId = serverIdToClientId(serverCellId);
-
-				// Use the store's removeCell method to trigger reactivity
-				const result = notebookStore.removeCell(clientCellId);
-				logger.info(`🔍 Remove cell result:`, result);
-				logger.info(
-					`🔍 Current cells after deletion:`,
-					notebookStore.notebook.cells.map((c) => c.id)
-				);
-				break;
-			}
-			case 'cell.moved': {
-				const serverCellId = payload.cellId as string;
-				const position = payload.position as number;
-
-				logger.info(`↕️ Moving cell ${serverCellId} to position ${position}`);
-
-				// Find the client ID that maps to this server ID
-				let clientCellId = serverIdToClientId(serverCellId);
-
-				// Move cell and trigger reactivity
-				notebookStore.moveCell(clientCellId, position);
-				break;
-			}
-		}
-
-		logger.info(
-			'✅ Cell event handled directly, current cells:',
-			notebookStore.notebook.cells.length
+	/**
+	 * Registers handlers for different WebSocket message types
+	 */
+	function registerWebSocketHandlers() {
+		// Handle cell events
+		wsMessageHandler.registerHandler('cell.created', (msg) =>
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			syncService.handleCellCreated(msg.payload as any)
 		);
-	}
+		wsMessageHandler.registerHandler('cell.updated', (msg) =>
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			syncService.handleCellUpdated(msg.payload as any)
+		);
+		wsMessageHandler.registerHandler('cell.deleted', (msg) =>
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			syncService.handleCellDeleted(msg.payload as any)
+		);
+		wsMessageHandler.registerHandler('cell.moved', (msg) =>
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			syncService.handleCellMoved(msg.payload as any)
+		);
 
-	function attemptReconnect(notebookId: string) {
-		if (reconnectAttempts < maxReconnectAttempts) {
-			reconnectAttempts++;
-			logger.info(
-				`Attempting to reconnect WebSocket (${reconnectAttempts}/${maxReconnectAttempts})...`
-			);
+		// Handle notebook events
+		wsMessageHandler.registerHandler('notebook.updated', (msg) =>
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			syncService.handleNotebookUpdated(msg.data as any)
+		);
+		wsMessageHandler.registerHandler('notebook.initialized', (msg) =>
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			syncService.handleNotebookInitialized(msg.data as any)
+		);
 
-			setTimeout(() => {
-				setupWebSocketConnection(notebookId);
-			}, reconnectDelay);
-
-			// Exponential backoff
-			reconnectDelay = Math.min(reconnectDelay * 2, 30000);
-		} else {
-			logger.error('Max reconnection attempts reached');
-		}
-	}
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	async function handleServerEvent(eventData: any) {
-		if (!notebookStore) return;
-
-		switch (eventData.type) {
-			case 'notebook.initialized': {
-				// Initial data - cells are already loaded from the API
-				logger.info('Notebook initialized with', eventData.data.cells.length, 'cells');
-				break;
-			}
-			case 'notebook.updated': {
-				// Update cells from server
-				const eventId = eventData.data.event?.id;
-				logger.info('Received notebook.updated event:', eventData.data.event);
-
-				if (eventId && isEventNewer(eventId)) {
-					logger.info('Processing newer event:', eventId);
-					await updateCellsFromServer(eventData.data.cells);
-					lastProcessedEventId = eventId;
-				} else {
-					logger.info('Skipping older event:', eventId, 'last processed:', lastProcessedEventId);
-				}
-				break;
-			}
-			case 'heartbeat': {
-				// Just a heartbeat to keep connection alive
-				logger.info('Event stream heartbeat received');
-				break;
-			}
-			default:
-				logger.info('Unknown event type:', eventData.type);
-		}
-	}
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	async function updateCellsFromServer(serverCells: any[]) {
-		if (!notebookStore) return;
-
-		logger.info('🔄 Updating cells from server:', serverCells.length, 'cells');
-		logger.info('📋 Current cells:', notebookStore.notebook.cells.length);
-
-		// Simple approach: clear all cells and rebuild from server
-		const currentCells = [...notebookStore.notebook.cells];
-
-		// Remove all current cells
-		currentCells.forEach((cell) => {
-			notebookStore?.notebook.removeCell(cell.id);
+		// Handle connection events
+		wsMessageHandler.registerHandler('connected', (msg) => {
+			logger.info('WebSocket connection confirmed for notebook:', msg.data);
 		});
-
-		// Add all cells from server
-		serverCells.forEach(async (serverCell) => {
-			logger.info(
-				'➕ Adding cell from server:',
-				serverCell.id,
-				'kind:',
-				serverCell.kind,
-				'value:',
-				serverCell.value.substring(0, 50)
-			);
-
-			await notebookStore?.notebook.addCell({
-				id: serverCell.id,
-				kind: serverCell.kind,
-				value: serverCell.value,
-				focus: false
-			});
+		wsMessageHandler.registerHandler('pong', () => {
+			logger.info('WebSocket heartbeat received');
+		});
+		wsMessageHandler.registerHandler('server_ready', (msg) => {
+			logger.info('Server ready for notebook:', msg.data);
+		});
+		wsMessageHandler.registerHandler('heartbeat', () => {
+			logger.info('Event stream heartbeat received');
 		});
 	}
 
 	onDestroy(() => {
-		if (websocket) {
-			websocket.close();
+		if (wsConnection) {
+			wsConnection.disconnect();
 		}
 	});
 
@@ -390,48 +160,26 @@
 	}
 
 	async function handleAddCellToServer(kind: CellKind, value: string, position: number) {
-		await ServerCommand.addCell(notebookId, kind, value, position);
+		await commandService.addCell(kind, value, position);
 	}
 
 	async function handleUpdateCellOnServer(
 		cellId: string,
 		updates: { kind?: string; value?: string }
 	) {
-		await ServerCommand.updateCell(notebookId, cellId, updates);
+		await commandService.updateCell(cellId, updates);
 	}
 
 	async function handleDeleteCellOnServer(cellId: string) {
-		await ServerCommand.deleteCell(notebookId, cellId);
+		await commandService.deleteCell(cellId);
 	}
 
 	async function handleMoveCellOnServer(cellId: string, direction: 'up' | 'down') {
-		if (!notebookId || !notebookStore) return;
-
-		// Find the current position of the cell
-		const currentPosition = notebookStore.findCellIndex(cellId);
-		if (currentPosition === -1) {
-			logger.error('Cell not found in notebook:', cellId);
-			return;
-		}
-
-		// Calculate new position
-		let newPosition: number;
-		if (direction === 'up') {
-			newPosition = Math.max(0, currentPosition - 1);
-		} else {
-			newPosition = Math.min(notebookStore.length() - 1, currentPosition + 1);
-		}
-
-		if (newPosition === currentPosition) {
-			// Cell already at boundary, no move needed
-			return;
-		}
-
-		await ServerCommand.moveCell(notebookId, cellId, newPosition);
+		await commandService.moveCell(cellId, direction);
 	}
 
 	async function handleDuplicateCellOnServer(cellId: string) {
-		await ServerCommand.duplicateCell(notebookId, cellId);
+		await commandService.duplicateCell(cellId);
 	}
 </script>
 
@@ -445,7 +193,7 @@
 		<div class="error-container">
 			<h2>Error Loading Notebook</h2>
 			<p>{error}</p>
-			<button onclick={() => loadNotebook(notebookId!)}>Retry</button>
+			<button onclick={() => initializeNotebook()}>Retry</button>
 		</div>
 	{:else if notebookStore}
 		<TopBar
