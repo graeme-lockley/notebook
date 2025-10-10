@@ -1,6 +1,6 @@
 # ObservableHQ Clone - Architecture & Design Documentation
 
-**Version:** 2.0  
+**Version:** 2.1  
 **Last Updated:** October 10, 2025  
 **Status:** Production Ready
 
@@ -432,10 +432,20 @@ export class AddCellCommandHandler {
 ```typescript
 export class NotebookProjector implements EventHandler {
 	private lastProcessedEventId: string | null = null;
+	private notebookId: string;
 
-	constructor(private readModel: CellWriteModel & CellReadModel) {}
+	constructor(
+		private readModel: CellWriteModel & CellReadModel,
+		notebookId: string
+	) {
+		this.notebookId = notebookId;
+	}
 
 	async handle(event: DomainEvent): Promise<void> {
+		logger.debug(
+			`NotebookProjector[${this.notebookId}]: Handling event: ${event.type} eventId: ${event.id}`
+		);
+
 		switch (event.type) {
 			case 'cell.created':
 				await this.handleCellCreated(event);
@@ -451,7 +461,7 @@ export class NotebookProjector implements EventHandler {
 }
 ```
 
-### 7. Projection Middleware
+### 9. Projection Middleware
 
 **Purpose:** Helper for REST API projection lifecycle.
 
@@ -645,7 +655,81 @@ for await (const event of eventStore.streamEvents(notebookId, {
 }
 ```
 
-### 7. Domain Layer Purity
+**Critical Design Decision:** Use **either** Event Bus subscription **or** Event Streaming, never both.
+
+**Problem:** Initially, NotebookProjectors were subscribed to both Event Bus and Event Stream, causing duplicate event processing and duplicate cells in read models.
+
+**Solution:** When `enableEventStreaming: true` (default), only use Event Stream. Event Bus subscription is only used when streaming is disabled.
+
+```typescript
+// Only subscribe to event bus if event streaming is disabled
+// Otherwise, we'll get duplicate events (once from event bus, once from stream)
+if (!this.config.enableEventStreaming) {
+	this.subscribeProjectorToEventBus(state);
+}
+
+// Start event streaming if enabled
+if (this.config.enableEventStreaming) {
+	this.startEventStream(state);
+}
+```
+
+### 7. Duplicate Cell Functionality
+
+**Decision:** Implement complete CQRS/Event Sourcing flow for cell duplication.
+
+**Components:**
+
+- **Command:** `DuplicateCellCommand` with notebook and cell IDs
+- **Command Handler:** `DuplicateCellCommandHandler` with projection-based validation
+- **API Route:** `POST /api/notebooks/[notebookId]/cells/[cellId]/duplicate`
+- **Event Factory:** Creates `cell.created` event with unique ID and position
+- **Client Integration:** Proper ID mapping between client and server
+
+**Pattern:**
+
+```typescript
+// Command Handler
+export class DuplicateCellCommandHandler {
+	async handle(command: DuplicateCellCommand): Promise<DuplicateCellCommandResult> {
+		// 1. Acquire projection for validation
+		await this.projectionManager.acquireProjection(command.notebookId);
+
+		try {
+			// 2. Get current cells and validate source cell exists
+			const readModel = await this.projectionManager.getProjectionReadModel(command.notebookId);
+			const sourceCell = await this.findSourceCell(command.cellId);
+
+			// 3. Create event with source cell data
+			const event = NotebookEventFactory.createCellEvent(
+				command.notebookId,
+				sourceCell.kind,
+				sourceCell.value,
+				newPosition,
+				currentCells
+			);
+
+			// 4. Publish to event store and event bus
+			const eventId = await this.eventStore.publishEvent(/*...*/);
+			await this.eventBus.publish(/*...*/);
+
+			return { cellId: event.payload.cellId, eventId };
+		} finally {
+			await this.projectionManager.releaseProjection(command.notebookId);
+		}
+	}
+}
+```
+
+**Key Features:**
+
+- **Unique IDs:** Uses `Date.now() + Math.random()` for collision-free IDs
+- **Position Calculation:** Inserts duplicated cell immediately after source cell
+- **Validation:** Ensures source cell exists before duplication
+- **Projection Safety:** Proper acquire/release lifecycle management
+- **Client Mapping:** Converts client IDs to server IDs before API calls
+
+### 8. Domain Layer Purity
 
 **Decision:** Remove all infrastructure dependencies from domain layer.
 
@@ -670,7 +754,7 @@ import { logger } from '$lib/common/infrastructure/logging/logger.service';
 // Logging moved to application layer
 ```
 
-### 8. Centralized Command Service
+### 9. Centralized Command Service
 
 **Decision:** Create application service facade for commands.
 
@@ -1164,6 +1248,8 @@ None identified. Current architecture is solid.
 - **Middleware Pattern** - withProjection helper
 - **Observer Pattern** - Event bus subscriptions
 - **Reference Counting** - Projection lifecycle
+- **Command Pattern** - DuplicateCellCommandHandler
+- **Event Sourcing** - Immutable event storage
 
 ### E. Dependency Graph
 
@@ -1240,6 +1326,44 @@ Projectors (broadcast)
 - Event Sourcing Patterns
 - CQRS Pattern
 - Hexagonal Architecture (Ports & Adapters)
+
+---
+
+## Changelog
+
+### Version 2.1 (October 10, 2025)
+
+**Major Features:**
+
+- ✅ **Duplicate Cell Functionality**: Complete CQRS/Event Sourcing implementation
+  - `DuplicateCellCommand` and `DuplicateCellCommandHandler`
+  - API endpoint: `POST /api/notebooks/[notebookId]/cells/[cellId]/duplicate`
+  - Client-side integration with proper ID mapping
+  - Unique ID generation using `Date.now() + Math.random()`
+
+**Critical Bug Fixes:**
+
+- ✅ **Fixed Duplicate Event Processing**: Resolved double event processing issue
+  - Problem: NotebookProjectors received events from both Event Bus and Event Stream
+  - Solution: Use either Event Bus OR Event Stream, never both
+  - Removed redundant notebook ID filtering in projectors
+- ✅ **Fixed Projection Deadlocks**: Resolved race conditions in projection manager
+  - Improved acquire/release lifecycle management
+  - Added proper eviction timer cancellation
+  - Fixed concurrent request handling
+
+**Architectural Improvements:**
+
+- Enhanced event processing architecture with clear separation
+- Improved projection lifecycle management
+- Better error handling and logging
+- Maintained domain layer purity throughout changes
+
+**Performance:**
+
+- Eliminated duplicate event processing overhead
+- Improved projection memory management
+- Faster duplicate cell operations
 
 ---
 

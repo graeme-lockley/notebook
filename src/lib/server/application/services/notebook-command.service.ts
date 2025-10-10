@@ -5,6 +5,7 @@ import { AddCellCommandHandler } from '../command-handlers/add-cell-command-hand
 import { UpdateCellCommandHandler } from '../command-handlers/update-cell-command-handler';
 import { DeleteCellCommandHandler } from '../command-handlers/delete-cell-command-handler';
 import { MoveCellCommandHandler } from '../command-handlers/move-cell-command-handler';
+import { DuplicateCellCommandHandler } from '../command-handlers/duplicate-cell-command-handler';
 import type { CellKind } from '$lib/server/domain/value-objects';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
@@ -18,6 +19,7 @@ export class NotebookCommandService {
 	private updateCellHandler: UpdateCellCommandHandler;
 	private deleteCellHandler: DeleteCellCommandHandler;
 	private moveCellHandler: MoveCellCommandHandler;
+	private duplicateCellHandler: DuplicateCellCommandHandler;
 
 	constructor(
 		eventStore: EventStore,
@@ -29,6 +31,11 @@ export class NotebookCommandService {
 		this.updateCellHandler = new UpdateCellCommandHandler(eventStore, projectionManager, eventBus);
 		this.deleteCellHandler = new DeleteCellCommandHandler(eventStore, projectionManager, eventBus);
 		this.moveCellHandler = new MoveCellCommandHandler(eventStore, projectionManager, eventBus);
+		this.duplicateCellHandler = new DuplicateCellCommandHandler(
+			eventStore,
+			projectionManager,
+			eventBus
+		);
 
 		logger.info('NotebookCommandService: Initialized with all command handlers');
 	}
@@ -111,6 +118,24 @@ export class NotebookCommandService {
 		});
 
 		logger.info(`NotebookCommandService: Cell moved successfully`);
+		return result;
+	}
+
+	/**
+	 * Duplicate an existing cell
+	 */
+	async duplicateCell(
+		notebookId: string,
+		cellId: string
+	): Promise<{ cellId: string; eventId: string }> {
+		logger.info(`NotebookCommandService: Duplicating cell ${cellId} in notebook ${notebookId}`);
+
+		const result = await this.duplicateCellHandler.handle({
+			notebookId,
+			cellId
+		});
+
+		logger.info(`NotebookCommandService: Cell duplicated successfully: ${result.cellId}`);
 		return result;
 	}
 }

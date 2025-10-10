@@ -4,11 +4,19 @@ import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class NotebookProjector implements EventHandler {
 	private lastProcessedEventId: string | null = null;
+	private notebookId: string;
 
-	constructor(private readModel: CellWriteModel & CellReadModel) {}
+	constructor(
+		private readModel: CellWriteModel & CellReadModel,
+		notebookId: string
+	) {
+		this.notebookId = notebookId;
+	}
 
 	async handle(event: DomainEvent): Promise<void> {
-		logger.debug(`NotebookProjector: Handling event: ${event.type}`);
+		logger.debug(
+			`NotebookProjector[${this.notebookId}]: Handling event: ${event.type} eventId: ${event.id}`
+		);
 
 		switch (event.type) {
 			case 'cell.created':

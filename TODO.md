@@ -2,8 +2,8 @@
 
 ## Defects
 
-- [ ] Duplicate does not have a server side route.
-- [ ] Create a new notebook does not create the notebook topic. The event is published however the consumers are not working. It does appear that the new projections and the former approach are interfering which each other. This must be unified and cleaned up.
+- [x] Duplicate does not have a server side route.
+- [x] Create a new notebook does not create the notebook topic. The event is published however the consumers are not working. It does appear that the new projections and the former approach are interfering which each other. This must be unified and cleaned up.
 
 ## Features
 

@@ -129,8 +129,11 @@ export async function moveCell(notebookId: string | undefined, cellId: string, p
 export async function duplicateCell(notebookId: string | undefined, cellId: string) {
 	if (!notebookId) return;
 
+	// Get the server cell ID from the mapping
+	const serverCellId = clientIdToServerId(cellId);
+
 	try {
-		const response = await fetch(`/api/notebooks/${notebookId}/cells/${cellId}/duplicate`, {
+		const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}/duplicate`, {
 			method: 'POST'
 		});
 

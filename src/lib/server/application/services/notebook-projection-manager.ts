@@ -85,16 +85,31 @@ export class NotebookProjectionManager {
 			);
 			await existingHydration;
 
-			// After waiting, increment reference count
+			// After waiting, check if projection still exists and increment reference count
 			const state = this.projections.get(notebookId);
 			if (state) {
+				// Cancel any eviction timer that might have started
+				if (state.evictionTimer) {
+					clearTimeout(state.evictionTimer);
+					state.evictionTimer = null;
+					logger.info(
+						`NotebookProjectionManager: Cancelled eviction timer for notebook ${notebookId} after hydration wait`
+					);
+				}
+
 				state.referenceCount++;
 				state.lastAccessedAt = new Date();
 				logger.info(
 					`NotebookProjectionManager: Incremented refCount to ${state.referenceCount} after hydration for notebook ${notebookId}`
 				);
+				return;
+			} else {
+				// Projection was evicted while waiting, need to hydrate again
+				logger.warn(
+					`NotebookProjectionManager: Projection was evicted while waiting for hydration for notebook ${notebookId}, re-hydrating`
+				);
+				// Fall through to start new hydration
 			}
-			return;
 		}
 
 		// Start new hydration
@@ -203,7 +218,7 @@ export class NotebookProjectionManager {
 
 		// Create read model and projector
 		const readModel = new PerNotebookReadModel(notebookId);
-		const projector = new NotebookProjector(readModel);
+		const projector = new NotebookProjector(readModel, notebookId);
 
 		// Create state
 		const state: ProjectionState = {
@@ -261,8 +276,11 @@ export class NotebookProjectionManager {
 				`NotebookProjectionManager: Hydration complete for notebook ${notebookId}, lastEventId: ${state.lastProcessedEventId}`
 			);
 
-			// Subscribe projector to event bus for real-time updates
-			this.subscribeProjectorToEventBus(state);
+			// Only subscribe to event bus if event streaming is disabled
+			// Otherwise, we'll get duplicate events (once from event bus, once from stream)
+			if (!this.config.enableEventStreaming) {
+				this.subscribeProjectorToEventBus(state);
+			}
 
 			// Start event streaming if enabled
 			if (this.config.enableEventStreaming) {

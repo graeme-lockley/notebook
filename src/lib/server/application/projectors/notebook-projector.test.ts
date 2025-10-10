@@ -10,7 +10,7 @@ describe('NotebookProjector', () => {
 
 	beforeEach(() => {
 		readModel = new PerNotebookReadModel(testNotebookId);
-		projector = new NotebookProjector(readModel);
+		projector = new NotebookProjector(readModel, testNotebookId);
 	});
 
 	describe('handleCellCreated', () => {
