@@ -6,9 +6,8 @@ export interface LoggerConfig {
 	showPrefix: boolean;
 }
 
-function formatArg(arg: unknown): unknown {
-	return typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg;
-}
+const formatArg = (arg: unknown): unknown =>
+	typeof arg === 'object' && arg !== null ? JSON.stringify(arg, null, 2) : arg;
 
 class Logger {
 	private config: LoggerConfig = {
