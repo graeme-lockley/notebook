@@ -5,11 +5,11 @@ import type {
 	CellDeletedEvent,
 	CellMovedEvent
 } from '$lib/server/domain/events/notebook.events';
-import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 /**
  * Stateless event factory for notebook cell operations.
  * Uses projection state for validation instead of maintaining its own state.
+ * Pure functions with no side effects (no logging, no infrastructure dependencies).
  */
 export class NotebookEventFactory {
 	/**
@@ -39,10 +39,6 @@ export class NotebookEventFactory {
 
 		// Generate a unique cell ID
 		const cellId = `cell-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-
-		logger.info(
-			`NotebookEventFactory: Creating cell.created event for ${kind} cell in notebook ${notebookId} at position ${position}`
-		);
 
 		return {
 			type: 'cell.created',
@@ -81,10 +77,6 @@ export class NotebookEventFactory {
 			throw new Error('Invalid cell kind. Must be js, md, or html');
 		}
 
-		logger.info(
-			`NotebookEventFactory: Creating cell.updated event for cell ${cellId} in notebook ${notebookId}`
-		);
-
 		return {
 			type: 'cell.updated',
 			payload: {
@@ -108,10 +100,6 @@ export class NotebookEventFactory {
 		if (!cellExists) {
 			throw new Error(`Cell not found: ${cellId}`);
 		}
-
-		logger.info(
-			`NotebookEventFactory: Creating cell.deleted event for cell ${cellId} in notebook ${notebookId}`
-		);
 
 		return {
 			type: 'cell.deleted',
@@ -141,10 +129,6 @@ export class NotebookEventFactory {
 		if (position < 0 || position > currentCells.length) {
 			throw new Error(`Invalid position: ${position}. Valid range: 0-${currentCells.length}`);
 		}
-
-		logger.info(
-			`NotebookEventFactory: Creating cell.moved event for cell ${cellId} to position ${position} in notebook ${notebookId}`
-		);
 
 		return {
 			type: 'cell.moved',

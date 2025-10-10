@@ -8,7 +8,10 @@ export class SimpleEventBus implements EventBus {
 		if (!this.handlers.has(eventType)) {
 			this.handlers.set(eventType, new Set());
 		}
-		this.handlers.get(eventType)!.add(handler);
+		const handlers = this.handlers.get(eventType);
+		if (handlers) {
+			handlers.add(handler);
+		}
 		logger.info(`EventBus: Subscribed handler to event type: ${eventType}`);
 	}
 

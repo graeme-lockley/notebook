@@ -3,10 +3,6 @@ import type { Notebook } from '../value-objects';
 export class Library {
 	private notebooks: Map<string, Notebook> = new Map();
 
-	constructor() {
-		this.notebooks = new Map();
-	}
-
 	has(notebookId: string): boolean {
 		return this.notebooks.has(notebookId);
 	}

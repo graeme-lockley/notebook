@@ -1,28 +1,26 @@
 import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 import { clientIdToServerId } from '$lib/client/model/cell';
-import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { CreateNotebookResponse } from '$lib/types/api-contracts';
+import { apiRequest } from './api-client';
 
 export async function createNotebook(
 	name: string,
 	description: string | undefined
 ): Promise<CreateNotebookResponse> {
-	const response = await fetch('/api/notebooks', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
+	const response = await apiRequest<{ title: string; description: string }, CreateNotebookResponse>(
+		'/api/notebooks',
+		'POST',
+		{
 			title: name,
 			description: description || ''
-		})
-	});
+		}
+	);
 
-	if (!response.ok) {
-		throw new Error(`Failed to create notebook: ${response.statusText}`);
+	if (!response) {
+		throw new Error('Failed to create notebook: No response received');
 	}
 
-	return await response.json();
+	return response;
 }
 
 export async function addCell(
@@ -30,114 +28,56 @@ export async function addCell(
 	kind: CellKind,
 	value: string,
 	position: number
-) {
+): Promise<void> {
 	if (!notebookId) return;
 
-	try {
-		const response = await fetch(`/api/notebooks/${notebookId}/cells`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				kind,
-				value,
-				position
-			})
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to add cell: ${response.statusText}`);
-		}
-	} catch (error) {
-		logger.error('Error adding cell:', error);
-	}
+	await apiRequest(`/api/notebooks/${notebookId}/cells`, 'POST', {
+		kind,
+		value,
+		position
+	});
 }
 
 export async function updateCell(
 	notebookId: string | undefined,
 	cellId: string,
 	updates: { kind?: string; value?: string }
-) {
+): Promise<void> {
 	if (!notebookId) return;
 
 	// Get the server cell ID from the mapping
 	const serverCellId = clientIdToServerId(cellId);
 
-	try {
-		const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(updates)
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to update cell: ${response.statusText}`);
-		}
-	} catch (error) {
-		logger.error('Error updating cell:', error);
-	}
+	await apiRequest(`/api/notebooks/${notebookId}/cells/${serverCellId}`, 'PATCH', updates);
 }
 
-export async function deleteCell(notebookId: string | undefined, cellId: string) {
+export async function deleteCell(notebookId: string | undefined, cellId: string): Promise<void> {
 	if (!notebookId) return;
 
 	// Get the server cell ID from the mapping
 	const serverCellId = clientIdToServerId(cellId);
 
-	try {
-		const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
-			method: 'DELETE'
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to delete cell: ${response.statusText}`);
-		}
-	} catch (error) {
-		logger.error('Error deleting cell:', error);
-	}
+	await apiRequest(`/api/notebooks/${notebookId}/cells/${serverCellId}`, 'DELETE');
 }
 
-export async function moveCell(notebookId: string | undefined, cellId: string, position: number) {
+export async function moveCell(
+	notebookId: string | undefined,
+	cellId: string,
+	position: number
+): Promise<void> {
 	if (!notebookId) return;
 
 	// Get the server cell ID from the mapping
 	const serverCellId = clientIdToServerId(cellId);
 
-	try {
-		const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}`, {
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ position: position })
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to move cell: ${response.statusText}`);
-		}
-	} catch (error) {
-		logger.error('Error moving cell:', error);
-	}
+	await apiRequest(`/api/notebooks/${notebookId}/cells/${serverCellId}`, 'PATCH', { position });
 }
 
-export async function duplicateCell(notebookId: string | undefined, cellId: string) {
+export async function duplicateCell(notebookId: string | undefined, cellId: string): Promise<void> {
 	if (!notebookId) return;
 
 	// Get the server cell ID from the mapping
 	const serverCellId = clientIdToServerId(cellId);
 
-	try {
-		const response = await fetch(`/api/notebooks/${notebookId}/cells/${serverCellId}/duplicate`, {
-			method: 'POST'
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to duplicate cell: ${response.statusText}`);
-		}
-	} catch (error) {
-		logger.error('Error duplicating cell:', error);
-	}
+	await apiRequest(`/api/notebooks/${notebookId}/cells/${serverCellId}/duplicate`, 'POST');
 }
