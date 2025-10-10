@@ -1,18 +1,33 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 import { DeleteCellCommandHandler } from './delete-cell-command-handler';
+import { NotebookProjectionManager } from '../services/notebook-projection-manager';
+import { SimpleEventBus } from '../adapters/outbound/simple-event-bus';
 
 describe('DeleteCellCommandHandler', () => {
 	let eventStore: EventStore;
+	let projectionManager: NotebookProjectionManager;
 	let commandHandler: DeleteCellCommandHandler;
+
+	let eventBus: SimpleEventBus;
 
 	beforeEach(async () => {
 		eventStore = new EventStoreTestImpl();
+		eventBus = new SimpleEventBus();
+		projectionManager = new NotebookProjectionManager(eventStore, eventBus, {
+			gracePeriodMs: 100,
+			enableEventStreaming: false
+		});
+
 		// Create the notebook topic
 		await eventStore.createTopic('test-notebook', []);
 
-		commandHandler = new DeleteCellCommandHandler(eventStore);
+		commandHandler = new DeleteCellCommandHandler(eventStore, projectionManager, eventBus);
+	});
+
+	afterEach(async () => {
+		await projectionManager.shutdown();
 	});
 
 	describe('handle', () => {
@@ -26,7 +41,9 @@ describe('DeleteCellCommandHandler', () => {
 			};
 
 			const addHandler = new (await import('./add-cell-command-handler')).AddCellCommandHandler(
-				eventStore
+				eventStore,
+				projectionManager,
+				eventBus
 			);
 			const addResult = await addHandler.handle(addCommand);
 
@@ -57,7 +74,9 @@ describe('DeleteCellCommandHandler', () => {
 			};
 
 			const addHandler = new (await import('./add-cell-command-handler')).AddCellCommandHandler(
-				eventStore
+				eventStore,
+				projectionManager,
+				eventBus
 			);
 			const addResult = await addHandler.handle(addCommand);
 

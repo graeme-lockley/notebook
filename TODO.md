@@ -13,7 +13,13 @@
 
 ### Projections
 
-- [ ] All notebook projections are loaded at start-up. This is aweful. I would like a notebook projection to be managed in a lazy manner. If no consumer has that notebook open, then the projection must be discarded. When a consumer opens a notebook, that notebook's projection should be hydrated. Projections will be shared between consumers. A reference counting scheme will need to be used here.
+- [x] All notebook projections are loaded at start-up. This is aweful. I would like a notebook projection to be managed in a lazy manner. If no consumer has that notebook open, then the projection must be discarded. When a consumer opens a notebook, that notebook's projection should be hydrated. Projections will be shared between consumers. A reference counting scheme will need to be used here.
+  - Implemented NotebookProjectionManager with lazy loading and reference counting
+  - Projections are hydrated on-demand when accessed via WebSocket or REST API
+  - Grace period eviction (60 seconds default) handles quick reconnections
+  - Event streaming keeps projections current without re-hydration
+  - Multiple consumers share the same projection instance
+  - Comprehensive unit and integration tests included
 
 ### Notebook
 

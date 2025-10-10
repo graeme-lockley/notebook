@@ -1,12 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
-import { UpdateCellCommandHandler } from '$lib/server/application/command-handlers/update-cell-command-handler';
-import { DeleteCellCommandHandler } from '$lib/server/application/command-handlers/delete-cell-command-handler';
-import { MoveCellCommandHandler } from '$lib/server/application/command-handlers/move-cell-command-handler';
-import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
-import type { EventBus } from '$lib/server/application/ports/outbound/event-bus';
 
 export async function PATCH({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -19,25 +13,15 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 		const body = await request.json();
 		const { kind, value, position } = body;
 
-		// Access the injected services
-		const libraryService: LibraryApplicationService = locals.libraryService;
-		const eventStore: EventStore = locals.eventStore;
-		const eventBus: EventBus = locals.eventBus;
-
 		// Check if notebook exists
-		const notebook = libraryService.getNotebook(notebookId);
+		const notebook = locals.libraryService.getNotebook(notebookId);
 		if (!notebook) {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
 		// If position is provided, this is a move operation
 		if (position !== undefined) {
-			const commandHandler = new MoveCellCommandHandler(eventStore, eventBus);
-			const result = await commandHandler.handle({
-				notebookId,
-				cellId,
-				position
-			});
+			const result = await locals.notebookCommandService.moveCell(notebookId, cellId, position);
 
 			logger.info(`Moved cell ${cellId} to position ${position} in notebook ${notebookId}`);
 
@@ -55,11 +39,9 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			return json({ error: 'Either kind, value, or position must be provided' }, { status: 400 });
 		}
 
-		const commandHandler = new UpdateCellCommandHandler(eventStore, eventBus);
-		const result = await commandHandler.handle({
-			notebookId,
-			cellId,
-			updates: { kind, value }
+		const result = await locals.notebookCommandService.updateCell(notebookId, cellId, {
+			kind,
+			value
 		});
 
 		logger.info(`Updated cell ${cellId} in notebook ${notebookId}`);
@@ -85,22 +67,13 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 			return json({ error: 'Notebook ID and Cell ID are required' }, { status: 400 });
 		}
 
-		// Access the injected services
-		const libraryService: LibraryApplicationService = locals.libraryService;
-		const eventStore: EventStore = locals.eventStore;
-		const eventBus: EventBus = locals.eventBus;
-
 		// Check if notebook exists
-		const notebook = libraryService.getNotebook(notebookId);
+		const notebook = locals.libraryService.getNotebook(notebookId);
 		if (!notebook) {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
-		const commandHandler = new DeleteCellCommandHandler(eventStore, eventBus);
-		const result = await commandHandler.handle({
-			notebookId,
-			cellId
-		});
+		const result = await locals.notebookCommandService.deleteCell(notebookId, cellId);
 
 		return json({
 			message: 'Cell deleted successfully',

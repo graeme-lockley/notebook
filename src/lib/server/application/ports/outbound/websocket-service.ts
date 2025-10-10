@@ -10,12 +10,12 @@ export interface WebSocketService {
 	/**
 	 * Add a new WebSocket connection for a specific notebook
 	 */
-	addConnection(connection: WebSocketConnection): void;
+	addConnection(connection: WebSocketConnection): Promise<void>;
 
 	/**
 	 * Remove a WebSocket connection
 	 */
-	removeConnection(connectionId: string): void;
+	removeConnection(connectionId: string): Promise<void>;
 
 	/**
 	 * Broadcast a message to all connections for a specific notebook

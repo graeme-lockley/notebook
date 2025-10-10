@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import { withProjection } from '$lib/server/application/middleware/projection-middleware';
 
 export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -22,28 +23,21 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 			return json({ error: 'Notebook not found' }, { status: 404 });
 		}
 
-		// Get the notebook data from the read model
-		const { notebookReadModel } = locals;
-		const notebookData = await notebookReadModel.getNotebook(notebookId);
+		// Use projection middleware to get cells
+		return withProjection(notebookId, locals.projectionManager, async (readModel) => {
+			const cells = await readModel.getCells(notebookId);
 
-		if (!notebookData) {
-			logger.error(`Notebook data not found in read model: ${notebookId}`);
-			return json({ error: 'Notebook data not found' }, { status: 404 });
-		}
+			logger.info(`Notebook found: ${notebookId} with ${cells.length} cells`);
 
-		// Get the cells for this notebook
-		const cells = await notebookReadModel.getCells(notebookId);
-
-		logger.info(`Notebook found: ${notebookId} with ${cells.length} cells`);
-
-		// Return the complete notebook data including cells from read model
-		return json({
-			id: notebookMetadata.id,
-			title: notebookMetadata.title,
-			description: notebookMetadata.description,
-			createdAt: notebookMetadata.createdAt,
-			updatedAt: notebookMetadata.updatedAt,
-			cells: cells
+			// Return the complete notebook data including cells from read model
+			return json({
+				id: notebookMetadata.id,
+				title: notebookMetadata.title,
+				description: notebookMetadata.description,
+				createdAt: notebookMetadata.createdAt,
+				updatedAt: notebookMetadata.updatedAt,
+				cells: cells
+			});
 		});
 	} catch (error) {
 		logger.error('Error getting notebook:', error);

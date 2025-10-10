@@ -1,9 +1,11 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
-import type { NotebookReadModel } from '../ports/inbound/read-models';
+import type { CellWriteModel, CellReadModel } from '../ports/inbound/read-models';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class NotebookProjector implements EventHandler {
-	constructor(private readModel: NotebookReadModel) {}
+	private lastProcessedEventId: string | null = null;
+
+	constructor(private readModel: CellWriteModel & CellReadModel) {}
 
 	async handle(event: DomainEvent): Promise<void> {
 		logger.debug(`NotebookProjector: Handling event: ${event.type}`);
@@ -24,6 +26,13 @@ export class NotebookProjector implements EventHandler {
 			default:
 				logger.debug(`NotebookProjector: Ignoring event type: ${event.type}`);
 		}
+
+		// Track the last processed event ID
+		this.lastProcessedEventId = event.id;
+	}
+
+	getLastProcessedEventId(): string | null {
+		return this.lastProcessedEventId;
 	}
 
 	private async handleCellCreated(event: DomainEvent): Promise<void> {
@@ -45,12 +54,7 @@ export class NotebookProjector implements EventHandler {
 		};
 
 		// Update read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-notebook-read-model')).InMemoryNotebookReadModel
-		) {
-			this.readModel.addCellAtPosition(event.aggregateId, cell, payload.position);
-		}
+		this.readModel.addCellAtPosition(event.aggregateId, cell, payload.position);
 
 		logger.info(
 			`NotebookProjector: Cell created: ${payload.cellId} in notebook ${event.aggregateId} at position ${payload.position}`
@@ -80,12 +84,7 @@ export class NotebookProjector implements EventHandler {
 		};
 
 		// Update read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-notebook-read-model')).InMemoryNotebookReadModel
-		) {
-			this.readModel.updateCell(event.aggregateId, payload.cellId, updatedCell);
-		}
+		this.readModel.updateCell(event.aggregateId, payload.cellId, updatedCell);
 
 		logger.info(
 			`NotebookProjector: Cell updated: ${payload.cellId} in notebook ${event.aggregateId}`
@@ -99,12 +98,7 @@ export class NotebookProjector implements EventHandler {
 		};
 
 		// Update read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-notebook-read-model')).InMemoryNotebookReadModel
-		) {
-			this.readModel.removeCell(event.aggregateId, payload.cellId);
-		}
+		this.readModel.removeCell(event.aggregateId, payload.cellId);
 
 		logger.info(
 			`NotebookProjector: Cell deleted: ${payload.cellId} from notebook ${event.aggregateId}`
@@ -119,12 +113,7 @@ export class NotebookProjector implements EventHandler {
 		};
 
 		// Update read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-notebook-read-model')).InMemoryNotebookReadModel
-		) {
-			this.readModel.moveCell(event.aggregateId, payload.cellId, payload.position);
-		}
+		this.readModel.moveCell(event.aggregateId, payload.cellId, payload.position);
 
 		logger.info(
 			`NotebookProjector: Cell moved: ${payload.cellId} to position ${payload.position} in notebook ${event.aggregateId}`

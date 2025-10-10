@@ -1,4 +1,3 @@
-import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type {
 	LibraryEvent,
 	NotebookCreatedEvent,
@@ -39,8 +38,6 @@ export class LibraryServiceImpl implements LibraryDomainService {
 				createdAt: new Date().toISOString()
 			}
 		};
-
-		logger.info(`LibraryService: createNotebookEvent: Created notebook event for: ${notebookId}`);
 
 		return event;
 	}
@@ -87,10 +84,6 @@ export class LibraryServiceImpl implements LibraryDomainService {
 			}
 		};
 
-		logger.info(
-			`LibraryService: createUpdateNotebookEvent: Created update event for notebook: ${notebookId}`
-		);
-
 		return event;
 	}
 
@@ -106,16 +99,11 @@ export class LibraryServiceImpl implements LibraryDomainService {
 			}
 		};
 
-		logger.info(
-			`LibraryService: createDeleteNotebookEvent: Created delete event for notebook: ${notebookId}`
-		);
-
 		return event;
 	}
 
 	eventHandler(event: LibraryEvent & { id: string }): void {
 		const { type } = event;
-		logger.info(`LibraryService: eventHandler: ${type}: ${JSON.stringify(event.payload)}`);
 
 		switch (type) {
 			case 'notebook.created': {
@@ -133,11 +121,7 @@ export class LibraryServiceImpl implements LibraryDomainService {
 			case 'notebook.updated': {
 				const { notebookId, changes, updatedAt } = event.payload;
 				const notebook = this.library.get(notebookId);
-				if (notebook === undefined) {
-					logger.warn(
-						`LibraryService: eventHandler: notebook.updated: Notebook not found: ${notebookId}: ${JSON.stringify(event.payload)}`
-					);
-				} else {
+				if (notebook !== undefined) {
 					if (changes.title !== undefined) {
 						notebook.title = changes.title;
 					}
@@ -149,21 +133,14 @@ export class LibraryServiceImpl implements LibraryDomainService {
 				break;
 			}
 			case 'notebook.deleted': {
-				logger.info(
-					`LibraryService: eventHandler: notebook.deleted: ${JSON.stringify(event.payload)}`
-				);
 				const { notebookId } = event.payload;
 				if (this.library.has(notebookId)) {
 					this.library.delete(notebookId);
-				} else {
-					logger.warn(
-						`LibraryService: eventHandler: notebook.deleted: Notebook not found: ${notebookId}: ${JSON.stringify(event.payload)}`
-					);
 				}
 				break;
 			}
 			default:
-				logger.warn(`LibraryService: eventHandler: Unknown notebook event type: ${type}`);
+			// Unknown event type - silently ignore
 		}
 
 		// Update the last processed event ID

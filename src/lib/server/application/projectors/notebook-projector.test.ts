@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NotebookProjector } from './notebook-projector';
-import { InMemoryNotebookReadModel } from '../adapters/inbound/in-memory-notebook-read-model';
+import { PerNotebookReadModel } from '../adapters/inbound/per-notebook-read-model';
 import type { DomainEvent } from '../ports/outbound/event-bus';
 
 describe('NotebookProjector', () => {
 	let projector: NotebookProjector;
-	let readModel: InMemoryNotebookReadModel;
+	let readModel: PerNotebookReadModel;
+	const testNotebookId = 'test-notebook-123';
 
 	beforeEach(() => {
-		readModel = new InMemoryNotebookReadModel();
+		readModel = new PerNotebookReadModel(testNotebookId);
 		projector = new NotebookProjector(readModel);
 	});
 
@@ -25,21 +26,25 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 
 			// Add a cell first to test insertion in middle
-			readModel.addCell('notebook-1', {
-				id: 'existing-cell',
-				kind: 'md',
-				value: '# Existing',
-				createdAt: new Date(),
-				updatedAt: new Date()
-			});
+			readModel.addCellAtPosition(
+				testNotebookId,
+				{
+					id: 'existing-cell',
+					kind: 'md',
+					value: '# Existing',
+					createdAt: new Date(),
+					updatedAt: new Date()
+				},
+				0
+			);
 
 			await projector.handle(event);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(2);
 			expect(cells[0].id).toBe('existing-cell');
 			expect(cells[1].id).toBe('cell-1'); // Should be at position 1
@@ -57,21 +62,25 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 
 			// Add a cell first
-			readModel.addCell('notebook-1', {
-				id: 'existing-cell',
-				kind: 'md',
-				value: '# Existing',
-				createdAt: new Date(),
-				updatedAt: new Date()
-			});
+			readModel.addCellAtPosition(
+				testNotebookId,
+				{
+					id: 'existing-cell',
+					kind: 'md',
+					value: '# Existing',
+					createdAt: new Date(),
+					updatedAt: new Date()
+				},
+				0
+			);
 
 			await projector.handle(event);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(2);
 			expect(cells[0].id).toBe('cell-1'); // Should be at position 0
 			expect(cells[1].id).toBe('existing-cell');
@@ -89,12 +98,12 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 
 			await projector.handle(event);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(1);
 			expect(cells[0].id).toBe('cell-1');
 		});
@@ -111,12 +120,12 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 
 			await projector.handle(event);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells[0]).toEqual({
 				id: 'cell-1',
 				kind: 'html',
@@ -141,7 +150,7 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(createEvent);
 
@@ -157,11 +166,11 @@ describe('NotebookProjector', () => {
 					updatedAt: '2025-01-01T00:01:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:01:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(updateEvent);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(1);
 			expect(cells[0].value).toBe('console.log("updated");');
 		});
@@ -181,7 +190,7 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(createEvent1);
 
@@ -196,7 +205,7 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:01:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:01:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(createEvent2);
 
@@ -209,11 +218,11 @@ describe('NotebookProjector', () => {
 					deletedAt: '2025-01-01T00:02:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:02:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(deleteEvent);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(1);
 			expect(cells[0].id).toBe('cell-2');
 		});
@@ -233,7 +242,7 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:00:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(createEvent1);
 
@@ -248,7 +257,7 @@ describe('NotebookProjector', () => {
 					createdAt: '2025-01-01T00:01:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:01:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(createEvent2);
 
@@ -262,11 +271,11 @@ describe('NotebookProjector', () => {
 					movedAt: '2025-01-01T00:02:00Z'
 				},
 				timestamp: new Date('2025-01-01T00:02:00Z'),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 			await projector.handle(moveEvent);
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(2);
 			expect(cells[0].id).toBe('cell-2'); // Should be first now
 			expect(cells[1].id).toBe('cell-1'); // Should be second now
@@ -280,13 +289,13 @@ describe('NotebookProjector', () => {
 				type: 'unknown.event',
 				payload: {},
 				timestamp: new Date(),
-				aggregateId: 'notebook-1'
+				aggregateId: testNotebookId
 			};
 
 			// Should not throw
 			await expect(projector.handle(event)).resolves.toBeUndefined();
 
-			const cells = await readModel.getCells('notebook-1');
+			const cells = await readModel.getCells(testNotebookId);
 			expect(cells).toHaveLength(0);
 		});
 	});

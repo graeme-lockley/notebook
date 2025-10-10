@@ -113,20 +113,4 @@ describe('LibraryApplicationService', () => {
 			expect(notebook?.description).toBe('Test Description');
 		});
 	});
-
-	describe('getNotebookService', () => {
-		it('should return undefined for non-existent notebook', async () => {
-			const service = await libraryService.getNotebookService('non-existent');
-			expect(service).toBeUndefined();
-		});
-
-		it('should create and return notebook service', async () => {
-			const [notebookId] = await libraryService.createNotebook('Test Notebook');
-
-			const service = await libraryService.getNotebookService(notebookId);
-
-			expect(service).toBeDefined();
-			expect(service?.id).toBe(notebookId);
-		});
-	});
 });

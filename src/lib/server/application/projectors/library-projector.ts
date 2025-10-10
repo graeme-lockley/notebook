@@ -1,12 +1,9 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
-import type { LibraryReadModel, NotebookReadModel } from '../ports/inbound/read-models';
+import type { LibraryReadModel } from '../ports/inbound/read-models';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class LibraryProjector implements EventHandler {
-	constructor(
-		private readModel: LibraryReadModel,
-		private notebookReadModel?: NotebookReadModel
-	) {}
+	constructor(private readModel: LibraryReadModel) {}
 
 	async handle(event: DomainEvent): Promise<void> {
 		logger.debug(`LibraryProjector: Handling event: ${event.type}`);
@@ -51,16 +48,8 @@ export class LibraryProjector implements EventHandler {
 			this.readModel.updateNotebook(notebook);
 		}
 
-		// Also update notebook read model so it knows about the notebook
-		if (this.notebookReadModel) {
-			if (
-				this.notebookReadModel instanceof
-				(await import('../adapters/inbound/in-memory-notebook-read-model'))
-					.InMemoryNotebookReadModel
-			) {
-				this.notebookReadModel.updateNotebook(notebook);
-			}
-		}
+		// Note: notebookReadModel is no longer used - each projection has its own read model
+		// managed by NotebookProjectionManager
 
 		logger.info(`LibraryProjector: Notebook created: ${payload.notebookId}`);
 	}
@@ -98,16 +87,8 @@ export class LibraryProjector implements EventHandler {
 			this.readModel.updateNotebook(updatedNotebook);
 		}
 
-		// Also update notebook read model
-		if (this.notebookReadModel) {
-			if (
-				this.notebookReadModel instanceof
-				(await import('../adapters/inbound/in-memory-notebook-read-model'))
-					.InMemoryNotebookReadModel
-			) {
-				this.notebookReadModel.updateNotebook(updatedNotebook);
-			}
-		}
+		// Note: notebookReadModel is no longer used - each projection has its own read model
+		// managed by NotebookProjectionManager
 
 		logger.info(`LibraryProjector: Notebook updated: ${payload.notebookId}`);
 	}
@@ -126,16 +107,8 @@ export class LibraryProjector implements EventHandler {
 			this.readModel.removeNotebook(payload.notebookId);
 		}
 
-		// Also update notebook read model
-		if (this.notebookReadModel) {
-			if (
-				this.notebookReadModel instanceof
-				(await import('../adapters/inbound/in-memory-notebook-read-model'))
-					.InMemoryNotebookReadModel
-			) {
-				this.notebookReadModel.removeNotebook(payload.notebookId);
-			}
-		}
+		// Note: notebookReadModel is no longer used - each projection has its own read model
+		// managed by NotebookProjectionManager
 
 		logger.info(`LibraryProjector: Notebook deleted: ${payload.notebookId}`);
 	}

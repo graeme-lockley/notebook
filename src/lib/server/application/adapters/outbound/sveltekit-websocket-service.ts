@@ -1,18 +1,22 @@
 import type { WebSocketService, WebSocketConnection } from '../../ports/outbound/websocket-service';
+import type { NotebookProjectionManager } from '../../services/notebook-projection-manager';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class SvelteKitWebSocketService implements WebSocketService {
 	private connections: Map<string, WebSocketConnection> = new Map();
 	private notebookConnections: Map<string, Set<string>> = new Map();
 
-	constructor() {
+	constructor(private projectionManager: NotebookProjectionManager) {
 		// Set up periodic cleanup of dead connections
 		setInterval(() => {
 			this.cleanupDeadConnections();
 		}, 30000); // Clean up every 30 seconds
 	}
 
-	addConnection(connection: WebSocketConnection): void {
+	async addConnection(connection: WebSocketConnection): Promise<void> {
+		// Acquire projection for this notebook
+		await this.projectionManager.acquireProjection(connection.notebookId);
+
 		this.connections.set(connection.id, connection);
 
 		// Track connections per notebook
@@ -22,13 +26,16 @@ export class SvelteKitWebSocketService implements WebSocketService {
 		this.notebookConnections.get(connection.notebookId)!.add(connection.id);
 
 		logger.info(
-			`WebSocket connection added: ${connection.id} for notebook ${connection.notebookId}`
+			`WebSocket connection added: ${connection.id} for notebook ${connection.notebookId} (projection acquired)`
 		);
 	}
 
-	removeConnection(connectionId: string): void {
+	async removeConnection(connectionId: string): Promise<void> {
 		const connection = this.connections.get(connectionId);
 		if (connection) {
+			// Release projection for this notebook
+			await this.projectionManager.releaseProjection(connection.notebookId);
+
 			// Remove from notebook tracking
 			const notebookConnections = this.notebookConnections.get(connection.notebookId);
 			if (notebookConnections) {
@@ -40,7 +47,9 @@ export class SvelteKitWebSocketService implements WebSocketService {
 
 			// Remove from main connections map
 			this.connections.delete(connectionId);
-			logger.info(`WebSocket connection removed: ${connectionId}`);
+			logger.info(
+				`WebSocket connection removed: ${connectionId} (projection released for notebook ${connection.notebookId})`
+			);
 		}
 	}
 

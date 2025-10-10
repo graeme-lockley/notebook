@@ -42,7 +42,7 @@ export class SvelteKitWebSocketServer {
 		}
 	}
 
-	private handleConnection(ws: WebSocket, request: unknown): void {
+	private async handleConnection(ws: WebSocket, request: unknown): Promise<void> {
 		// Extract notebook ID from URL
 		const requestObj = request as { url: string; headers: { host: string } };
 		const url = new URL(requestObj.url, `http://${requestObj.headers.host}`);
@@ -69,8 +69,14 @@ export class SvelteKitWebSocketServer {
 			isAlive: true
 		};
 
-		// Add connection to service
-		this.webSocketService.addConnection(connection);
+		// Add connection to service (acquires projection)
+		try {
+			await this.webSocketService.addConnection(connection);
+		} catch (error) {
+			logger.error(`Failed to add WebSocket connection for notebook ${notebookId}:`, error);
+			ws.close(1011, 'Failed to initialize notebook projection');
+			return;
+		}
 
 		// Set up event handlers
 		ws.on('message', (data: Buffer) => {
@@ -81,9 +87,9 @@ export class SvelteKitWebSocketServer {
 			connection.isAlive = true;
 		});
 
-		ws.on('close', () => {
+		ws.on('close', async () => {
 			logger.info(`WebSocket connection closed: ${connectionId}`);
-			this.webSocketService.removeConnection(connectionId);
+			await this.webSocketService.removeConnection(connectionId);
 		});
 
 		ws.on('error', (error) => {
