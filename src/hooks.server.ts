@@ -57,8 +57,9 @@ async function initializeServices() {
 		// Initialize projection manager for lazy notebook loading
 		projectionManager = new NotebookProjectionManager(eventStore, eventBus, {
 			gracePeriodMs: 60000, // 60 seconds
-			enableEventStreaming: true
+			enableEventStreaming: false // Use Event Bus for real-time updates (push-based)
 		});
+
 		logger.info('Notebook projection manager initialized');
 
 		// Initialize WebSocket service with projection manager
