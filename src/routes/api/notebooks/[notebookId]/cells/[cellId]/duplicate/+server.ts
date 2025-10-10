@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import type { DuplicateCellResponse, ApiError } from '$lib/types/api-contracts';
 
 export async function POST({ params, locals }: RequestEvent): Promise<Response> {
 	const timestamp = Date.now();
@@ -14,13 +15,15 @@ export async function POST({ params, locals }: RequestEvent): Promise<Response> 
 		const { notebookId, cellId } = params;
 
 		if (!notebookId || !cellId) {
-			return json({ error: 'Notebook ID and Cell ID are required' }, { status: 400 });
+			const errorResponse: ApiError = { error: 'Notebook ID and Cell ID are required' };
+			return json(errorResponse, { status: 400 });
 		}
 
 		// Check if notebook exists
 		const notebook = locals.libraryService.getNotebook(notebookId);
 		if (!notebook) {
-			return json({ error: 'Notebook not found' }, { status: 404 });
+			const errorResponse: ApiError = { error: 'Notebook not found' };
+			return json(errorResponse, { status: 404 });
 		}
 
 		// Execute duplicate command via service
@@ -30,17 +33,16 @@ export async function POST({ params, locals }: RequestEvent): Promise<Response> 
 			`API: [${requestId}] Duplicated cell ${cellId} in notebook ${notebookId} -> new cell ${result.cellId}`
 		);
 
-		return json(
-			{
-				message: 'Cell duplicated successfully',
-				notebookId,
-				cellId: result.cellId,
-				eventId: result.eventId
-			},
-			{ status: 201 }
-		);
+		const response: DuplicateCellResponse = {
+			message: 'Cell duplicated successfully',
+			notebookId,
+			cellId: result.cellId,
+			eventId: result.eventId
+		};
+		return json(response, { status: 201 });
 	} catch (error) {
 		logger.error('Error duplicating cell:', error);
-		return json({ error: 'Failed to duplicate cell' }, { status: 500 });
+		const errorResponse: ApiError = { error: 'Failed to duplicate cell' };
+		return json(errorResponse, { status: 500 });
 	}
 }

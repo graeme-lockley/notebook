@@ -1,7 +1,7 @@
 import { createNotebookStore, type NotebookStore } from '$lib/client/stores/notebook';
 import { ReactiveNotebook } from '$lib/client/model/cell';
 import * as ServerQuery from '$lib/client/server/server-queries';
-import type { NotebookResponse } from '$lib/client/server/server-queries';
+import type { GetNotebookResponse } from '$lib/types/api-contracts';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 /**
@@ -66,7 +66,7 @@ export class NotebookLoaderService {
 	 * @returns Promise with notebook data
 	 * @private
 	 */
-	private async fetchNotebookData(notebookId: string): Promise<NotebookResponse> {
+	private async fetchNotebookData(notebookId: string): Promise<GetNotebookResponse> {
 		return await ServerQuery.getNotebook(notebookId);
 	}
 
@@ -76,7 +76,7 @@ export class NotebookLoaderService {
 	 * @returns Promise with initialized ReactiveNotebook
 	 * @private
 	 */
-	private async createNotebookFromData(data: NotebookResponse): Promise<ReactiveNotebook> {
+	private async createNotebookFromData(data: GetNotebookResponse): Promise<ReactiveNotebook> {
 		const notebook = new ReactiveNotebook({
 			title: data.title,
 			description: data.description || ''

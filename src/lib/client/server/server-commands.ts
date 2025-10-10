@@ -1,10 +1,7 @@
 import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 import { clientIdToServerId } from '$lib/client/model/cell';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
-
-interface CreateNotebookResponse {
-	id: string;
-}
+import type { CreateNotebookResponse } from '$lib/types/api-contracts';
 
 export async function createNotebook(
 	name: string,

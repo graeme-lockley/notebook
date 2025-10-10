@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotebookLoaderService } from './notebook-loader.service';
-import type { NotebookResponse } from '$lib/client/server/server-queries';
+import type { GetNotebookResponse } from '$lib/types/api-contracts';
 
 // Mock the dependencies
 vi.mock('$lib/client/server/server-queries', () => ({
@@ -27,12 +27,27 @@ describe('NotebookLoaderService', () => {
 
 	describe('loadNotebook', () => {
 		it('should load notebook with cells', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-1',
 				title: 'Test Notebook',
 				description: 'Test Description',
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
 				cells: [
-					{ id: 'cell-1', kind: 'js', value: 'Math.PI' },
-					{ id: 'cell-2', kind: 'md', value: '# Hello' }
+					{
+						id: 'cell-1',
+						kind: 'js',
+						value: 'Math.PI',
+						createdAt: '2024-01-01T00:00:00.000Z',
+						updatedAt: '2024-01-01T00:00:00.000Z'
+					},
+					{
+						id: 'cell-2',
+						kind: 'md',
+						value: '# Hello',
+						createdAt: '2024-01-01T00:00:00.000Z',
+						updatedAt: '2024-01-01T00:00:00.000Z'
+					}
 				]
 			};
 
@@ -49,9 +64,12 @@ describe('NotebookLoaderService', () => {
 		});
 
 		it('should handle notebook with no cells', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-2',
 				title: 'Empty Notebook',
 				description: '',
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
 				cells: []
 			};
 
@@ -64,9 +82,12 @@ describe('NotebookLoaderService', () => {
 		});
 
 		it('should handle notebook with missing description', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-3',
 				title: 'No Description',
 				description: undefined,
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
 				cells: []
 			};
 
@@ -85,9 +106,12 @@ describe('NotebookLoaderService', () => {
 		});
 
 		it('should call ServerQuery.getNotebook with correct ID', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-4',
 				title: 'Test',
 				description: '',
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
 				cells: []
 			};
 
@@ -102,9 +126,12 @@ describe('NotebookLoaderService', () => {
 
 	describe('reloadNotebook', () => {
 		it('should reload notebook successfully', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-5',
 				title: 'Reload Test',
 				description: '',
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
 				cells: []
 			};
 
@@ -127,13 +154,34 @@ describe('NotebookLoaderService', () => {
 
 	describe('cell loading', () => {
 		it('should preserve cell order', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-6',
 				title: 'Order Test',
 				description: '',
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
 				cells: [
-					{ id: 'cell-1', kind: 'js', value: 'first' },
-					{ id: 'cell-2', kind: 'js', value: 'second' },
-					{ id: 'cell-3', kind: 'js', value: 'third' }
+					{
+						id: 'cell-1',
+						kind: 'js',
+						value: 'first',
+						createdAt: '2024-01-01T00:00:00.000Z',
+						updatedAt: '2024-01-01T00:00:00.000Z'
+					},
+					{
+						id: 'cell-2',
+						kind: 'js',
+						value: 'second',
+						createdAt: '2024-01-01T00:00:00.000Z',
+						updatedAt: '2024-01-01T00:00:00.000Z'
+					},
+					{
+						id: 'cell-3',
+						kind: 'js',
+						value: 'third',
+						createdAt: '2024-01-01T00:00:00.000Z',
+						updatedAt: '2024-01-01T00:00:00.000Z'
+					}
 				]
 			};
 
@@ -147,10 +195,21 @@ describe('NotebookLoaderService', () => {
 		});
 
 		it('should not focus cells during load', async () => {
-			const mockNotebookData: NotebookResponse = {
+			const mockNotebookData: GetNotebookResponse = {
+				id: 'notebook-7',
 				title: 'Focus Test',
 				description: '',
-				cells: [{ id: 'cell-1', kind: 'js', value: 'test' }]
+				createdAt: '2024-01-01T00:00:00.000Z',
+				updatedAt: '2024-01-01T00:00:00.000Z',
+				cells: [
+					{
+						id: 'cell-1',
+						kind: 'js',
+						value: 'test',
+						createdAt: '2024-01-01T00:00:00.000Z',
+						updatedAt: '2024-01-01T00:00:00.000Z'
+					}
+				]
 			};
 
 			vi.mocked(ServerQuery.getNotebook).mockResolvedValue(mockNotebookData);

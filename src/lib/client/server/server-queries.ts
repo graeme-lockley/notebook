@@ -1,17 +1,6 @@
-import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
+import type { GetNotebookResponse } from '$lib/types/api-contracts';
 
-export interface NotebookResponse {
-	title: string;
-	description: string | undefined;
-
-	cells: {
-		id: string;
-		kind: CellKind;
-		value: string;
-	}[];
-}
-
-export async function getNotebook(id: string): Promise<NotebookResponse> {
+export async function getNotebook(id: string): Promise<GetNotebookResponse> {
 	// Fetch notebook data from API
 	const response = await fetch(`/api/notebooks/${id}`);
 

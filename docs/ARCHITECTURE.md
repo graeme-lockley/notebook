@@ -1,6 +1,6 @@
 # ObservableHQ Clone - Architecture & Design Documentation
 
-**Version:** 2.1  
+**Version:** 2.2  
 **Last Updated:** October 10, 2025  
 **Status:** Production Ready
 
@@ -183,6 +183,68 @@ An ObservableHQ clone built with SvelteKit that provides:
 - Before: 89/100
 - After: 93/100 (+4 points)
 
+### Phase 5: API Type Safety (October 10, 2025)
+
+**Problem Addressed:**
+
+- API responses were untyped JavaScript objects
+- No contract between client and server
+- Runtime type errors possible
+- No IDE autocomplete for API responses
+
+**Solution:**
+
+1. Created centralized `src/lib/types/api-contracts.ts`
+2. Defined typed interfaces for all 7 API endpoints
+3. Separated API types (JSON-serialized) from domain types (internal)
+4. Updated all server routes to use typed responses
+5. Updated client service functions to use shared types
+
+**Components:**
+
+- **API Contracts**: Request/response interfaces for all endpoints
+- **Type Distinction**: API types use ISO 8601 strings for dates (JSON reality)
+- **Error Types**: Standardized `ApiError` interface
+- **Full Coverage**: All notebook and cell operations typed
+
+**Impact:**
+
+- ✅ Compile-time type checking for API contracts
+- ✅ IDE autocomplete for API responses
+- ✅ Self-documenting API contracts
+- ✅ Eliminates runtime type errors
+- ✅ All tests passing (176 tests)
+
+**Pattern:**
+
+```typescript
+// Shared contract accessible by both client and server
+export interface GetNotebookResponse {
+	id: string;
+	title: string;
+	description?: string;
+	createdAt: string; // ISO 8601 (JSON-serialized)
+	updatedAt: string; // ISO 8601 (JSON-serialized)
+	cells: ApiCell[];
+}
+
+// Server route uses typed response
+const response: GetNotebookResponse = {
+	id: notebookMetadata.id,
+	title: notebookMetadata.title,
+	cells: cells.map((cell) => ({
+		...cell,
+		createdAt: cell.createdAt.toISOString(),
+		updatedAt: cell.updatedAt.toISOString()
+	}))
+};
+return json(response);
+
+// Client gets full type safety
+const notebook: GetNotebookResponse = await getNotebook(id);
+// TypeScript knows all properties and types
+```
+
 ### Dead Code Removed
 
 **Deleted Files (~1,300 lines):**
@@ -210,6 +272,9 @@ src/
 │       └── events/                     # Event webhooks
 │
 ├── lib/
+│   ├── types/                          # Shared type definitions
+│   │   └── api-contracts.ts            # API request/response types
+│   │
 │   ├── client/                         # Client-side code
 │   │   ├── model/                      # Client domain models
 │   │   ├── services/                   # Client services
@@ -949,12 +1014,12 @@ removeNotebook(): void {} // no-op
 
 ### Test Coverage
 
-**16 test files** with **168 tests** passing
+**17 test files** with **176 tests** passing
 
 ```
-Test Files  16 passed (16)
-     Tests  168 passed (168)
-  Duration  1.71s
+Test Files  17 passed (17)
+     Tests  176 passed (176)
+  Duration  1.49s
 ```
 
 ### Test Categories
@@ -1152,29 +1217,23 @@ None identified. Current architecture is solid.
 
 ### Low Priority
 
-1. **Add Request/Response DTOs**
-   - Explicit types for API contracts
-   - Better type safety at boundaries
-   - Effort: 2-3 hours
-   - Impact: Improved API documentation
-
-2. **Standardize Error Handling**
+1. **Standardize Error Handling**
    - Create domain exception types
    - Consistent error responses
    - Effort: 2-3 hours
    - Impact: Better error messages
 
-3. **Move Projectors to Adapters**
+2. **Move Projectors to Adapters**
    - `application/projectors/` → `application/adapters/inbound/projectors/`
    - Effort: 30 minutes
    - Impact: Better layer organization
 
-4. **Rename command-handlers to use-cases**
+3. **Rename command-handlers to use-cases**
    - Aligns with Clean Architecture terminology
    - Effort: 30 minutes
    - Impact: Clearer naming
 
-5. **Add Dependency Injection Container**
+4. **Add Dependency Injection Container**
    - Automated dependency wiring
    - Better testability
    - Effort: 1-2 days
@@ -1186,7 +1245,7 @@ None identified. Current architecture is solid.
 
 ### A. File Statistics
 
-**Files Created:** 8
+**Files Created:** 9
 
 - `projection-manager-config.ts`
 - `notebook-projection-manager.ts`
@@ -1195,6 +1254,7 @@ None identified. Current architecture is solid.
 - `per-notebook-read-model.ts`
 - `projection-middleware.ts`
 - `notebook-command.service.ts`
+- `api-contracts.ts` (API type definitions)
 
 **Files Deleted:** 9 (~1,300 lines)
 
@@ -1214,10 +1274,10 @@ None identified. Current architecture is solid.
 
 ### B. Test Statistics
 
-**Test Files:** 16  
-**Total Tests:** 168  
+**Test Files:** 17  
+**Total Tests:** 176  
 **Pass Rate:** 100%  
-**Execution Time:** 1.71s
+**Execution Time:** 1.49s
 
 **Test Categories:**
 
@@ -1312,7 +1372,7 @@ Projectors (broadcast)
 
 **Created:** October 2025  
 **Last Updated:** October 10, 2025  
-**Version:** 2.0  
+**Version:** 2.2  
 **Authors:** Development Team  
 **Status:** Production Ready  
 **Next Review:** As needed for major changes
@@ -1330,6 +1390,19 @@ Projectors (broadcast)
 ---
 
 ## Changelog
+
+### Version 2.2 (October 10, 2025)
+
+**Major Features:**
+
+- ✅ **API Type Safety**: Complete type system for client-server communication
+  - Created centralized `src/lib/types/api-contracts.ts` with all API contracts
+  - Defined typed interfaces for all 7 API endpoints (notebooks and cells)
+  - Distinguished API types (JSON-serialized) from domain types (internal)
+  - Updated all server routes to use typed request/response interfaces
+  - Updated client service functions to use shared type definitions
+  - Benefits: Compile-time type checking, IDE autocomplete, self-documenting API
+  - All tests passing (176 tests)
 
 ### Version 2.1 (October 10, 2025)
 

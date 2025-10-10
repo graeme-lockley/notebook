@@ -31,4 +31,12 @@
 
 ## Thoughts
 
-- [ ] The responses returned from the server-side routes are constructed as untyped Javascript objects. This is unhelpful in that the client would want to have the type interfaces to inspect these responses. Placing these interfaces in a location where both the client and service can access would be very helpful. Unsure what the idiomatic way of doing this is.
+- [x] The responses returned from the server-side routes are constructed as untyped Javascript objects. This is unhelpful in that the client would want to have the type interfaces to inspect these responses. Placing these interfaces in a location where both the client and service can access would be very helpful. Unsure what the idiomatic way of doing this is.
+  - Created centralized API contracts file at `src/lib/types/api-contracts.ts`
+  - Defined typed interfaces for all 7 API endpoints (notebooks and cells)
+  - Separated API types (JSON-serialized with string dates) from domain types (Date objects)
+  - Updated all server routes to use typed request/response interfaces
+  - Updated client service functions to use shared type definitions
+  - All types accessible via `$lib/types/api-contracts` import
+  - Provides type safety, autocomplete, and compile-time error detection
+  - All tests passing with new type system

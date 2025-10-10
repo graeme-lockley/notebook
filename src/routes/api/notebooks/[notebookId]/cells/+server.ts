@@ -1,22 +1,25 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import type { AddCellRequest, AddCellResponse, ApiError } from '$lib/types/api-contracts';
 
 export async function POST({ params, request, locals }: RequestEvent): Promise<Response> {
 	try {
 		const { notebookId } = params;
 
 		if (!notebookId) {
-			return json({ error: 'Notebook ID is required' }, { status: 400 });
+			const errorResponse: ApiError = { error: 'Notebook ID is required' };
+			return json(errorResponse, { status: 400 });
 		}
 
-		const body = await request.json();
+		const body: AddCellRequest = await request.json();
 		const { kind, value, position } = body;
 
 		// Check if notebook exists
 		const notebook = locals.libraryService.getNotebook(notebookId);
 		if (!notebook) {
-			return json({ error: 'Notebook not found' }, { status: 404 });
+			const errorResponse: ApiError = { error: 'Notebook not found' };
+			return json(errorResponse, { status: 404 });
 		}
 
 		// Execute command via service
@@ -24,19 +27,18 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 
 		logger.info(`Added ${kind} cell to notebook ${notebookId} at position ${position}`);
 
-		return json(
-			{
-				message: 'Cell added successfully',
-				notebookId,
-				cellId: result.cellId,
-				eventId: result.eventId,
-				kind,
-				position
-			},
-			{ status: 201 }
-		);
+		const response: AddCellResponse = {
+			message: 'Cell added successfully',
+			notebookId,
+			cellId: result.cellId,
+			eventId: result.eventId,
+			kind,
+			position
+		};
+		return json(response, { status: 201 });
 	} catch (error) {
 		logger.error('Error adding cell:', error);
-		return json({ error: 'Failed to add cell' }, { status: 500 });
+		const errorResponse: ApiError = { error: 'Failed to add cell' };
+		return json(errorResponse, { status: 500 });
 	}
 }
