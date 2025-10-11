@@ -454,14 +454,13 @@ export class ReactiveNotebook {
 	}
 
 	// Notebook metadata
-	updateTitle(title: string): void {
-		this._title = title;
-		this._updatedAt = new Date();
-		this._version++;
-	}
-
-	updateDescription(description: string): void {
-		this._description = description;
+	updateMetadata(updates: { title?: string; description?: string }): void {
+		if (updates.title !== undefined) {
+			this._title = updates.title;
+		}
+		if (updates.description !== undefined) {
+			this._description = updates.description;
+		}
 		this._updatedAt = new Date();
 		this._version++;
 	}

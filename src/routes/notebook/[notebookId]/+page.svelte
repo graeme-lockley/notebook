@@ -14,6 +14,7 @@
 	import { NotebookSyncService } from '$lib/client/services/notebook-sync.service';
 	import { NotebookLoaderService } from '$lib/client/services/notebook-loader.service';
 	import { NotebookCommandService } from '$lib/client/services/notebook-command.service';
+	import * as ServerCommand from '$lib/client/server/server-commands';
 
 	logger.configure({ enableInfo: true });
 
@@ -21,6 +22,10 @@
 	let notebookStore: NotebookStore | undefined;
 	let loading = true;
 	let error: string | null = null;
+
+	// Reactive values for notebook metadata
+	$: notebookTitle = $notebookStore?.title ?? 'Untitled';
+	$: notebookDescription = $notebookStore?.description ?? '';
 
 	// Services (initialized in onMount)
 	let wsConnection: WebSocketConnectionService;
@@ -117,7 +122,7 @@
 		// Handle notebook events
 		wsMessageHandler.registerHandler('notebook.updated', (msg) =>
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			syncService.handleNotebookUpdated(msg.data as any)
+			syncService.handleNotebookUpdated(msg.payload as any)
 		);
 		wsMessageHandler.registerHandler('notebook.initialized', (msg) =>
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -145,18 +150,27 @@
 		}
 	});
 
-	function handleTitleChange(event: CustomEvent) {
-		if (notebookStore) {
-			const { title } = event.detail;
-			notebookStore.updateTitle(title);
-		}
-	}
-
 	function handleNewNotebook(event: CustomEvent) {
 		// Handle new notebook creation - redirect to the new notebook
 		const { name, description } = event.detail;
 		logger.info('Creating new notebook:', { name, description });
 		// The TopBar component will handle the API call and navigation
+	}
+
+	async function handleUpdateNotebook(event: CustomEvent) {
+		if (!notebookId) return;
+
+		const { title, description } = event.detail;
+		logger.info('Updating notebook:', { title, description });
+
+		try {
+			await ServerCommand.updateNotebook(notebookId, { title, description });
+			logger.info('Notebook updated successfully');
+			// WebSocket will sync the change back to the store
+		} catch (error) {
+			logger.error('Error updating notebook:', error);
+			// You might want to show an error message to the user here
+		}
 	}
 
 	async function handleAddCellToServer(kind: CellKind, value: string, position: number) {
@@ -197,9 +211,10 @@
 		</div>
 	{:else if notebookStore}
 		<TopBar
-			title={notebookStore.notebook.title}
-			on:titleChange={handleTitleChange}
+			title={notebookTitle}
+			description={notebookDescription}
 			on:newNotebook={handleNewNotebook}
+			on:updateNotebook={handleUpdateNotebook}
 		/>
 
 		<main class="notebook-main">

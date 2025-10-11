@@ -16,7 +16,7 @@ export interface NotebookStore {
 	setFocus: (id: string) => void;
 	toggleClosed: (id: string) => void;
 	duplicateCell: (id: string) => Promise<void>;
-	updateTitle: (title: string) => void;
+	updateMetadata: (updates: { title?: string; description?: string }) => void;
 	notebook: ReactiveNotebook;
 
 	findCellIndex: (id: string) => number;
@@ -80,8 +80,11 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 		set(currentNotebook);
 	}
 
-	function updateTitle(title: string) {
-		currentNotebook.updateTitle(title);
+	function updateMetadata(updates: { title?: string; description?: string }) {
+		currentNotebook.updateMetadata(updates);
+
+		// Force Svelte reactivity by calling set (which notifies all subscribers)
+		// This ensures the store value change is detected even though it's the same object reference
 		set(currentNotebook);
 	}
 
@@ -99,7 +102,7 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 		setFocus,
 		toggleClosed,
 		duplicateCell,
-		updateTitle,
+		updateMetadata,
 		// Expose the current notebook value (SSR compatible)
 		get notebook() {
 			return currentNotebook;

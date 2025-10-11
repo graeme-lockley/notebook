@@ -45,12 +45,12 @@ export interface CellMovedPayload {
  * Payload for notebook.updated event
  */
 export interface NotebookUpdatedPayload {
-	event?: { id: string };
-	cells: Array<{
-		id: string;
-		kind: CellKind;
-		value: string;
-	}>;
+	notebookId: string;
+	changes: {
+		title?: string;
+		description?: string;
+	};
+	updatedAt: string;
 }
 
 /**
@@ -166,21 +166,11 @@ export class NotebookSyncService {
 	 * @param payload - Notebook update payload
 	 */
 	async handleNotebookUpdated(payload: NotebookUpdatedPayload): Promise<void> {
-		const eventId = payload.event?.id;
-		logger.info('Received notebook.updated event:', payload.event);
+		logger.info('📝 Updating notebook metadata:', payload.changes);
 
-		if (eventId && this.eventSequencer.isEventNewer(eventId)) {
-			logger.info('Processing newer event:', eventId);
-			await this.syncCellsFromServer(payload.cells);
-			this.eventSequencer.markEventProcessed(eventId);
-		} else {
-			logger.info(
-				'Skipping older event:',
-				eventId,
-				'last processed:',
-				this.eventSequencer.getLastProcessedEventId()
-			);
-		}
+		this.notebookStore.updateMetadata(payload.changes);
+
+		logger.info('✅ Notebook metadata updated successfully');
 	}
 
 	/**
@@ -197,46 +187,5 @@ export class NotebookSyncService {
 	 */
 	resetSequencer(): void {
 		this.eventSequencer.reset();
-	}
-
-	/**
-	 * Synchronizes cells from server by rebuilding the entire cell list
-	 * @param serverCells - Array of cell data from server
-	 * @private
-	 */
-	private async syncCellsFromServer(
-		serverCells: Array<{ id: string; kind: CellKind; value: string }>
-	): Promise<void> {
-		logger.info('🔄 Updating cells from server:', serverCells.length, 'cells');
-		logger.info('📋 Current cells:', this.notebookStore.notebook.cells.length);
-
-		// Simple approach: clear all cells and rebuild from server
-		const currentCells = [...this.notebookStore.notebook.cells];
-
-		// Remove all current cells
-		for (const cell of currentCells) {
-			await this.notebookStore.removeCell(cell.id);
-		}
-
-		// Add all cells from server
-		for (const serverCell of serverCells) {
-			logger.info(
-				'➕ Adding cell from server:',
-				serverCell.id,
-				'kind:',
-				serverCell.kind,
-				'value:',
-				serverCell.value.substring(0, 50)
-			);
-
-			await this.notebookStore.addCell({
-				id: serverCell.id,
-				kind: serverCell.kind,
-				value: serverCell.value,
-				focus: false
-			});
-		}
-
-		logger.info('✅ Cells synced from server');
 	}
 }

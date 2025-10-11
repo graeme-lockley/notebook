@@ -11,6 +11,11 @@ export type CreateNotebookEvent = {
 	description: string;
 };
 
+export type UpdateNotebookEvent = {
+	title?: string;
+	description?: string;
+};
+
 export type DeleteCellEvent = {
 	id: string;
 };

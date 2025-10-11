@@ -1,6 +1,10 @@
 import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
 import { clientIdToServerId } from '$lib/client/model/cell';
-import type { CreateNotebookResponse } from '$lib/types/api-contracts';
+import type {
+	CreateNotebookResponse,
+	UpdateNotebookRequest,
+	UpdateNotebookResponse
+} from '$lib/types/api-contracts';
 import { apiRequest } from './api-client';
 
 export async function createNotebook(
@@ -18,6 +22,23 @@ export async function createNotebook(
 
 	if (!response) {
 		throw new Error('Failed to create notebook: No response received');
+	}
+
+	return response;
+}
+
+export async function updateNotebook(
+	notebookId: string,
+	updates: { title?: string; description?: string }
+): Promise<UpdateNotebookResponse> {
+	const response = await apiRequest<UpdateNotebookRequest, UpdateNotebookResponse>(
+		`/api/notebooks/${notebookId}`,
+		'PATCH',
+		updates
+	);
+
+	if (!response) {
+		throw new Error('Failed to update notebook: No response received');
 	}
 
 	return response;

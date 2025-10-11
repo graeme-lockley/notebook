@@ -1,4 +1,5 @@
 import type { EventStore } from '../ports/outbound/event-store';
+import type { EventBus } from '../ports/outbound/event-bus';
 import { LibraryServiceImpl } from '$lib/server/domain/domain-services/library.service.impl';
 import type { Notebook } from '$lib/server/domain/value-objects';
 import { NotebookEventFactory } from './notebook-event-factory';
@@ -15,7 +16,10 @@ import { logger } from '$lib/common/infrastructure/logging/logger.service';
 export class LibraryApplicationService {
 	private libraryService: LibraryServiceImpl;
 
-	constructor(private eventStore: EventStore) {
+	constructor(
+		private eventStore: EventStore,
+		private eventBus: EventBus
+	) {
 		this.libraryService = new LibraryServiceImpl();
 	}
 
@@ -57,6 +61,14 @@ export class LibraryApplicationService {
 
 		// Process event to update domain state
 		this.libraryService.eventHandler({ ...event, id: eventId });
+
+		// Publish to event bus for WebSocket broadcasting
+		await this.eventBus.publish({
+			...event,
+			id: eventId,
+			aggregateId: notebookId,
+			timestamp: new Date()
+		});
 
 		logger.info(`LibraryApplicationService: updateNotebook: Updated notebook ${notebookId}`);
 

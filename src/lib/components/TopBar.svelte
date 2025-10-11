@@ -1,46 +1,41 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Globe, Copy, Download, Search, Plus } from 'lucide-svelte';
+	import { Globe, Copy, Download, Search, Plus, Pencil } from 'lucide-svelte';
 	import CreateNotebookModal from './CreateNotebookModal.svelte';
-	import type { CreateNotebookEvent } from './event-types';
+	import EditNotebookModal from './EditNotebookModal.svelte';
+	import type { CreateNotebookEvent, UpdateNotebookEvent } from './event-types';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
 	import * as ServerCommand from '$lib/client/server/server-commands';
 
-	let { title = 'Untitled Notebook', lastEdited = new Date(), version = '1.0.0' } = $props();
+	let {
+		title = 'Untitled Notebook',
+		description = '',
+		lastEdited = new Date(),
+		version = '1.0.0'
+	} = $props();
+
+	// Track current values for display
+	let currentTitle = $state(title);
+	let currentDescription = $state(description);
+
+	// Update when props change
+	$effect(() => {
+		currentTitle = title;
+		currentDescription = description;
+	});
 
 	const dispatch = createEventDispatcher<{
-		titleChange: string;
 		search: void;
 		newNotebook: { name: string; description: string };
+		updateNotebook: UpdateNotebookEvent;
 		share: void;
 		duplicate: void;
 		download: void;
 	}>();
 
-	let isEditingTitle = $state(false);
-	let titleValue = $state(title);
 	let showNewNotebookModal = $state(false);
-
-	function handleTitleClick() {
-		isEditingTitle = true;
-	}
-
-	function handleTitleBlur() {
-		isEditingTitle = false;
-		if (titleValue !== title) {
-			dispatch('titleChange', titleValue);
-		}
-	}
-
-	function handleTitleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter') {
-			(event.target as HTMLInputElement).blur();
-		} else if (event.key === 'Escape') {
-			titleValue = title;
-			isEditingTitle = false;
-		}
-	}
+	let showEditNotebookModal = $state(false);
 
 	function formatDate(date: Date): string {
 		return date.toLocaleDateString('en-US', {
@@ -77,6 +72,18 @@
 		showNewNotebookModal = false;
 	}
 
+	function handleEditNotebook() {
+		showEditNotebookModal = true;
+	}
+
+	function handleUpdateNotebook(event: CustomEvent<UpdateNotebookEvent>) {
+		dispatch('updateNotebook', event.detail);
+	}
+
+	function handleCancelEditNotebook() {
+		showEditNotebookModal = false;
+	}
+
 	function handleShare() {
 		dispatch('share');
 	}
@@ -93,22 +100,11 @@
 <header data-testid="topbar" class="topbar">
 	<!-- Title and Metadata Area -->
 	<div class="topbar-left">
-		<!-- Editable Title -->
+		<!-- Title -->
 		<div class="title-container">
-			{#if isEditingTitle}
-				<input
-					type="text"
-					bind:value={titleValue}
-					onblur={handleTitleBlur}
-					onkeydown={handleTitleKeydown}
-					class="title-input"
-					data-testid="title-input"
-				/>
-			{:else}
-				<button onclick={handleTitleClick} class="title-button" data-testid="title-button">
-					{titleValue}
-				</button>
-			{/if}
+			<h1 class="title-text" data-testid="notebook-title">
+				{currentTitle}
+			</h1>
 		</div>
 
 		<!-- Metadata -->
@@ -123,6 +119,15 @@
 
 	<!-- Actions Area -->
 	<div class="topbar-actions">
+		<button
+			onclick={handleEditNotebook}
+			class="action-button action-button-icon"
+			data-testid="edit-notebook-button"
+			title="Edit notebook"
+		>
+			<Pencil size={14} />
+		</button>
+
 		<button
 			onclick={handleSearch}
 			data-testid="search-button"
@@ -178,6 +183,15 @@
 	on:cancel={handleCancelNotebook}
 />
 
+<!-- Edit Notebook Modal -->
+<EditNotebookModal
+	isOpen={showEditNotebookModal}
+	{currentTitle}
+	{currentDescription}
+	on:updateNotebook={handleUpdateNotebook}
+	on:cancel={handleCancelEditNotebook}
+/>
+
 <style>
 	.topbar {
 		display: flex;
@@ -199,35 +213,12 @@
 		align-items: center;
 	}
 
-	.title-button {
-		border-radius: var(--border-radius);
+	.title-text {
+		margin: 0;
 		padding: var(--space-2) var(--space-4);
 		font-size: var(--font-size-xl);
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-gray-900);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		transition: background-color var(--transition-fast);
-	}
-
-	.title-button:hover {
-		background-color: var(--color-gray-100);
-	}
-
-	.title-input {
-		border: none;
-		background: transparent;
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-gray-900);
-		outline: none;
-		border-radius: var(--border-radius);
-	}
-
-	.title-input:focus {
-		box-shadow: 0 0 0 2px var(--color-primary);
 	}
 
 	.metadata {

@@ -84,6 +84,21 @@ export interface GetNotebookResponse {
 	cells: ApiCell[];
 }
 
+/**
+ * PATCH /api/notebooks/:notebookId
+ * Update notebook metadata
+ */
+export interface UpdateNotebookRequest {
+	title?: string;
+	description?: string;
+}
+
+export interface UpdateNotebookResponse {
+	message: string;
+	notebookId: string;
+	eventId: string;
+}
+
 // ============================================================================
 // Cell Endpoints
 // ============================================================================

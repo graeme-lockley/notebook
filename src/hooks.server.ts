@@ -90,7 +90,7 @@ async function initializeServices() {
 		logger.info('Projectors registered with event bus');
 
 		// Create application services that bridge domain and infrastructure
-		libraryService = new LibraryApplicationService(eventStore);
+		libraryService = new LibraryApplicationService(eventStore, eventBus);
 		notebookCommandService = new NotebookCommandService(eventStore, projectionManager, eventBus);
 
 		// Initialize the library service to hydrate with existing events

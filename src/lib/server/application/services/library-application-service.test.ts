@@ -1,19 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { LibraryApplicationService } from './library-application-service';
 import { EventStoreTestImpl } from '$lib/server/adapters/outbound/event-store/inmemory/event-store';
+import { SimpleEventBus } from '$lib/server/application/adapters/outbound/simple-event-bus';
 import type { EventStore } from '$lib/server/application/ports/outbound/event-store';
 
 describe('LibraryApplicationService', () => {
 	let eventStore: EventStore;
+	let eventBus: SimpleEventBus;
 	let libraryService: LibraryApplicationService;
 
 	beforeEach(async () => {
 		eventStore = new EventStoreTestImpl();
+		eventBus = new SimpleEventBus();
 
 		// Create the library topic
 		await eventStore.createTopic('library', []);
 
-		libraryService = new LibraryApplicationService(eventStore);
+		libraryService = new LibraryApplicationService(eventStore, eventBus);
 		await libraryService.initialize();
 	});
 
