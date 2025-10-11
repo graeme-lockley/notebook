@@ -30,7 +30,7 @@ export class WebSocketProjector implements EventHandler {
 			);
 
 			// Broadcast to all connections for this notebook
-			await this.webSocketService.broadcastToNotebook(notebookId, clientEvent);
+			this.webSocketService.broadcastToNotebook(notebookId, clientEvent);
 
 			logger.info(`WebSocketProjector: Broadcasted ${event.type} event to notebook ${notebookId}`);
 		} catch (error) {
