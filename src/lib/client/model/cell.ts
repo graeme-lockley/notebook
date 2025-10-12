@@ -7,12 +7,12 @@ import {
 	type IVariable
 } from '$lib/common/lib/runtime';
 import type { CellKind } from '$lib/server/domain/value-objects/CellKind';
-import { logger } from '$lib/common/infrastructure/logging/logger.service';
+import { NotebookLoaderService } from '$lib/client/services/notebook-loader.service';
 
 import { executeHtml } from './cell/html';
 import { executeJavaScript } from './cell/javascript';
 import { executeMarkdown } from './cell/markdown';
-import { Modules, Module } from './imported-module';
+import { ImportedNotebookRegistry, Module } from './imported-module';
 
 export type CellStatus = 'ok' | 'error' | 'pending';
 
@@ -194,11 +194,28 @@ export class ReactiveCell implements Cell {
 		});
 	}
 
+	/**
+	 * Imports variables from another module into this cell.
+	 *
+	 * This method:
+	 * - Removes any existing variables that are not in the new import list
+	 * - Creates new variable bindings for imported variables
+	 * - For multiple imports, creates a default observer that wraps all values as an array
+	 *   (this allows the cell to have a default output showing all imported values)
+	 *
+	 * @param names - Array of variable names and their aliases to import
+	 * @param module - The Observable module to import from
+	 */
 	importVariables(names: Array<{ name: string; alias: string }>, module: IModule): void {
 		// Invalidate cache when variables change
 		this._cachedDefaultObservers = null;
 
 		const newNames = new Set(names.map((variable) => variable.alias || variable.name));
+		// Add this.id to preserved names if it will be recreated for multiple imports
+		if (names.length > 1) {
+			newNames.add(this.id);
+		}
+
 		for (const name of this.variables.keys()) {
 			if (!newNames.has(name)) {
 				const binding = this.variables.get(name)!;
@@ -221,21 +238,14 @@ export class ReactiveCell implements Cell {
 			}
 		});
 
-		logger.info(
-			`importVariables: ${names.map((name) => name.name).join(', ')} into cell ${this.id}`
-		);
-
 		if (names.length > 1) {
 			// Create a default observer for the cell wrapping all of the values as a map
 			const newObservers = new Observers();
 			const newVariable = this.module.variable(newObservers);
-			newVariable.define(
-				this.id,
-				names.map((name) => name.name),
-				Eval(
-					`(${names.map((name) => name.name).join(', ')}) => [${names.map((name) => name.name).join(', ')}]`
-				)
-			);
+			const nameList = names.map((name) => name.alias || name.name);
+			const params = nameList.join(', ');
+			const body = `(${params}) => [${params}]`;
+			newVariable.define(this.id, nameList, Eval(body));
 			this.variables.set(this.id, { observers: newObservers, variable: newVariable });
 		}
 	}
@@ -280,7 +290,7 @@ export class ReactiveNotebook {
 	private _version = 0;
 	private runtime: IRuntime;
 	private module: IModule;
-	private _modules: Modules;
+	private _modules: ImportedNotebookRegistry;
 
 	constructor(options: NotebookOptions = {}) {
 		this._title = options.title || 'Untitled Notebook';
@@ -292,7 +302,7 @@ export class ReactiveNotebook {
 		this.runtime = createRuntime();
 		this.module = this.runtime.module();
 
-		this._modules = new Modules(this.runtime);
+		this._modules = new ImportedNotebookRegistry(this.runtime, new NotebookLoaderService());
 	}
 
 	// Getters
@@ -364,25 +374,15 @@ export class ReactiveNotebook {
 	}
 
 	removeCell(id: string): boolean {
-		logger.info(`🔍 ReactiveNotebook.removeCell called with id: ${id}`);
-		logger.info(
-			`🔍 Current _cells before removal:`,
-			this._cells.map((c) => c.id)
-		);
 		const index = this.getCellIndex(id);
-		logger.info(`🔍 Found cell at index: ${index}`);
 		if (index === -1) {
-			logger.info(`🔍 Cell not found, returning false`);
 			return false;
 		}
 
 		this._cells.splice(index, 1);
 		this._updatedAt = new Date();
 		this._version++;
-		logger.info(
-			`🔍 Cell removed, new _cells:`,
-			this._cells.map((c) => c.id)
-		);
+
 		return true;
 	}
 
@@ -496,6 +496,7 @@ export class ReactiveNotebook {
 	dispose(): void {
 		this._cells.forEach((cell) => cell.dispose());
 		this._cells = [];
+		this._modules.dispose();
 	}
 }
 
