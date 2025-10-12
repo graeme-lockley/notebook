@@ -66,7 +66,7 @@ export class NotebookLoaderService {
 	 * @returns Promise with notebook data
 	 * @private
 	 */
-	private async fetchNotebookData(notebookId: string): Promise<GetNotebookResponse> {
+	async fetchNotebookData(notebookId: string): Promise<GetNotebookResponse> {
 		return await ServerQuery.getNotebook(notebookId);
 	}
 

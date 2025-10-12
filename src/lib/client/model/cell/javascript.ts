@@ -6,7 +6,6 @@ export async function executeJavaScript(cell: ReactiveCell): Promise<void> {
 
 	if (pr.type === 'exception') {
 		cell.handleError(pr.exception);
-		return;
 	} else if (pr.type === 'assignment' && pr.viewof && pr.name !== null) {
 		const tmpName = cell.id;
 
@@ -23,11 +22,9 @@ export async function executeJavaScript(cell: ReactiveCell): Promise<void> {
 
 		cell.assignVariables([{ name, dependencies: pr.dependencies, body: pr.body }]);
 	} else if (pr.type === 'import') {
-		console.log('import', pr);
-		cell.handleError(Error('Unsupported statement: ' + pr.type));
-		return;
+		const importedModule = await cell.notebook.getModule(pr.urn);
+		cell.importVariables(pr.names, importedModule.runtimeModule);
 	} else {
 		cell.handleError(Error('Unknown statement: ' + pr));
-		return;
 	}
 }

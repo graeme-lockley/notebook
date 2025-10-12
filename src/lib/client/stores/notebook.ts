@@ -15,7 +15,6 @@ export interface NotebookStore {
 	updateCell: (id: string, updates: Partial<Omit<ReactiveCell, 'id'>>) => Promise<void>;
 	setFocus: (id: string) => void;
 	toggleClosed: (id: string) => void;
-	duplicateCell: (id: string) => Promise<void>;
 	updateMetadata: (updates: { title?: string; description?: string }) => void;
 	notebook: ReactiveNotebook;
 
@@ -75,11 +74,6 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 		set(currentNotebook);
 	}
 
-	async function duplicateCell(id: string) {
-		await currentNotebook.duplicateCell(id);
-		set(currentNotebook);
-	}
-
 	function updateMetadata(updates: { title?: string; description?: string }) {
 		currentNotebook.updateMetadata(updates);
 
@@ -101,7 +95,6 @@ export function createNotebookStore(notebook: ReactiveNotebook): NotebookStore {
 		updateCell,
 		setFocus,
 		toggleClosed,
-		duplicateCell,
 		updateMetadata,
 		// Expose the current notebook value (SSR compatible)
 		get notebook() {

@@ -104,21 +104,6 @@ describe('ReactiveNotebook', () => {
 			expect(notebook.cells[1]).toBe(cell2);
 		});
 
-		it('should duplicate cells', async () => {
-			const originalCell = await notebook.addCell({
-				id: 'cell-1757076572584-48gnae',
-				kind: 'js',
-				value: 'const x = 42; x'
-			});
-
-			const duplicatedCell = await notebook.duplicateCell(originalCell.id);
-
-			expect(notebook.cells).toHaveLength(2);
-			expect(duplicatedCell?.kind).toBe(originalCell.kind);
-			expect(duplicatedCell?.value).toBe(originalCell.value);
-			expect(duplicatedCell?.id).not.toBe(originalCell.id);
-		});
-
 		it('should toggle cell closed state', async () => {
 			const cell = await notebook.addCell({
 				id: 'cell-1757076572584-48gnae',

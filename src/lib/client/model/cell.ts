@@ -12,6 +12,7 @@ import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import { executeHtml } from './cell/html';
 import { executeJavaScript } from './cell/javascript';
 import { executeMarkdown } from './cell/markdown';
+import { Modules, Module } from './imported-module';
 
 export type CellStatus = 'ok' | 'error' | 'pending';
 
@@ -193,6 +194,52 @@ export class ReactiveCell implements Cell {
 		});
 	}
 
+	importVariables(names: Array<{ name: string; alias: string }>, module: IModule): void {
+		// Invalidate cache when variables change
+		this._cachedDefaultObservers = null;
+
+		const newNames = new Set(names.map((variable) => variable.alias || variable.name));
+		for (const name of this.variables.keys()) {
+			if (!newNames.has(name)) {
+				const binding = this.variables.get(name)!;
+				binding.observers.clear();
+				binding.variable.delete();
+				this.variables.delete(name);
+			}
+		}
+		names.forEach((name) => {
+			const newName = name.alias || name.name;
+			const binding = this.variables.get(newName);
+
+			if (binding === undefined) {
+				const newObservers = new Observers();
+				const newVariable = this.module.variable(newObservers);
+				newVariable.import(name.name, name.alias, module);
+				this.variables.set(newName, { observers: newObservers, variable: newVariable });
+			} else {
+				binding.variable.import(name.name, name.alias, module);
+			}
+		});
+
+		logger.info(
+			`importVariables: ${names.map((name) => name.name).join(', ')} into cell ${this.id}`
+		);
+
+		if (names.length > 1) {
+			// Create a default observer for the cell wrapping all of the values as a map
+			const newObservers = new Observers();
+			const newVariable = this.module.variable(newObservers);
+			newVariable.define(
+				this.id,
+				names.map((name) => name.name),
+				Eval(
+					`(${names.map((name) => name.name).join(', ')}) => [${names.map((name) => name.name).join(', ')}]`
+				)
+			);
+			this.variables.set(this.id, { observers: newObservers, variable: newVariable });
+		}
+	}
+
 	names(): string[] {
 		return Array.from(this.variables.keys()).filter((n) => !n.startsWith(CELL_ID_PREFIX));
 	}
@@ -233,6 +280,7 @@ export class ReactiveNotebook {
 	private _version = 0;
 	private runtime: IRuntime;
 	private module: IModule;
+	private _modules: Modules;
 
 	constructor(options: NotebookOptions = {}) {
 		this._title = options.title || 'Untitled Notebook';
@@ -243,6 +291,8 @@ export class ReactiveNotebook {
 		// Initialize Observable runtime with standard library
 		this.runtime = createRuntime();
 		this.module = this.runtime.module();
+
+		this._modules = new Modules(this.runtime);
 	}
 
 	// Getters
@@ -280,6 +330,10 @@ export class ReactiveNotebook {
 
 	get closedCells(): ReactiveCell[] {
 		return this._cells.filter((cell) => cell.isClosed);
+	}
+
+	async getModule(urn: string): Promise<Module> {
+		return this._modules.getModule(urn);
 	}
 
 	// Cell management methods
@@ -426,33 +480,6 @@ export class ReactiveNotebook {
 		return this.moveCell(id, currentIndex + 1);
 	}
 
-	async duplicateCell(id: string): Promise<ReactiveCell | null> {
-		const cell = this.getCell(id);
-		if (!cell) return null;
-
-		const duplicatedCell = new ReactiveCell(
-			this.generateCellId(),
-			cell.kind,
-			cell.value,
-			this.module,
-			this
-		);
-
-		// Copy properties
-		duplicatedCell.isClosed = cell.isClosed;
-
-		const currentIndex = this.getCellIndex(id);
-		this._cells.splice(currentIndex + 1, 0, duplicatedCell);
-
-		// Execute the duplicated cell
-		await duplicatedCell.execute();
-
-		this._updatedAt = new Date();
-		this._version++;
-
-		return duplicatedCell;
-	}
-
 	// Notebook metadata
 	updateMetadata(updates: { title?: string; description?: string }): void {
 		if (updates.title !== undefined) {
@@ -463,11 +490,6 @@ export class ReactiveNotebook {
 		}
 		this._updatedAt = new Date();
 		this._version++;
-	}
-
-	// Utility methods
-	private generateCellId(): string {
-		return `${CELL_ID_PREFIX}${Math.random().toString(36).substring(2, 15)}`;
 	}
 
 	// Dispose of all resources
