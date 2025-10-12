@@ -23,9 +23,9 @@
 
 ### Notebook
 
-- [ ] Update a notebook description. It does look like that this event is not handled correctly on the client side as the client side is assuming that the entire array of cells is also emitted. This should not be the case.
+- [x] Update a notebook description. It does look like that this event is not handled correctly on the client side as the client side is assuming that the entire array of cells is also emitted. This should not be the case.
 - [ ] Enable searching for a notebook based on the title and, when selected, open the notebook. The search can be limited to private only or public.
-- [ ] Allow a notebook to refer to another notebook.
+- [x] Allow a notebook to refer to another notebook.
 - [ ] Think about notebook scoping. Each notebook can be marked private, and public. When private, only the creator can see and edit the notebook. Public everyone can see it. A public notebook can be edited only by the creator however, it can be cloned into private and then edited from there.
 - [ ] Have a read-only version of a notebook. This will allow people to read a notebook without worrying about accidentally editing the content. The current veresion is a read-write view.
 
