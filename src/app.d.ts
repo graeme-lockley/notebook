@@ -11,6 +11,13 @@ declare global {
 			libraryReadModel: import('$lib/server/application/ports/inbound/read-models').LibraryReadModel;
 			projectionManager: import('$lib/server/application/services/notebook-projection-manager').NotebookProjectionManager;
 			webSocketService: import('$lib/server/application/ports/outbound/websocket-service').WebSocketService;
+
+			// Authentication services
+			authenticationService: import('$lib/server/application/services/authentication.service').AuthenticationService;
+			sessionService: import('$lib/server/application/services/session.service').SessionService;
+			oauthRouteHandler: import('$lib/server/application/adapters/inbound/oauth-route-handler').OAuthRouteHandler;
+			userReadModel: import('$lib/server/application/ports/inbound/user-read-model').UserReadModel;
+			sessionReadModel: import('$lib/server/application/ports/inbound/session-read-model').SessionReadModel;
 		}
 		// interface PageData {}
 		// interface PageState {}

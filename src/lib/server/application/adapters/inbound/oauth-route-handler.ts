@@ -3,6 +3,7 @@ import type { SessionService } from '../../services/session.service';
 import type { AuthProvider } from '$lib/server/domain/value-objects';
 import type { Cookies } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
+import { redirect } from '@sveltejs/kit';
 
 export interface OAuthCallbackResult {
 	redirectTo: string;
@@ -60,6 +61,65 @@ export class OAuthRouteHandler {
 			sameSite: 'lax',
 			maxAge: 60 * 60 * 24 * 7 // 7 days
 		});
+	}
+
+	handleGoogleAuthRedirect(state: string, redirectUri: string, cookies: Cookies): Response {
+		logger.info('OAuthRouteHandler: Handling Google auth redirect');
+
+		// Store the state in a secure, httpOnly cookie
+		cookies.set('oauth_state', state, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			maxAge: 60 * 10, // 10 minutes
+			path: '/'
+		});
+
+		const authorizationUrl = this.authService.getAuthorizationUrl('google', state, redirectUri);
+		throw redirect(302, authorizationUrl);
+	}
+
+	async handleGoogleAuthCallback(
+		code: string,
+		state: string,
+		redirectUri: string,
+		cookies: Cookies
+	): Promise<Response> {
+		logger.info('OAuthRouteHandler: Handling Google auth callback');
+
+		const storedState = cookies.get('oauth_state');
+		cookies.delete('oauth_state', { path: '/' }); // Clear the state cookie immediately
+
+		if (!storedState || storedState !== state) {
+			logger.warn('OAuthRouteHandler: State mismatch or missing state cookie');
+			throw redirect(302, '/auth/error?message=State mismatch or missing');
+		}
+
+		try {
+			const { user, isNewUser } = await this.authService.authenticateUser(
+				'google',
+				code,
+				redirectUri
+			);
+
+			// Create session
+			const sessionId = await this.sessionService.createSession(user.id);
+
+			// Set session cookie
+			cookies.set('session_id', sessionId, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				maxAge: 60 * 60 * 24 * 7, // 7 days
+				path: '/'
+			});
+
+			logger.info(
+				`OAuthRouteHandler: User ${user.id} authenticated. New user: ${isNewUser}. Session ID: ${sessionId}`
+			);
+			throw redirect(302, '/'); // Redirect to home page or dashboard
+		} catch (error) {
+			logger.error(`OAuthRouteHandler: Authentication failed: ${error}`);
+			throw redirect(302, `/auth/error?message=${(error as Error).message}`);
+		}
 	}
 
 	async handleLogout(cookies: Cookies): Promise<void> {
