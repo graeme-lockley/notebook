@@ -1,4 +1,4 @@
-import type { Session, SessionId, UserId } from '$lib/server/domain/value-objects';
+import type { Session, SessionId, UserId, User } from '$lib/server/domain/value-objects';
 import type { SessionReadModel } from '../../ports/inbound/session-read-model';
 import type { UserReadModel } from '../../ports/inbound/user-read-model';
 import type {
@@ -23,9 +23,7 @@ export class InMemorySessionReadModel implements SessionReadModel {
 		return session;
 	}
 
-	async getUserBySessionId(
-		sessionId: SessionId
-	): Promise<import('$lib/server/domain/value-objects').User | null> {
+	async getUserBySessionId(sessionId: SessionId): Promise<User | null> {
 		const session = await this.getSessionById(sessionId);
 		if (!session) return null;
 

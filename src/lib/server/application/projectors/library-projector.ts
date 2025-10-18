@@ -1,5 +1,6 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
 import type { LibraryReadModel } from '../ports/inbound/read-models';
+import { InMemoryLibraryReadModel } from '../adapters/inbound/in-memory-library-read-model';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class LibraryProjector implements EventHandler {
@@ -41,10 +42,7 @@ export class LibraryProjector implements EventHandler {
 		};
 
 		// Update library read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
-		) {
+		if (this.readModel instanceof InMemoryLibraryReadModel) {
 			this.readModel.updateNotebook(notebook);
 		}
 
@@ -80,10 +78,7 @@ export class LibraryProjector implements EventHandler {
 		};
 
 		// Update library read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
-		) {
+		if (this.readModel instanceof InMemoryLibraryReadModel) {
 			this.readModel.updateNotebook(updatedNotebook);
 		}
 
@@ -100,10 +95,7 @@ export class LibraryProjector implements EventHandler {
 		};
 
 		// Update library read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
-		) {
+		if (this.readModel instanceof InMemoryLibraryReadModel) {
 			this.readModel.removeNotebook(payload.notebookId);
 		}
 
