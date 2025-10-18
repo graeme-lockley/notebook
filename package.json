@@ -76,6 +76,7 @@
 		"@observablehq/runtime": "^6.0.0",
 		"@observablehq/stdlib": "^5.8.8",
 		"@types/ws": "^8.18.1",
+		"google-auth-library": "^9.0.0",
 		"lucide-svelte": "^0.539.0",
 		"marked": "^16.2.0",
 		"uuid": "^13.0.0",
