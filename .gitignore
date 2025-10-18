@@ -23,3 +23,5 @@ coverage/
 *.lcov
 .nyc_output
 
+# Environment variables
+.env
