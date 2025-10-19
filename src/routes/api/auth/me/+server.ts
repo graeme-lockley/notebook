@@ -1,36 +1,19 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { withAuth } from '$lib/server/application/middleware/auth-middleware';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
-export async function GET({ cookies, locals }: RequestEvent) {
+export const GET = withAuth(async ({ locals }: RequestEvent) => {
 	logger.info('Auth me endpoint accessed');
 
-	try {
-		// Get the session service from locals
-		const sessionService = locals.sessionService;
-		if (!sessionService) {
-			logger.error('Session service not available');
-			return json({ error: 'Authentication service not available' }, { status: 500 });
-		}
+	// User context is already available in locals.user from middleware
+	const user = locals.user;
 
-		// Get session ID from cookies
-		const sessionId = cookies.get('session_id');
-		if (!sessionId) {
-			logger.debug('No session found');
-			return json({ user: null });
-		}
-
-		// Validate session and get user
-		const user = await sessionService.validateSession(sessionId);
-		if (!user) {
-			logger.debug('Invalid or expired session');
-			return json({ user: null });
-		}
-
+	if (user) {
 		logger.info(`User ${user.id} authenticated`);
 		return json({ user });
-	} catch (error) {
-		logger.error('Error in auth me endpoint:', error);
-		return json({ error: 'Authentication failed' }, { status: 500 });
+	} else {
+		logger.debug('No authenticated user');
+		return json({ user: null });
 	}
-}
+});

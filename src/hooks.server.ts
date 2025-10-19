@@ -43,9 +43,9 @@ let oauthConfigService: OAuthConfigService;
 let oauthProviderRegistry: OAuthProviderRegistry;
 let userReadModel: UserReadModel;
 let sessionReadModel: SessionReadModel;
-let authenticationService: AuthenticationService;
+let authenticationService: AuthenticationService | null;
 let sessionService: SessionService;
-let oauthRouteHandler: OAuthRouteHandler;
+let oauthRouteHandler: OAuthRouteHandler | null;
 // Initialize event store
 const eventStore: EventStore = eventStoreClient();
 
@@ -132,7 +132,7 @@ async function initializeServices() {
 		// Setup library topic
 		await setupLibraryTopic();
 
-		// Initialize authentication services
+		// Initialize authentication services (if OAuth is configured)
 		await initializeAuthServices();
 
 		isInitialized = true;
@@ -210,34 +210,52 @@ async function initializeAuthServices() {
 		oauthConfigService = new OAuthConfigService();
 		logger.info('OAuth config service initialized');
 
-		// 2. Initialize OAuth providers
+		// 2. Check if Google OAuth is configured
+		if (!oauthConfigService.isProviderConfigured('google')) {
+			logger.warn('Google OAuth is not configured. Authentication features will be disabled.');
+			logger.warn(
+				'To enable authentication, create a .env file with GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI'
+			);
+
+			// Initialize minimal services for non-authenticated mode
+			userReadModel = new InMemoryUserReadModel();
+			sessionReadModel = new InMemorySessionReadModel(userReadModel);
+			authenticationService = null;
+			sessionService = new SessionService(eventStore, eventBus, sessionReadModel);
+			oauthRouteHandler = null;
+
+			logger.info('Authentication services initialized in limited mode (no OAuth)');
+			return;
+		}
+
+		// 3. Initialize OAuth providers
 		const googleConfig = oauthConfigService.getConfig('google');
 		const googleProvider = new GoogleOAuthProvider(googleConfig);
 		oauthProviderRegistry = new OAuthProviderRegistry([googleProvider]);
 		logger.info('OAuth providers initialized');
 
-		// 3. Initialize read models
+		// 4. Initialize read models
 		userReadModel = new InMemoryUserReadModel();
 		sessionReadModel = new InMemorySessionReadModel(userReadModel);
 		logger.info('Authentication read models initialized');
 
-		// 4. Initialize projectors
+		// 5. Initialize projectors
 		const userProjector = new UserProjector(userReadModel as InMemoryUserReadModel);
 		const sessionProjector = new SessionProjector(sessionReadModel as InMemorySessionReadModel);
 
-		// 5. Subscribe projectors to event bus
+		// 6. Subscribe projectors to event bus
 		eventBus.subscribe('user.registered', userProjector);
 		eventBus.subscribe('user.logged_in', userProjector);
 		eventBus.subscribe('session.created', sessionProjector);
 		eventBus.subscribe('session.expired', sessionProjector);
 		logger.info('Authentication projectors subscribed to event bus');
 
-		// 6. Hydrate read models from event store
+		// 7. Hydrate read models from event store
 		await hydrateUserReadModel(userProjector);
 		await hydrateSessionReadModel(sessionProjector);
 		logger.info('Authentication read models hydrated');
 
-		// 7. Initialize services
+		// 8. Initialize services
 		authenticationService = new AuthenticationService(
 			oauthProviderRegistry,
 			eventStore,

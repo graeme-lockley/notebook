@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import { requireAuthApi } from '$lib/server/application/middleware/auth-middleware';
 import type {
 	CreateNotebookRequest,
 	CreateNotebookResponse,
@@ -26,7 +27,7 @@ export async function GET(): Promise<Response> {
 	}
 }
 
-export async function POST({ request, locals }: RequestEvent): Promise<Response> {
+export const POST = requireAuthApi(async ({ request, locals }: RequestEvent) => {
 	try {
 		const body: CreateNotebookRequest = await request.json();
 		const { title, description } = body;
@@ -35,6 +36,10 @@ export async function POST({ request, locals }: RequestEvent): Promise<Response>
 			const errorResponse: ApiError = { error: 'Title is required' };
 			return json(errorResponse, { status: 400 });
 		}
+
+		// User is guaranteed to be authenticated due to requireAuthApi middleware
+		const user = locals.user!;
+		logger.info(`User ${user.id} creating notebook: ${title}`);
 
 		// Use the injected libraryService to create a notebook
 		const { libraryService } = locals;
@@ -53,4 +58,4 @@ export async function POST({ request, locals }: RequestEvent): Promise<Response>
 		const errorResponse: ApiError = { error: 'Failed to create notebook' };
 		return json(errorResponse, { status: 500 });
 	}
-}
+});

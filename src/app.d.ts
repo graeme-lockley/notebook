@@ -12,12 +12,21 @@ declare global {
 			projectionManager: import('$lib/server/application/services/notebook-projection-manager').NotebookProjectionManager;
 			webSocketService: import('$lib/server/application/ports/outbound/websocket-service').WebSocketService;
 
-			// Authentication services
-			authenticationService: import('$lib/server/application/services/authentication.service').AuthenticationService;
+			// Authentication services (optional - may be null if OAuth not configured)
+			authenticationService:
+				| import('$lib/server/application/services/authentication.service').AuthenticationService
+				| null;
 			sessionService: import('$lib/server/application/services/session.service').SessionService;
-			oauthRouteHandler: import('$lib/server/application/adapters/inbound/oauth-route-handler').OAuthRouteHandler;
+			oauthRouteHandler:
+				| import('$lib/server/application/adapters/inbound/oauth-route-handler').OAuthRouteHandler
+				| null;
 			userReadModel: import('$lib/server/application/ports/inbound/user-read-model').UserReadModel;
 			sessionReadModel: import('$lib/server/application/ports/inbound/session-read-model').SessionReadModel;
+
+			// Authentication context (injected by middleware)
+			user: import('$lib/server/domain/value-objects').User | null;
+			isAuthenticated: boolean;
+			sessionId: string | null;
 		}
 		// interface PageData {}
 		// interface PageState {}
