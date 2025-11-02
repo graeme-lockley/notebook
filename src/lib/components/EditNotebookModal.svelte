@@ -4,7 +4,17 @@
 	import type { UpdateNotebookEvent } from './event-types';
 	import './modal-styles.css';
 
-	let { isOpen = false, currentTitle = '', currentDescription = '' } = $props();
+	let {
+		isOpen = false,
+		currentTitle = '',
+		currentDescription = '',
+		visibility: currentVisibility = 'public'
+	}: {
+		isOpen: boolean;
+		currentTitle: string;
+		currentDescription: string;
+		visibility?: 'private' | 'public' | 'protected';
+	} = $props();
 
 	const dispatch = createEventDispatcher<{
 		updateNotebook: UpdateNotebookEvent;
@@ -13,13 +23,15 @@
 
 	let notebookName = $state('');
 	let notebookDescription = $state('');
+	let notebookVisibility = $state<'private' | 'public' | 'protected'>('public');
 	let nameInput = $state<HTMLInputElement>();
 
 	function handleUpdate() {
 		if (notebookName.trim()) {
 			dispatch('updateNotebook', {
 				title: notebookName.trim(),
-				description: notebookDescription.trim()
+				description: notebookDescription.trim(),
+				visibility: notebookVisibility
 			});
 			dispatch('cancel'); // Close the modal
 		}
@@ -40,6 +52,7 @@
 		if (isOpen) {
 			notebookName = currentTitle;
 			notebookDescription = currentDescription || '';
+			notebookVisibility = currentVisibility;
 			// Focus on name input after a brief delay to ensure DOM is ready
 			setTimeout(() => nameInput?.focus(), 0);
 		}
@@ -102,6 +115,22 @@
 						data-testid="notebook-description-input"
 						rows="3"
 					></textarea>
+				</div>
+
+				<div class="form-group">
+					<label for="notebook-visibility" class="form-label">Visibility</label>
+					<select
+						id="notebook-visibility"
+						bind:value={notebookVisibility}
+						class="form-input"
+						data-testid="notebook-visibility-input"
+					>
+						<option value="private">Private (Only you can see, view, edit, and import)</option>
+						<option value="protected"
+							>Protected (Everyone can search, view, and import, only you can edit)</option
+						>
+						<option value="public">Public (Everyone can search, view, edit, and import)</option>
+					</select>
 				</div>
 			</div>
 

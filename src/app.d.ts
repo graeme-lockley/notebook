@@ -11,6 +11,26 @@ declare global {
 			libraryReadModel: import('$lib/server/application/ports/inbound/read-models').LibraryReadModel;
 			projectionManager: import('$lib/server/application/services/notebook-projection-manager').NotebookProjectionManager;
 			webSocketService: import('$lib/server/application/ports/outbound/websocket-service').WebSocketService;
+
+			// Authentication services (optional - may be null if OAuth not configured)
+			authenticationService:
+				| import('$lib/server/application/services/authentication.service').AuthenticationService
+				| null;
+			sessionService: import('$lib/server/application/services/session.service').SessionService;
+			oauthRouteHandler:
+				| import('$lib/server/application/adapters/inbound/oauth-route-handler').OAuthRouteHandler
+				| null;
+			userReadModel: import('$lib/server/application/ports/inbound/user-read-model').UserReadModel;
+			sessionReadModel: import('$lib/server/application/ports/inbound/session-read-model').SessionReadModel;
+			userNotebookViewReadModel: import('$lib/server/application/ports/inbound/user-notebook-view-read-model').UserNotebookViewReadModel;
+			recentNotebooksService: import('$lib/server/application/services/recent-notebooks.service').RecentNotebooksService;
+			userSerializationService: import('$lib/server/application/services/user-serialization.service').UserSerializationService;
+			notebookAccessControlService: import('$lib/server/application/services/notebook-access-control.service').NotebookAccessControlService;
+
+			// Authentication context (injected by middleware)
+			user: import('$lib/server/domain/value-objects').User | null;
+			isAuthenticated: boolean;
+			sessionId: string | null;
 		}
 		// interface PageData {}
 		// interface PageState {}

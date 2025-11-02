@@ -13,13 +13,15 @@
 
 	let notebookName = $state('');
 	let notebookDescription = $state('');
+	let notebookVisibility = $state<'private' | 'public' | 'protected'>('private');
 	let nameInput = $state<HTMLInputElement>();
 
 	function handleCreate() {
 		if (notebookName.trim()) {
 			dispatch('createNotebook', {
 				name: notebookName.trim(),
-				description: notebookDescription.trim()
+				description: notebookDescription.trim(),
+				visibility: notebookVisibility
 			});
 			resetForm();
 			dispatch('cancel'); // Close the modal
@@ -34,6 +36,7 @@
 	function resetForm() {
 		notebookName = '';
 		notebookDescription = '';
+		notebookVisibility = 'private';
 	}
 
 	function handleModalKeydown(event: KeyboardEvent) {
@@ -108,6 +111,22 @@
 						data-testid="notebook-description-input"
 						rows="3"
 					></textarea>
+				</div>
+
+				<div class="form-group">
+					<label for="notebook-visibility" class="form-label">Visibility</label>
+					<select
+						id="notebook-visibility"
+						bind:value={notebookVisibility}
+						class="form-input"
+						data-testid="notebook-visibility-input"
+					>
+						<option value="private">Private (Only you can see, view, edit, and import)</option>
+						<option value="protected"
+							>Protected (Everyone can search, view, and import, only you can edit)</option
+						>
+						<option value="public">Public (Everyone can search, view, edit, and import)</option>
+					</select>
 				</div>
 			</div>
 

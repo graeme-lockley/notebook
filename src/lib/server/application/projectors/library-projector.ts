@@ -1,5 +1,6 @@
 import type { EventHandler, DomainEvent } from '../ports/outbound/event-bus';
 import type { LibraryReadModel } from '../ports/inbound/read-models';
+import { InMemoryLibraryReadModel } from '../adapters/inbound/in-memory-library-read-model';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 
 export class LibraryProjector implements EventHandler {
@@ -28,6 +29,8 @@ export class LibraryProjector implements EventHandler {
 			notebookId: string;
 			title: string;
 			description?: string;
+			visibility?: 'private' | 'public';
+			ownerId?: string | null;
 			createdAt: string;
 		};
 
@@ -36,15 +39,14 @@ export class LibraryProjector implements EventHandler {
 			id: payload.notebookId,
 			title: payload.title,
 			description: payload.description,
+			visibility: payload.visibility || 'public', // Default to public for legacy events
+			ownerId: payload.ownerId || null, // Default to null for legacy events
 			createdAt: new Date(payload.createdAt),
 			updatedAt: new Date(payload.createdAt)
 		};
 
 		// Update library read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
-		) {
+		if (this.readModel instanceof InMemoryLibraryReadModel) {
 			this.readModel.updateNotebook(notebook);
 		}
 
@@ -57,7 +59,7 @@ export class LibraryProjector implements EventHandler {
 	private async handleNotebookUpdated(event: DomainEvent): Promise<void> {
 		const payload = event.payload as {
 			notebookId: string;
-			changes: { title?: string; description?: string };
+			changes: { title?: string; description?: string; visibility?: 'private' | 'public' };
 			updatedAt: string;
 		};
 
@@ -68,7 +70,7 @@ export class LibraryProjector implements EventHandler {
 			return;
 		}
 
-		// Create updated notebook
+		// Create updated notebook (allow visibility changes, preserve ownerId)
 		const updatedNotebook = {
 			...existingNotebook,
 			title: payload.changes.title || existingNotebook.title,
@@ -76,14 +78,16 @@ export class LibraryProjector implements EventHandler {
 				payload.changes.description !== undefined
 					? payload.changes.description
 					: existingNotebook.description,
+			visibility:
+				payload.changes.visibility !== undefined
+					? payload.changes.visibility
+					: existingNotebook.visibility, // Allow visibility changes
+			ownerId: existingNotebook.ownerId, // Preserve ownerId (cannot be changed)
 			updatedAt: new Date(payload.updatedAt)
 		};
 
 		// Update library read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
-		) {
+		if (this.readModel instanceof InMemoryLibraryReadModel) {
 			this.readModel.updateNotebook(updatedNotebook);
 		}
 
@@ -100,10 +104,7 @@ export class LibraryProjector implements EventHandler {
 		};
 
 		// Update library read model
-		if (
-			this.readModel instanceof
-			(await import('../adapters/inbound/in-memory-library-read-model')).InMemoryLibraryReadModel
-		) {
+		if (this.readModel instanceof InMemoryLibraryReadModel) {
 			this.readModel.removeNotebook(payload.notebookId);
 		}
 

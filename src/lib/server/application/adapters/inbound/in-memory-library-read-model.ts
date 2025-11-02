@@ -35,4 +35,54 @@ export class InMemoryLibraryReadModel implements LibraryReadModel {
 		this.notebooks.delete(notebookId);
 		logger.debug(`LibraryReadModel: removeNotebook(${notebookId})`);
 	}
+
+	async searchNotebooks(
+		query: string,
+		visibility?: 'private' | 'public' | 'protected',
+		userId?: string | null
+	): Promise<Notebook[]> {
+		if (!query || query.trim() === '') {
+			logger.debug('LibraryReadModel: searchNotebooks: Empty query, returning empty array');
+			return [];
+		}
+
+		const normalizedQuery = query.trim().toLowerCase();
+		const allNotebooks = Array.from(this.notebooks.values());
+
+		// Filter by search query
+		let matchingNotebooks = allNotebooks.filter((notebook) =>
+			notebook.title.toLowerCase().includes(normalizedQuery)
+		);
+
+		// Filter by visibility if specified
+		if (visibility) {
+			matchingNotebooks = matchingNotebooks.filter(
+				(notebook) => notebook.visibility === visibility
+			);
+		}
+
+		// Apply privacy rules:
+		// - Public notebooks: visible to everyone (anonymous or authenticated)
+		// - Protected notebooks: visible to everyone (anonymous or authenticated)
+		// - Private notebooks: only visible to the owner
+		if (userId !== undefined) {
+			matchingNotebooks = matchingNotebooks.filter((notebook) => {
+				if (notebook.visibility === 'public' || notebook.visibility === 'protected') {
+					return true; // Public and protected notebooks are visible to everyone
+				}
+				// Private notebooks: only show if user is the owner
+				return notebook.ownerId === userId;
+			});
+		} else {
+			// If no userId provided (anonymous), only show public and protected notebooks
+			matchingNotebooks = matchingNotebooks.filter(
+				(notebook) => notebook.visibility === 'public' || notebook.visibility === 'protected'
+			);
+		}
+
+		logger.debug(
+			`LibraryReadModel: searchNotebooks("${query}", visibility: ${visibility}, userId: ${userId}): ${matchingNotebooks.length} results`
+		);
+		return [...matchingNotebooks]; // Return copy to prevent mutation
+	}
 }

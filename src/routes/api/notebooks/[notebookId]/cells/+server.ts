@@ -22,6 +22,19 @@ export async function POST({ params, request, locals }: RequestEvent): Promise<R
 			return json(errorResponse, { status: 404 });
 		}
 
+		// Check access control (edit permission)
+		const userId = locals.user?.id || null;
+		const isAuthenticated = locals.isAuthenticated;
+		const canEdit = locals.notebookAccessControlService.canEdit(notebook, userId, isAuthenticated);
+
+		if (!canEdit) {
+			logger.warn(
+				`Access denied: User ${userId || 'anonymous'} cannot edit notebook ${notebookId}`
+			);
+			const errorResponse: ApiError = { error: 'Access denied' };
+			return json(errorResponse, { status: 403 });
+		}
+
 		// Execute command via service
 		const result = await locals.notebookCommandService.addCell(notebookId, kind, value, position);
 

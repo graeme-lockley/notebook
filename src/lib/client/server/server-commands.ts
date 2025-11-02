@@ -9,16 +9,17 @@ import { apiRequest } from './api-client';
 
 export async function createNotebook(
 	name: string,
-	description: string | undefined
+	description: string | undefined,
+	visibility: 'private' | 'public' | 'protected' = 'private'
 ): Promise<CreateNotebookResponse> {
-	const response = await apiRequest<{ title: string; description: string }, CreateNotebookResponse>(
-		'/api/notebooks',
-		'POST',
-		{
-			title: name,
-			description: description || ''
-		}
-	);
+	const response = await apiRequest<
+		{ title: string; description: string; visibility: 'private' | 'public' | 'protected' },
+		CreateNotebookResponse
+	>('/api/notebooks', 'POST', {
+		title: name,
+		description: description || '',
+		visibility
+	});
 
 	if (!response) {
 		throw new Error('Failed to create notebook: No response received');
@@ -29,7 +30,7 @@ export async function createNotebook(
 
 export async function updateNotebook(
 	notebookId: string,
-	updates: { title?: string; description?: string }
+	updates: { title?: string; description?: string; visibility?: 'private' | 'public' | 'protected' }
 ): Promise<UpdateNotebookResponse> {
 	const response = await apiRequest<UpdateNotebookRequest, UpdateNotebookResponse>(
 		`/api/notebooks/${notebookId}`,

@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import type { RequestEvent } from '@sveltejs/kit';
+import { requireAuthApi } from '$lib/server/application/middleware/auth-middleware';
 import type {
 	CreateNotebookRequest,
 	CreateNotebookResponse,
@@ -26,19 +27,44 @@ export async function GET(): Promise<Response> {
 	}
 }
 
-export async function POST({ request, locals }: RequestEvent): Promise<Response> {
+export const POST = requireAuthApi(async ({ request, locals }: RequestEvent) => {
 	try {
 		const body: CreateNotebookRequest = await request.json();
-		const { title, description } = body;
+		const { title, description, visibility } = body;
 
 		if (!title) {
 			const errorResponse: ApiError = { error: 'Title is required' };
 			return json(errorResponse, { status: 400 });
 		}
 
+		// Validate visibility if provided
+		if (
+			visibility &&
+			visibility !== 'private' &&
+			visibility !== 'public' &&
+			visibility !== 'protected'
+		) {
+			const errorResponse: ApiError = {
+				error: 'Visibility must be "private", "public", or "protected"'
+			};
+			return json(errorResponse, { status: 400 });
+		}
+
+		// User is guaranteed to be authenticated due to requireAuthApi middleware
+		const user = locals.user!;
+		logger.info(
+			`User ${user.id} creating notebook: ${title} (visibility: ${visibility || 'private'})`
+		);
+
 		// Use the injected libraryService to create a notebook
+		// Default to private for authenticated users if not specified
 		const { libraryService } = locals;
-		const [notebookId, eventId] = await libraryService.createNotebook(title, description);
+		const [notebookId, eventId] = await libraryService.createNotebook(
+			title,
+			description,
+			visibility || 'private',
+			user.id
+		);
 
 		const response: CreateNotebookResponse = {
 			id: notebookId,
@@ -53,4 +79,4 @@ export async function POST({ request, locals }: RequestEvent): Promise<Response>
 		const errorResponse: ApiError = { error: 'Failed to create notebook' };
 		return json(errorResponse, { status: 500 });
 	}
-}
+});
