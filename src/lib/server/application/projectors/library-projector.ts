@@ -29,6 +29,8 @@ export class LibraryProjector implements EventHandler {
 			notebookId: string;
 			title: string;
 			description?: string;
+			visibility?: 'private' | 'public';
+			ownerId?: string | null;
 			createdAt: string;
 		};
 
@@ -37,6 +39,8 @@ export class LibraryProjector implements EventHandler {
 			id: payload.notebookId,
 			title: payload.title,
 			description: payload.description,
+			visibility: payload.visibility || 'public', // Default to public for legacy events
+			ownerId: payload.ownerId || null, // Default to null for legacy events
 			createdAt: new Date(payload.createdAt),
 			updatedAt: new Date(payload.createdAt)
 		};
@@ -55,7 +59,7 @@ export class LibraryProjector implements EventHandler {
 	private async handleNotebookUpdated(event: DomainEvent): Promise<void> {
 		const payload = event.payload as {
 			notebookId: string;
-			changes: { title?: string; description?: string };
+			changes: { title?: string; description?: string; visibility?: 'private' | 'public' };
 			updatedAt: string;
 		};
 
@@ -66,7 +70,7 @@ export class LibraryProjector implements EventHandler {
 			return;
 		}
 
-		// Create updated notebook
+		// Create updated notebook (allow visibility changes, preserve ownerId)
 		const updatedNotebook = {
 			...existingNotebook,
 			title: payload.changes.title || existingNotebook.title,
@@ -74,6 +78,11 @@ export class LibraryProjector implements EventHandler {
 				payload.changes.description !== undefined
 					? payload.changes.description
 					: existingNotebook.description,
+			visibility:
+				payload.changes.visibility !== undefined
+					? payload.changes.visibility
+					: existingNotebook.visibility, // Allow visibility changes
+			ownerId: existingNotebook.ownerId, // Preserve ownerId (cannot be changed)
 			updatedAt: new Date(payload.updatedAt)
 		};
 

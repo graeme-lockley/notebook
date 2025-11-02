@@ -42,6 +42,7 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 				id: notebookMetadata.id,
 				title: notebookMetadata.title,
 				description: notebookMetadata.description,
+				visibility: notebookMetadata.visibility,
 				createdAt: notebookMetadata.createdAt.toISOString(),
 				updatedAt: notebookMetadata.updatedAt.toISOString(),
 				cells: cells.map((cell) => ({

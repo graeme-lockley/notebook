@@ -1,6 +1,16 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import { eventStoreClient } from '$lib/server/adapters/outbound/event-store/remote/config';
-import { LIBRARY_EVENT_SCHEMAS } from '$lib/server/adapters/outbound/event-store/remote/schemas';
+
+// Explicitly load .env file for server-side code
+// Vite loads .env files automatically for client-side, but we need explicit loading for server-side
+config({ path: resolve(process.cwd(), '.env') });
+import {
+	LIBRARY_EVENT_SCHEMAS,
+	USER_EVENT_SCHEMAS,
+	SESSION_EVENT_SCHEMAS
+} from '$lib/server/adapters/outbound/event-store/remote/schemas';
 import { LibraryApplicationService } from '$lib/server/application/services/library-application-service';
 import { NotebookProjectionManager } from '$lib/server/application/services/notebook-projection-manager';
 import { NotebookCommandService } from '$lib/server/application/services/notebook-command.service';
@@ -26,8 +36,14 @@ import { SessionProjector } from '$lib/server/application/projectors/session-pro
 import { AuthenticationService } from '$lib/server/application/services/authentication.service';
 import { SessionService } from '$lib/server/application/services/session.service';
 import { OAuthRouteHandler } from '$lib/server/application/adapters/inbound/oauth-route-handler';
+import { AuthMiddleware } from '$lib/server/application/middleware/auth-middleware';
 import type { UserReadModel } from '$lib/server/application/ports/inbound/user-read-model';
 import type { SessionReadModel } from '$lib/server/application/ports/inbound/session-read-model';
+import { InMemoryUserNotebookViewReadModel } from '$lib/server/application/adapters/inbound/in-memory-user-notebook-view-read-model';
+import { UserNotebookViewProjector } from '$lib/server/application/projectors/user-notebook-view-projector';
+import type { UserNotebookViewReadModel } from '$lib/server/application/ports/inbound/user-notebook-view-read-model';
+import { RecentNotebooksService } from '$lib/server/application/services/recent-notebooks.service';
+import { UserSerializationService } from '$lib/server/application/services/user-serialization.service';
 
 let isInitialized = false;
 let libraryService: LibraryApplicationService;
@@ -46,6 +62,9 @@ let sessionReadModel: SessionReadModel;
 let authenticationService: AuthenticationService | null;
 let sessionService: SessionService;
 let oauthRouteHandler: OAuthRouteHandler | null;
+let userNotebookViewReadModel: UserNotebookViewReadModel;
+let recentNotebooksService: RecentNotebooksService;
+let userSerializationService: UserSerializationService;
 // Initialize event store
 const eventStore: EventStore = eventStoreClient();
 
@@ -70,6 +89,30 @@ export async function handle({ event, resolve }) {
 	event.locals.oauthRouteHandler = oauthRouteHandler;
 	event.locals.userReadModel = userReadModel;
 	event.locals.sessionReadModel = sessionReadModel;
+	event.locals.userNotebookViewReadModel = userNotebookViewReadModel;
+
+	// Inject utility services
+	event.locals.recentNotebooksService = recentNotebooksService;
+	event.locals.userSerializationService = userSerializationService;
+
+	// Process authentication for all requests (non-blocking - doesn't require auth)
+	// This sets user, isAuthenticated, and sessionId in event.locals for page loads
+	try {
+		const authMiddleware = new AuthMiddleware(sessionService);
+		const auth = await authMiddleware.processRequest(event, { requireAuth: false });
+		event.locals.user = auth.user;
+		event.locals.isAuthenticated = auth.isAuthenticated;
+		event.locals.sessionId = auth.sessionId;
+	} catch (error) {
+		// If authentication processing fails, set defaults (don't block the request)
+		logger.debug(
+			'AuthMiddleware: Error processing authentication, continuing without auth:',
+			error
+		);
+		event.locals.user = null;
+		event.locals.isAuthenticated = false;
+		event.locals.sessionId = null;
+	}
 
 	return resolve(event);
 }
@@ -82,6 +125,17 @@ async function initializeServices() {
 		// Initialize event bus and library read model
 		eventBus = new SimpleEventBus();
 		libraryReadModel = new InMemoryLibraryReadModel();
+
+		// Initialize user notebook view read model (tracks recent notebooks per user)
+		userNotebookViewReadModel = new InMemoryUserNotebookViewReadModel();
+
+		// Initialize utility services
+		recentNotebooksService = new RecentNotebooksService(
+			userNotebookViewReadModel,
+			libraryReadModel
+		);
+		userSerializationService = new UserSerializationService();
+
 		logger.info('Event bus and library read model initialized');
 
 		// Initialize projection manager for lazy notebook loading
@@ -109,6 +163,10 @@ async function initializeServices() {
 		eventBus.subscribe('notebook.updated', libraryProjector);
 		eventBus.subscribe('notebook.deleted', libraryProjector);
 
+		// Subscribe user notebook view projector
+		const userNotebookViewProjector = new UserNotebookViewProjector(userNotebookViewReadModel);
+		eventBus.subscribe('notebook.viewed', userNotebookViewProjector);
+
 		// Subscribe WebSocket projector to all events
 		eventBus.subscribe('cell.created', webSocketProjector);
 		eventBus.subscribe('cell.updated', webSocketProjector);
@@ -134,6 +192,12 @@ async function initializeServices() {
 
 		// Initialize authentication services (if OAuth is configured)
 		await initializeAuthServices();
+
+		// Setup user and session topics (if auth is enabled)
+		if (authenticationService) {
+			await setupUserTopic();
+			await setupSessionTopic();
+		}
 
 		isInitialized = true;
 
@@ -195,10 +259,58 @@ async function setupLibraryTopic() {
 	logger.info('Checking if library topic exists...');
 	if (await isValidTopic(eventStore, 'library')) {
 		logger.info('Library topic already exists');
+
+		// Check if the topic has all required schemas
+		try {
+			const topic = await eventStore.getTopic('library');
+			const existingEventTypes = topic.schemas.map((s) => s.eventType);
+			const requiredEventTypes = LIBRARY_EVENT_SCHEMAS.map((s) => s.eventType);
+			const missingSchemas = requiredEventTypes.filter((et) => !existingEventTypes.includes(et));
+
+			if (missingSchemas.length > 0) {
+				logger.warn(
+					`Library topic exists but is missing event schemas: ${missingSchemas.join(', ')}`
+				);
+				logger.warn('⚠️  The Event Store topic needs to be updated with the new schema.');
+				logger.warn(
+					'⚠️  You may need to manually update the Event Store or delete and recreate the topic.'
+				);
+				logger.warn(
+					'⚠️  Events of missing types will fail with 400 errors until the topic is updated.'
+				);
+			} else {
+				logger.info('Library topic has all required schemas');
+			}
+		} catch (error) {
+			logger.warn('Could not verify library topic schemas:', error);
+		}
 		return;
 	} else {
 		logger.info('Creating library topic...');
 		await eventStore.createTopic('library', LIBRARY_EVENT_SCHEMAS);
+		logger.info('Library topic created with all schemas');
+	}
+}
+
+async function setupUserTopic() {
+	logger.info('Checking if users topic exists...');
+	if (await isValidTopic(eventStore, 'users')) {
+		logger.info('Users topic already exists');
+		return;
+	} else {
+		logger.info('Creating users topic...');
+		await eventStore.createTopic('users', USER_EVENT_SCHEMAS);
+	}
+}
+
+async function setupSessionTopic() {
+	logger.info('Checking if sessions topic exists...');
+	if (await isValidTopic(eventStore, 'sessions')) {
+		logger.info('Sessions topic already exists');
+		return;
+	} else {
+		logger.info('Creating sessions topic...');
+		await eventStore.createTopic('sessions', SESSION_EVENT_SCHEMAS);
 	}
 }
 

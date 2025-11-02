@@ -4,25 +4,41 @@
 	import { Globe, Copy, Download, Search, Plus, Pencil } from 'lucide-svelte';
 	import CreateNotebookModal from './CreateNotebookModal.svelte';
 	import EditNotebookModal from './EditNotebookModal.svelte';
+	import SearchNotebookModal from './SearchNotebookModal.svelte';
+	import AuthButton from './AuthButton.svelte';
 	import type { CreateNotebookEvent, UpdateNotebookEvent } from './event-types';
 	import { logger } from '$lib/common/infrastructure/logging/logger.service';
 	import * as ServerCommand from '$lib/client/server/server-commands';
+	import type { User } from '$lib/server/domain/value-objects';
 
 	let {
 		title = 'Untitled Notebook',
 		description = '',
+		visibility = 'public',
 		lastEdited = new Date(),
-		version = '1.0.0'
+		version = '1.0.0',
+		user = null,
+		isAuthenticated = false
+	}: {
+		title?: string;
+		description?: string;
+		visibility?: 'private' | 'public';
+		lastEdited?: Date;
+		version?: string;
+		user?: User | null;
+		isAuthenticated?: boolean;
 	} = $props();
 
 	// Track current values for display
 	let currentTitle = $state(title);
 	let currentDescription = $state(description);
+	let currentVisibility = $state<'private' | 'public'>(visibility);
 
 	// Update when props change
 	$effect(() => {
 		currentTitle = title;
 		currentDescription = description;
+		currentVisibility = visibility;
 	});
 
 	const dispatch = createEventDispatcher<{
@@ -36,6 +52,7 @@
 
 	let showNewNotebookModal = $state(false);
 	let showEditNotebookModal = $state(false);
+	let showSearchModal = $state(false);
 
 	function formatDate(date: Date): string {
 		return date.toLocaleDateString('en-US', {
@@ -46,7 +63,19 @@
 	}
 
 	function handleSearch() {
-		dispatch('search');
+		showSearchModal = true;
+	}
+
+	function handleCloseSearch() {
+		showSearchModal = false;
+	}
+
+	async function handleSelectNotebook(event: CustomEvent<{ notebookId: string }>) {
+		const { notebookId } = event.detail;
+		logger.info(`TopBar: Navigating to notebook ${notebookId}`);
+		showSearchModal = false; // Close modal first
+		await goto(`/notebook/${notebookId}`); // Then navigate
+		logger.info(`TopBar: Navigation initiated for notebook ${notebookId}`);
 	}
 
 	function handleNewNotebook() {
@@ -57,7 +86,8 @@
 		try {
 			const result = await ServerCommand.createNotebook(
 				event.detail.name,
-				event.detail.description
+				event.detail.description,
+				event.detail.visibility || 'private'
 			);
 
 			// Navigate to a clean page with the new notebook
@@ -173,6 +203,11 @@
 		>
 			<Download size={14} />
 		</button>
+
+		<!-- Auth Button -->
+		<div class="auth-button-wrapper">
+			<AuthButton {user} {isAuthenticated} isLoading={false} />
+		</div>
 	</div>
 </header>
 
@@ -183,11 +218,20 @@
 	on:cancel={handleCancelNotebook}
 />
 
+<!-- Search Notebook Modal -->
+<SearchNotebookModal
+	isOpen={showSearchModal}
+	visibility={isAuthenticated ? 'all' : 'public'}
+	on:close={handleCloseSearch}
+	on:select={handleSelectNotebook}
+/>
+
 <!-- Edit Notebook Modal -->
 <EditNotebookModal
 	isOpen={showEditNotebookModal}
 	{currentTitle}
 	{currentDescription}
+	visibility={currentVisibility}
 	on:updateNotebook={handleUpdateNotebook}
 	on:cancel={handleCancelEditNotebook}
 />
@@ -264,5 +308,11 @@
 	.action-button-icon {
 		width: 2rem;
 		height: 2rem;
+	}
+
+	.auth-button-wrapper {
+		display: flex;
+		align-items: center;
+		margin-left: var(--space-1);
 	}
 </style>

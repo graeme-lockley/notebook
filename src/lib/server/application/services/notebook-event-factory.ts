@@ -3,7 +3,8 @@ import type {
 	CellCreatedEvent,
 	CellUpdatedEvent,
 	CellDeletedEvent,
-	CellMovedEvent
+	CellMovedEvent,
+	NotebookViewedEvent
 } from '$lib/server/domain/events/notebook.events';
 
 /**
@@ -151,5 +152,26 @@ export class NotebookEventFactory {
 			0,
 			[] // Empty notebook
 		);
+	}
+
+	/**
+	 * Create a notebook.viewed event
+	 */
+	static createNotebookViewedEvent(notebookId: string, userId: string): NotebookViewedEvent {
+		if (!notebookId) {
+			throw new Error('NotebookId is required');
+		}
+		if (!userId) {
+			throw new Error('UserId is required');
+		}
+
+		return {
+			type: 'notebook.viewed',
+			payload: {
+				notebookId,
+				userId,
+				viewedAt: new Date().toISOString()
+			}
+		};
 	}
 }

@@ -22,6 +22,9 @@ declare global {
 				| null;
 			userReadModel: import('$lib/server/application/ports/inbound/user-read-model').UserReadModel;
 			sessionReadModel: import('$lib/server/application/ports/inbound/session-read-model').SessionReadModel;
+			userNotebookViewReadModel: import('$lib/server/application/ports/inbound/user-notebook-view-read-model').UserNotebookViewReadModel;
+			recentNotebooksService: import('$lib/server/application/services/recent-notebooks.service').RecentNotebooksService;
+			userSerializationService: import('$lib/server/application/services/user-serialization.service').UserSerializationService;
 
 			// Authentication context (injected by middleware)
 			user: import('$lib/server/domain/value-objects').User | null;

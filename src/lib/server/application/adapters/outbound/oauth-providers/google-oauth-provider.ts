@@ -52,29 +52,33 @@ export class GoogleOAuthProvider implements OAuthProvider {
 	}
 
 	async getUserInfo(accessToken: string): Promise<ProviderUserInfo> {
-		this.client.setCredentials({ access_token: accessToken });
-
-		const ticket = await this.client.verifyIdToken({
-			idToken: accessToken,
-			audience: this.client._clientId
+		// Use the access token to call Google's userinfo API endpoint
+		// This is the correct way to get user information with an access token
+		const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+			headers: {
+				Authorization: `Bearer ${accessToken}`
+			}
 		});
 
-		const payload = ticket.getPayload();
-
-		if (!payload) {
-			throw new Error('Failed to get user info from Google');
+		if (!response.ok) {
+			throw new Error(
+				`Failed to get user info from Google: ${response.status} ${response.statusText}`
+			);
 		}
 
-		if (!payload.email) {
+		const userInfo = await response.json();
+
+		if (!userInfo.email) {
 			throw new Error('Email is required from Google user info');
 		}
 
+		// Google's userinfo API returns 'id' but we need to use it as the provider user ID
 		return {
-			id: payload.sub,
-			email: payload.email,
-			emailVerified: payload.email_verified || false,
-			name: payload.name || payload.email,
-			picture: payload.picture
+			id: userInfo.id,
+			email: userInfo.email,
+			emailVerified: userInfo.verified_email || false,
+			name: userInfo.name || userInfo.email,
+			picture: userInfo.picture
 		};
 	}
 }

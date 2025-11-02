@@ -36,6 +36,8 @@ describe('LibraryDomainService', () => {
 					notebookId: 'test-notebook-1',
 					title: 'Original Title',
 					description: 'Original Description',
+					visibility: 'public' as const,
+					ownerId: null,
 					createdAt: new Date().toISOString()
 				}
 			});
@@ -60,6 +62,8 @@ describe('LibraryDomainService', () => {
 				payload: {
 					notebookId: 'test-notebook-1',
 					title: 'Test Title',
+					visibility: 'public' as const,
+					ownerId: null,
 					createdAt: new Date().toISOString()
 				}
 			});
@@ -105,6 +109,8 @@ describe('LibraryDomainService', () => {
 				payload: {
 					notebookId: 'test-notebook-1',
 					title: 'Original Title',
+					visibility: 'public' as const,
+					ownerId: null,
 					createdAt: new Date().toISOString()
 				}
 			});
@@ -148,6 +154,8 @@ describe('LibraryDomainService', () => {
 					notebookId: 'test-notebook-1',
 					title: 'Test Notebook',
 					description: 'Test Description',
+					visibility: 'public' as const,
+					ownerId: null,
 					createdAt: new Date().toISOString()
 				}
 			};
@@ -169,6 +177,8 @@ describe('LibraryDomainService', () => {
 					notebookId: 'test-notebook-1',
 					title: 'Original Title',
 					description: 'Original Description',
+					visibility: 'public' as const,
+					ownerId: null,
 					createdAt: new Date().toISOString()
 				}
 			});
@@ -199,6 +209,8 @@ describe('LibraryDomainService', () => {
 				payload: {
 					notebookId: 'test-notebook-1',
 					title: 'Test Title',
+					visibility: 'public' as const,
+					ownerId: null,
 					createdAt: new Date().toISOString()
 				}
 			});

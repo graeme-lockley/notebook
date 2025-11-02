@@ -28,9 +28,14 @@ export class LibraryApplicationService {
 		await this.hydrateLibrary();
 	}
 
-	async createNotebook(title: string, description?: string): Promise<[string, string]> {
+	async createNotebook(
+		title: string,
+		description?: string,
+		visibility: 'private' | 'public' = 'public',
+		ownerId: string | null = null
+	): Promise<[string, string]> {
 		// Create domain event
-		const event = this.libraryService.createNotebookEvent(title, description);
+		const event = this.libraryService.createNotebookEvent(title, description, visibility, ownerId);
 
 		// Publish event to event store
 		const eventId = await this.eventStore.publishEvent('library', event.type, event.payload);
@@ -51,7 +56,7 @@ export class LibraryApplicationService {
 
 	async updateNotebook(
 		notebookId: string,
-		updates: Partial<{ title: string; description: string }>
+		updates: Partial<{ title: string; description: string; visibility: 'private' | 'public' }>
 	): Promise<string> {
 		// Create domain event
 		const event = this.libraryService.createUpdateNotebookEvent(notebookId, updates);

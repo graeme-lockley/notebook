@@ -79,7 +79,8 @@ export class NotebookLoaderService {
 	private async createNotebookFromData(data: GetNotebookResponse): Promise<ReactiveNotebook> {
 		const notebook = new ReactiveNotebook({
 			title: data.title,
-			description: data.description || ''
+			description: data.description || '',
+			visibility: data.visibility || 'public'
 		});
 
 		// Add all cells from the API response to the notebook

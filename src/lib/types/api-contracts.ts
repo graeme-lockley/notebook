@@ -53,6 +53,7 @@ export interface ApiNotebook {
 export interface CreateNotebookRequest {
 	title: string;
 	description?: string;
+	visibility?: 'private' | 'public';
 }
 
 export interface CreateNotebookResponse {
@@ -72,6 +73,25 @@ export interface ListNotebooksResponse {
 }
 
 /**
+ * GET /api/notebooks/search
+ * Search notebooks by title
+ */
+export interface SearchNotebooksRequest {
+	q: string; // Search query
+	limit?: number; // Maximum results (default: 20)
+	visibility?: 'private' | 'public' | 'all'; // Filter by visibility
+}
+
+export interface SearchNotebooksResponse {
+	notebooks: ApiNotebook[];
+	count: number;
+}
+
+export interface SearchNotebooksError extends ApiError {
+	error: 'Invalid query' | 'Search failed';
+}
+
+/**
  * GET /api/notebooks/:notebookId
  * Get a specific notebook with its cells
  */
@@ -79,6 +99,7 @@ export interface GetNotebookResponse {
 	id: string;
 	title: string;
 	description?: string;
+	visibility?: 'private' | 'public';
 	createdAt: string; // ISO 8601 string
 	updatedAt: string; // ISO 8601 string
 	cells: ApiCell[];
@@ -91,6 +112,7 @@ export interface GetNotebookResponse {
 export interface UpdateNotebookRequest {
 	title?: string;
 	description?: string;
+	visibility?: 'private' | 'public';
 }
 
 export interface UpdateNotebookResponse {

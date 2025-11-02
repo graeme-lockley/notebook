@@ -4,6 +4,7 @@ import type { AuthProvider } from '$lib/server/domain/value-objects';
 import type { Cookies } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
 import { redirect } from '@sveltejs/kit';
+import { handleAuthError, serializeError } from '$lib/server/utils/error-helpers';
 
 export interface OAuthCallbackResult {
 	redirectTo: string;
@@ -75,6 +76,7 @@ export class OAuthRouteHandler {
 		});
 
 		const authorizationUrl = this.authService.getAuthorizationUrl('google', state, redirectUri);
+		logger.info(`Generated authorization URL with redirect URI: ${redirectUri}`);
 		throw redirect(302, authorizationUrl);
 	}
 
@@ -115,10 +117,25 @@ export class OAuthRouteHandler {
 			logger.info(
 				`OAuthRouteHandler: User ${user.id} authenticated. New user: ${isNewUser}. Session ID: ${sessionId}`
 			);
-			throw redirect(302, '/'); // Redirect to home page or dashboard
+
+			// Get return URL from cookie, or default to home page
+			const returnUrl = cookies.get('oauth_return_url') || '/';
+			cookies.delete('oauth_return_url', { path: '/' }); // Clear the return URL cookie
+			logger.info(`OAuthRouteHandler: Redirecting to: ${returnUrl}`);
+
+			throw redirect(302, returnUrl);
 		} catch (error) {
-			logger.error(`OAuthRouteHandler: Authentication failed: ${error}`);
-			throw redirect(302, `/auth/error?message=${(error as Error).message}`);
+			// Serialize error for logging
+			const errorInfo = serializeError(error);
+			logger.error('OAuthRouteHandler: Authentication failed:', {
+				message: errorInfo.message,
+				stack: errorInfo.stack,
+				error: errorInfo.details,
+				type: errorInfo.type
+			});
+
+			// Handle redirect errors properly
+			handleAuthError(error, 'Authentication failed');
 		}
 	}
 

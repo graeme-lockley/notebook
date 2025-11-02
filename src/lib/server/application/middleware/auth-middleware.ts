@@ -97,13 +97,17 @@ export class AuthMiddleware {
 
 	/**
 	 * Helper function to check if user has specific permissions
+	 * Currently all authenticated users have all permissions
+	 * This can be extended later with role-based access control (RBAC)
+	 * @param user - User to check permissions for
+	 * @param permission - Permission string (e.g., 'notebook.edit', 'notebook.delete')
+	 * @returns true if user has permission, false otherwise
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	hasPermission(user: User | null, permission: string): boolean {
 		if (!user) return false;
+		// TODO: Implement role-based permission checking
 		// For now, all authenticated users have all permissions
-		// This can be extended later with role-based permissions
-		// TODO: Implement permission checking based on permission parameter
 		return true;
 	}
 

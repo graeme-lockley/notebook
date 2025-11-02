@@ -9,11 +9,13 @@ export type CellCreatedEvent = {
 export type CreateNotebookEvent = {
 	name: string;
 	description: string;
+	visibility?: 'private' | 'public';
 };
 
 export type UpdateNotebookEvent = {
 	title?: string;
 	description?: string;
+	visibility?: 'private' | 'public';
 };
 
 export type DeleteCellEvent = {

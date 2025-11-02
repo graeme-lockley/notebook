@@ -40,6 +40,7 @@ export interface Cell extends BaseCell {
 export interface NotebookOptions {
 	title?: string;
 	description?: string;
+	visibility?: 'private' | 'public';
 	createdAt?: Date;
 	updatedAt?: Date;
 }
@@ -285,6 +286,7 @@ export class ReactiveNotebook {
 	private _cells: ReactiveCell[] = [];
 	private _title: string;
 	private _description: string;
+	private _visibility: 'private' | 'public';
 	private _createdAt: Date;
 	private _updatedAt: Date;
 	private _version = 0;
@@ -295,6 +297,7 @@ export class ReactiveNotebook {
 	constructor(options: NotebookOptions = {}) {
 		this._title = options.title || 'Untitled Notebook';
 		this._description = options.description || '';
+		this._visibility = options.visibility || 'public';
 		this._createdAt = options.createdAt || new Date();
 		this._updatedAt = options.updatedAt || new Date();
 
@@ -316,6 +319,10 @@ export class ReactiveNotebook {
 
 	get description(): string {
 		return this._description;
+	}
+
+	get visibility(): 'private' | 'public' {
+		return this._visibility;
 	}
 
 	get createdAt(): Date {
@@ -481,12 +488,19 @@ export class ReactiveNotebook {
 	}
 
 	// Notebook metadata
-	updateMetadata(updates: { title?: string; description?: string }): void {
+	updateMetadata(updates: {
+		title?: string;
+		description?: string;
+		visibility?: 'private' | 'public';
+	}): void {
 		if (updates.title !== undefined) {
 			this._title = updates.title;
 		}
 		if (updates.description !== undefined) {
 			this._description = updates.description;
+		}
+		if (updates.visibility !== undefined) {
+			this._visibility = updates.visibility;
 		}
 		this._updatedAt = new Date();
 		this._version++;

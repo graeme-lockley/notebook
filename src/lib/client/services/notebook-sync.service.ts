@@ -49,6 +49,7 @@ export interface NotebookUpdatedPayload {
 	changes: {
 		title?: string;
 		description?: string;
+		visibility?: 'private' | 'public';
 	};
 	updatedAt: string;
 }

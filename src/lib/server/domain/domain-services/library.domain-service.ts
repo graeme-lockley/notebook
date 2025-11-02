@@ -13,10 +13,15 @@ import type { Notebook } from '../value-objects';
  */
 export interface LibraryDomainService {
 	// Event creation methods - return domain events instead of publishing them
-	createNotebookEvent(title: string, description?: string): NotebookCreatedEvent;
+	createNotebookEvent(
+		title: string,
+		description?: string,
+		visibility?: 'private' | 'public',
+		ownerId?: string | null
+	): NotebookCreatedEvent;
 	createUpdateNotebookEvent(
 		notebookId: string,
-		updates: Partial<{ title: string; description: string }>
+		updates: Partial<{ title: string; description: string; visibility: 'private' | 'public' }>
 	): NotebookUpdatedEvent;
 	createDeleteNotebookEvent(notebookId: string): NotebookDeletedEvent;
 

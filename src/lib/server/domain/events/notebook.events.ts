@@ -1,11 +1,15 @@
 import type { CellKind } from '../value-objects/CellKind';
 
+export type NotebookVisibility = 'private' | 'public';
+
 export interface NotebookCreatedEvent {
 	type: 'notebook.created';
 	payload: {
 		notebookId: string;
 		title: string;
 		description?: string;
+		visibility: NotebookVisibility;
+		ownerId: string | null; // UserId or null for public/unowned
 		createdAt: string; // ISO timestamp string
 	};
 }
@@ -17,6 +21,7 @@ export interface NotebookUpdatedEvent {
 		changes: Partial<{
 			title: string;
 			description: string;
+			visibility: NotebookVisibility;
 		}>;
 		updatedAt: string; // ISO timestamp string
 	};
@@ -71,7 +76,20 @@ export interface CellMovedEvent {
 	};
 }
 
-export type LibraryEvent = NotebookCreatedEvent | NotebookUpdatedEvent | NotebookDeletedEvent;
+export interface NotebookViewedEvent {
+	type: 'notebook.viewed';
+	payload: {
+		notebookId: string;
+		userId: string;
+		viewedAt: string; // ISO timestamp string
+	};
+}
+
+export type LibraryEvent =
+	| NotebookCreatedEvent
+	| NotebookUpdatedEvent
+	| NotebookDeletedEvent
+	| NotebookViewedEvent;
 
 export type NotebookEvent = CellCreatedEvent | CellUpdatedEvent | CellDeletedEvent | CellMovedEvent;
 

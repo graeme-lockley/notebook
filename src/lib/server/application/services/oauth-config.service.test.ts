@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { OAuthConfigService } from './oauth-config.service';
 
 describe('OAuthConfigService', () => {
@@ -9,6 +9,12 @@ describe('OAuthConfigService', () => {
 		originalEnv = { ...process.env };
 		// Clear environment variables
 		process.env = {};
+		// Mock $env/dynamic/private to use process.env directly
+		vi.mock('$env/dynamic/private', () => ({
+			env: new Proxy({} as Record<string, string | undefined>, {
+				get: (_, prop: string) => process.env[prop]
+			})
+		}));
 	});
 
 	afterEach(() => {
@@ -185,6 +191,9 @@ describe('OAuthConfigService', () => {
 			const service = new OAuthConfigService();
 			const config = service.getConfig('google');
 
+			// Note: In test environment, $env/dynamic/private may use Vite's resolved env
+			// which could default to port 5173. This test verifies the service works
+			// correctly when the redirect URI is explicitly set.
 			expect(config.redirectUri).toBe('http://localhost:3000/auth/google/callback');
 		});
 	});

@@ -1,6 +1,7 @@
 import { json, redirect } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { logger } from '$lib/common/infrastructure/logging/logger.service';
+import { handleAuthError, serializeError } from '$lib/server/utils/error-helpers';
 
 export async function GET({ url, cookies, locals }: RequestEvent) {
 	logger.info('OAuth Google callback route accessed');
@@ -21,29 +22,33 @@ export async function GET({ url, cookies, locals }: RequestEvent) {
 		// Handle OAuth errors
 		if (error) {
 			logger.warn(`OAuth error: ${error}`);
-			return redirect(302, `/auth/error?message=${encodeURIComponent(error)}`);
+			throw redirect(302, `/auth/error?message=${encodeURIComponent(error)}`);
 		}
 
 		// Validate required parameters
 		if (!code || !state) {
 			logger.warn('Missing OAuth parameters: code or state');
-			return redirect(302, '/auth/error?message=Missing authentication parameters');
+			throw redirect(302, '/auth/error?message=Missing authentication parameters');
 		}
 
 		const redirectUri = `${url.origin}/auth/google/callback`;
 
-		// Handle the OAuth callback
-		const result = await oauthRouteHandler.handleGoogleAuthCallback(
-			code,
-			state,
-			redirectUri,
-			cookies
-		);
+		// Handle the OAuth callback (this may throw a redirect)
+		await oauthRouteHandler.handleGoogleAuthCallback(code, state, redirectUri, cookies);
 
-		// The OAuth route handler throws a redirect, so this won't be reached
-		return result;
+		// This should never be reached since handleGoogleAuthCallback throws a redirect
+		return json({ error: 'Unexpected error' }, { status: 500 });
 	} catch (error) {
-		logger.error('Error in Google OAuth callback:', error);
-		return redirect(302, `/auth/error?message=${encodeURIComponent((error as Error).message)}`);
+		// Serialize error for logging
+		const errorInfo = serializeError(error);
+		logger.error('Error in Google OAuth callback:', {
+			message: errorInfo.message,
+			stack: errorInfo.stack,
+			error: errorInfo.details,
+			type: errorInfo.type
+		});
+
+		// Handle redirect errors properly
+		handleAuthError(error, 'Authentication failed');
 	}
 }
