@@ -38,8 +38,15 @@ export const POST = requireAuthApi(async ({ request, locals }: RequestEvent) => 
 		}
 
 		// Validate visibility if provided
-		if (visibility && visibility !== 'private' && visibility !== 'public') {
-			const errorResponse: ApiError = { error: 'Visibility must be "private" or "public"' };
+		if (
+			visibility &&
+			visibility !== 'private' &&
+			visibility !== 'public' &&
+			visibility !== 'protected'
+		) {
+			const errorResponse: ApiError = {
+				error: 'Visibility must be "private", "public", or "protected"'
+			};
 			return json(errorResponse, { status: 400 });
 		}
 

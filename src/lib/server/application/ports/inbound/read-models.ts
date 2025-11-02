@@ -37,13 +37,13 @@ export interface LibraryReadModel {
 	/**
 	 * Search notebooks by title with optional visibility filtering
 	 * @param query - Search query string (case-insensitive partial match)
-	 * @param visibility - Optional visibility filter ('private', 'public', or undefined for all)
+	 * @param visibility - Optional visibility filter ('private', 'public', 'protected', or undefined for all)
 	 * @param userId - Optional user ID to filter private notebooks (only shows user's private notebooks)
 	 * @returns Array of matching notebooks
 	 */
 	searchNotebooks(
 		query: string,
-		visibility?: 'private' | 'public',
+		visibility?: 'private' | 'public' | 'protected',
 		userId?: string | null
 	): Promise<Notebook[]>;
 }

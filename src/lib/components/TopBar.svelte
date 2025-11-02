@@ -22,7 +22,7 @@
 	}: {
 		title?: string;
 		description?: string;
-		visibility?: 'private' | 'public';
+		visibility?: 'private' | 'public' | 'protected';
 		lastEdited?: Date;
 		version?: string;
 		user?: User | null;
@@ -32,7 +32,7 @@
 	// Track current values for display
 	let currentTitle = $state(title);
 	let currentDescription = $state(description);
-	let currentVisibility = $state<'private' | 'public'>(visibility);
+	let currentVisibility = $state<'private' | 'public' | 'protected'>(visibility);
 
 	// Update when props change
 	$effect(() => {

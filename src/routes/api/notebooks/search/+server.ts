@@ -10,7 +10,7 @@ import type { SearchNotebooksResponse, ApiError } from '$lib/types/api-contracts
  * Query parameters:
  * - q: Search query string (required)
  * - limit: Maximum results (optional, default: 20)
- * - visibility: Filter by visibility - 'private', 'public', or 'all' (optional)
+ * - visibility: Filter by visibility - 'private', 'public', 'protected', or 'all' (optional)
  */
 export async function GET({ url, locals }: RequestEvent): Promise<Response> {
 	try {
@@ -20,6 +20,7 @@ export async function GET({ url, locals }: RequestEvent): Promise<Response> {
 		const visibilityParam = url.searchParams.get('visibility') as
 			| 'private'
 			| 'public'
+			| 'protected'
 			| 'all'
 			| null;
 
@@ -45,9 +46,9 @@ export async function GET({ url, locals }: RequestEvent): Promise<Response> {
 		}
 
 		// Validate visibility
-		if (visibilityParam && !['private', 'public', 'all'].includes(visibilityParam)) {
+		if (visibilityParam && !['private', 'public', 'protected', 'all'].includes(visibilityParam)) {
 			const errorResponse: ApiError = {
-				error: "Visibility must be 'private', 'public', or 'all'"
+				error: "Visibility must be 'private', 'public', 'protected', or 'all'"
 			};
 			return json(errorResponse, { status: 400 });
 		}
@@ -56,8 +57,12 @@ export async function GET({ url, locals }: RequestEvent): Promise<Response> {
 		const userId = locals.user?.id || null;
 
 		// Determine visibility filter
-		let visibility: 'private' | 'public' | undefined = undefined;
-		if (visibilityParam === 'private' || visibilityParam === 'public') {
+		let visibility: 'private' | 'public' | 'protected' | undefined = undefined;
+		if (
+			visibilityParam === 'private' ||
+			visibilityParam === 'public' ||
+			visibilityParam === 'protected'
+		) {
 			visibility = visibilityParam;
 		}
 

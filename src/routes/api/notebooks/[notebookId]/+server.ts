@@ -31,6 +31,28 @@ export async function GET({ params, locals }: RequestEvent): Promise<Response> {
 			return json(errorResponse, { status: 404 });
 		}
 
+		// Check access control (view or import - this endpoint serves both purposes)
+		const userId = locals.user?.id || null;
+		const isAuthenticated = locals.isAuthenticated;
+		const canView = locals.notebookAccessControlService.canView(
+			notebookMetadata,
+			userId,
+			isAuthenticated
+		);
+		const canImport = locals.notebookAccessControlService.canImport(
+			notebookMetadata,
+			userId,
+			isAuthenticated
+		);
+
+		if (!canView && !canImport) {
+			logger.warn(
+				`Access denied: User ${userId || 'anonymous'} cannot view notebook ${notebookId}`
+			);
+			const errorResponse: ApiError = { error: 'Access denied' };
+			return json(errorResponse, { status: 403 });
+		}
+
 		// Use projection middleware to get cells
 		return withProjection(notebookId, locals.projectionManager, async (readModel) => {
 			const cells = await readModel.getCells(notebookId);
@@ -84,6 +106,19 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			logger.error(`Notebook not found: ${notebookId}`);
 			const errorResponse: ApiError = { error: 'Notebook not found' };
 			return json(errorResponse, { status: 404 });
+		}
+
+		// Check access control (edit permission)
+		const userId = locals.user?.id || null;
+		const isAuthenticated = locals.isAuthenticated;
+		const canEdit = locals.notebookAccessControlService.canEdit(notebook, userId, isAuthenticated);
+
+		if (!canEdit) {
+			logger.warn(
+				`Access denied: User ${userId || 'anonymous'} cannot edit notebook ${notebookId}`
+			);
+			const errorResponse: ApiError = { error: 'Access denied' };
+			return json(errorResponse, { status: 403 });
 		}
 
 		// Update via library service

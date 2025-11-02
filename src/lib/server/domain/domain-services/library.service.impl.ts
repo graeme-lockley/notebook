@@ -23,7 +23,7 @@ export class LibraryServiceImpl implements LibraryDomainService {
 	createNotebookEvent(
 		title: string,
 		description?: string,
-		visibility: 'private' | 'public' = 'public',
+		visibility: 'private' | 'public' | 'protected' = 'public',
 		ownerId: string | null = null
 	): NotebookCreatedEvent {
 		const notebookId = this.generateNotebookId();
@@ -34,8 +34,8 @@ export class LibraryServiceImpl implements LibraryDomainService {
 		}
 
 		// Validate visibility
-		if (visibility !== 'private' && visibility !== 'public') {
-			throw new Error('Visibility must be "private" or "public"');
+		if (visibility !== 'private' && visibility !== 'public' && visibility !== 'protected') {
+			throw new Error('Visibility must be "private", "public", or "protected"');
 		}
 
 		// Create event
@@ -74,7 +74,11 @@ export class LibraryServiceImpl implements LibraryDomainService {
 
 	createUpdateNotebookEvent(
 		notebookId: string,
-		updates: Partial<{ title: string; description: string; visibility: 'private' | 'public' }>
+		updates: Partial<{
+			title: string;
+			description: string;
+			visibility: 'private' | 'public' | 'protected';
+		}>
 	): NotebookUpdatedEvent {
 		this.getNotebookId(notebookId);
 
@@ -90,8 +94,12 @@ export class LibraryServiceImpl implements LibraryDomainService {
 
 		// Validate visibility if provided
 		if (updates.visibility !== undefined) {
-			if (updates.visibility !== 'private' && updates.visibility !== 'public') {
-				throw new Error('Visibility must be "private" or "public"');
+			if (
+				updates.visibility !== 'private' &&
+				updates.visibility !== 'public' &&
+				updates.visibility !== 'protected'
+			) {
+				throw new Error('Visibility must be "private", "public", or "protected"');
 			}
 		}
 

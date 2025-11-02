@@ -15,7 +15,7 @@ export class NotebookSearchService {
 		query: string,
 		options: {
 			limit?: number;
-			visibility?: 'private' | 'public' | 'all';
+			visibility?: 'private' | 'public' | 'protected' | 'all';
 		} = {}
 	): Promise<SearchNotebooksResponse> {
 		const { limit = 20, visibility } = options;

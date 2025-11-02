@@ -53,7 +53,7 @@ export interface ApiNotebook {
 export interface CreateNotebookRequest {
 	title: string;
 	description?: string;
-	visibility?: 'private' | 'public';
+	visibility?: 'private' | 'public' | 'protected';
 }
 
 export interface CreateNotebookResponse {
@@ -79,7 +79,7 @@ export interface ListNotebooksResponse {
 export interface SearchNotebooksRequest {
 	q: string; // Search query
 	limit?: number; // Maximum results (default: 20)
-	visibility?: 'private' | 'public' | 'all'; // Filter by visibility
+	visibility?: 'private' | 'public' | 'protected' | 'all'; // Filter by visibility
 }
 
 export interface SearchNotebooksResponse {
@@ -99,7 +99,7 @@ export interface GetNotebookResponse {
 	id: string;
 	title: string;
 	description?: string;
-	visibility?: 'private' | 'public';
+	visibility?: 'private' | 'public' | 'protected';
 	createdAt: string; // ISO 8601 string
 	updatedAt: string; // ISO 8601 string
 	cells: ApiCell[];
@@ -112,7 +112,7 @@ export interface GetNotebookResponse {
 export interface UpdateNotebookRequest {
 	title?: string;
 	description?: string;
-	visibility?: 'private' | 'public';
+	visibility?: 'private' | 'public' | 'protected';
 }
 
 export interface UpdateNotebookResponse {

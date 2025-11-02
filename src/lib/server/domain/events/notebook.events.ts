@@ -1,6 +1,6 @@
 import type { CellKind } from '../value-objects/CellKind';
 
-export type NotebookVisibility = 'private' | 'public';
+export type NotebookVisibility = 'private' | 'public' | 'protected';
 
 export interface NotebookCreatedEvent {
 	type: 'notebook.created';

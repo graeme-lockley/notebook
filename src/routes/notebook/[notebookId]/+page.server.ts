@@ -12,6 +12,35 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	logger.debug(`Notebook page: User ${user?.id || 'null'}, authenticated: ${isAuthenticated}`);
 
+	// Check access control before loading the page
+	const notebook = locals.libraryService.getNotebook(params.notebookId);
+	if (!notebook) {
+		logger.error(`Notebook not found: ${params.notebookId}`);
+		return {
+			notebookId: params.notebookId,
+			error: 'Notebook not found',
+			user: locals.userSerializationService.serializeForClient(user),
+			isAuthenticated,
+			sessionId
+		};
+	}
+
+	const userId = user?.id || null;
+	const canView = locals.notebookAccessControlService.canView(notebook, userId, isAuthenticated);
+
+	if (!canView) {
+		logger.warn(
+			`Access denied: User ${userId || 'anonymous'} cannot view notebook ${params.notebookId}`
+		);
+		return {
+			notebookId: params.notebookId,
+			error: 'Access denied',
+			user: locals.userSerializationService.serializeForClient(user),
+			isAuthenticated,
+			sessionId
+		};
+	}
+
 	// Emit notebook.viewed event if user is authenticated
 	if (isAuthenticated && user) {
 		try {

@@ -13,7 +13,7 @@
 		isOpen: boolean;
 		currentTitle: string;
 		currentDescription: string;
-		visibility?: 'private' | 'public';
+		visibility?: 'private' | 'public' | 'protected';
 	} = $props();
 
 	const dispatch = createEventDispatcher<{
@@ -23,7 +23,7 @@
 
 	let notebookName = $state('');
 	let notebookDescription = $state('');
-	let notebookVisibility = $state<'private' | 'public'>('public');
+	let notebookVisibility = $state<'private' | 'public' | 'protected'>('public');
 	let nameInput = $state<HTMLInputElement>();
 
 	function handleUpdate() {
@@ -125,8 +125,11 @@
 						class="form-input"
 						data-testid="notebook-visibility-input"
 					>
-						<option value="private">Private (Only you can see and edit)</option>
-						<option value="public">Public (Everyone can see, only you can edit)</option>
+						<option value="private">Private (Only you can see, view, edit, and import)</option>
+						<option value="protected"
+							>Protected (Everyone can search, view, and import, only you can edit)</option
+						>
+						<option value="public">Public (Everyone can search, view, edit, and import)</option>
 					</select>
 				</div>
 			</div>

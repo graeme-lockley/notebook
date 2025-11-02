@@ -11,7 +11,7 @@
 		visibility: initialVisibility = 'all'
 	}: {
 		isOpen: boolean;
-		visibility?: 'private' | 'public' | 'all';
+		visibility?: 'private' | 'public' | 'protected' | 'all';
 	} = $props();
 
 	const dispatch = createEventDispatcher<{
@@ -24,7 +24,7 @@
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
 	let selectedIndex = $state(-1);
-	let visibility = $state<'private' | 'public' | 'all'>(initialVisibility);
+	let visibility = $state<'private' | 'public' | 'protected' | 'all'>(initialVisibility);
 	let searchInput = $state<HTMLInputElement>();
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -116,7 +116,7 @@
 
 	function handleVisibilityChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
-		visibility = target.value as 'private' | 'public' | 'all';
+		visibility = target.value as 'private' | 'public' | 'protected' | 'all';
 		// Re-search with new visibility filter
 		if (searchQuery.trim()) {
 			performSearch(searchQuery);
@@ -193,6 +193,7 @@
 				>
 					<option value="all">All Notebooks</option>
 					<option value="public">Public Only</option>
+					<option value="protected">Protected Only</option>
 					<option value="private">Private Only</option>
 				</select>
 			</div>

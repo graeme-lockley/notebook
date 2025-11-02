@@ -40,7 +40,7 @@ export interface Cell extends BaseCell {
 export interface NotebookOptions {
 	title?: string;
 	description?: string;
-	visibility?: 'private' | 'public';
+	visibility?: 'private' | 'public' | 'protected';
 	createdAt?: Date;
 	updatedAt?: Date;
 }
@@ -286,7 +286,7 @@ export class ReactiveNotebook {
 	private _cells: ReactiveCell[] = [];
 	private _title: string;
 	private _description: string;
-	private _visibility: 'private' | 'public';
+	private _visibility: 'private' | 'public' | 'protected';
 	private _createdAt: Date;
 	private _updatedAt: Date;
 	private _version = 0;
@@ -321,7 +321,7 @@ export class ReactiveNotebook {
 		return this._description;
 	}
 
-	get visibility(): 'private' | 'public' {
+	get visibility(): 'private' | 'public' | 'protected' {
 		return this._visibility;
 	}
 
@@ -491,7 +491,7 @@ export class ReactiveNotebook {
 	updateMetadata(updates: {
 		title?: string;
 		description?: string;
-		visibility?: 'private' | 'public';
+		visibility?: 'private' | 'public' | 'protected';
 	}): void {
 		if (updates.title !== undefined) {
 			this._title = updates.title;

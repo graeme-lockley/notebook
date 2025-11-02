@@ -1,6 +1,6 @@
 import type { UserId } from './UserId';
 
-export type NotebookVisibility = 'private' | 'public';
+export type NotebookVisibility = 'private' | 'public' | 'protected';
 
 export type Notebook = {
 	id: string;

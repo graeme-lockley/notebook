@@ -10,10 +10,10 @@ import { apiRequest } from './api-client';
 export async function createNotebook(
 	name: string,
 	description: string | undefined,
-	visibility: 'private' | 'public' = 'private'
+	visibility: 'private' | 'public' | 'protected' = 'private'
 ): Promise<CreateNotebookResponse> {
 	const response = await apiRequest<
-		{ title: string; description: string; visibility: 'private' | 'public' },
+		{ title: string; description: string; visibility: 'private' | 'public' | 'protected' },
 		CreateNotebookResponse
 	>('/api/notebooks', 'POST', {
 		title: name,
@@ -30,7 +30,7 @@ export async function createNotebook(
 
 export async function updateNotebook(
 	notebookId: string,
-	updates: { title?: string; description?: string; visibility?: 'private' | 'public' }
+	updates: { title?: string; description?: string; visibility?: 'private' | 'public' | 'protected' }
 ): Promise<UpdateNotebookResponse> {
 	const response = await apiRequest<UpdateNotebookRequest, UpdateNotebookResponse>(
 		`/api/notebooks/${notebookId}`,

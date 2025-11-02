@@ -38,7 +38,7 @@ export class InMemoryLibraryReadModel implements LibraryReadModel {
 
 	async searchNotebooks(
 		query: string,
-		visibility?: 'private' | 'public',
+		visibility?: 'private' | 'public' | 'protected',
 		userId?: string | null
 	): Promise<Notebook[]> {
 		if (!query || query.trim() === '') {
@@ -62,19 +62,22 @@ export class InMemoryLibraryReadModel implements LibraryReadModel {
 		}
 
 		// Apply privacy rules:
-		// - Public notebooks: visible to everyone
+		// - Public notebooks: visible to everyone (anonymous or authenticated)
+		// - Protected notebooks: visible to everyone (anonymous or authenticated)
 		// - Private notebooks: only visible to the owner
 		if (userId !== undefined) {
 			matchingNotebooks = matchingNotebooks.filter((notebook) => {
-				if (notebook.visibility === 'public') {
-					return true; // Public notebooks are visible to everyone
+				if (notebook.visibility === 'public' || notebook.visibility === 'protected') {
+					return true; // Public and protected notebooks are visible to everyone
 				}
 				// Private notebooks: only show if user is the owner
 				return notebook.ownerId === userId;
 			});
 		} else {
-			// If no userId provided, only show public notebooks
-			matchingNotebooks = matchingNotebooks.filter((notebook) => notebook.visibility === 'public');
+			// If no userId provided (anonymous), only show public and protected notebooks
+			matchingNotebooks = matchingNotebooks.filter(
+				(notebook) => notebook.visibility === 'public' || notebook.visibility === 'protected'
+			);
 		}
 
 		logger.debug(

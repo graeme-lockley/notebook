@@ -20,7 +20,7 @@ export const LIBRARY_EVENT_SCHEMAS: EventSchema[] = [
 			notebookId: { type: 'string' },
 			title: { type: 'string' },
 			description: { type: 'string' },
-			visibility: { type: 'string', enum: ['private', 'public'] },
+			visibility: { type: 'string', enum: ['private', 'public', 'protected'] },
 			ownerId: { type: ['string', 'null'] },
 			createdAt: { type: 'string', format: 'date-time' }
 		},

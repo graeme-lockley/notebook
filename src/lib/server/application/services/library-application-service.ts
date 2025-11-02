@@ -31,7 +31,7 @@ export class LibraryApplicationService {
 	async createNotebook(
 		title: string,
 		description?: string,
-		visibility: 'private' | 'public' = 'public',
+		visibility: 'private' | 'public' | 'protected' = 'public',
 		ownerId: string | null = null
 	): Promise<[string, string]> {
 		// Create domain event
@@ -56,7 +56,11 @@ export class LibraryApplicationService {
 
 	async updateNotebook(
 		notebookId: string,
-		updates: Partial<{ title: string; description: string; visibility: 'private' | 'public' }>
+		updates: Partial<{
+			title: string;
+			description: string;
+			visibility: 'private' | 'public' | 'protected';
+		}>
 	): Promise<string> {
 		// Create domain event
 		const event = this.libraryService.createUpdateNotebookEvent(notebookId, updates);

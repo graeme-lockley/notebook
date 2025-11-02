@@ -16,12 +16,16 @@ export interface LibraryDomainService {
 	createNotebookEvent(
 		title: string,
 		description?: string,
-		visibility?: 'private' | 'public',
+		visibility?: 'private' | 'public' | 'protected',
 		ownerId?: string | null
 	): NotebookCreatedEvent;
 	createUpdateNotebookEvent(
 		notebookId: string,
-		updates: Partial<{ title: string; description: string; visibility: 'private' | 'public' }>
+		updates: Partial<{
+			title: string;
+			description: string;
+			visibility: 'private' | 'public' | 'protected';
+		}>
 	): NotebookUpdatedEvent;
 	createDeleteNotebookEvent(notebookId: string): NotebookDeletedEvent;
 

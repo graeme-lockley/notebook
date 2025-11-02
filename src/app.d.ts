@@ -25,6 +25,7 @@ declare global {
 			userNotebookViewReadModel: import('$lib/server/application/ports/inbound/user-notebook-view-read-model').UserNotebookViewReadModel;
 			recentNotebooksService: import('$lib/server/application/services/recent-notebooks.service').RecentNotebooksService;
 			userSerializationService: import('$lib/server/application/services/user-serialization.service').UserSerializationService;
+			notebookAccessControlService: import('$lib/server/application/services/notebook-access-control.service').NotebookAccessControlService;
 
 			// Authentication context (injected by middleware)
 			user: import('$lib/server/domain/value-objects').User | null;

@@ -27,6 +27,19 @@ export async function PATCH({ params, request, locals }: RequestEvent): Promise<
 			return json(errorResponse, { status: 404 });
 		}
 
+		// Check access control (edit permission)
+		const userId = locals.user?.id || null;
+		const isAuthenticated = locals.isAuthenticated;
+		const canEdit = locals.notebookAccessControlService.canEdit(notebook, userId, isAuthenticated);
+
+		if (!canEdit) {
+			logger.warn(
+				`Access denied: User ${userId || 'anonymous'} cannot edit notebook ${notebookId}`
+			);
+			const errorResponse: ApiError = { error: 'Access denied' };
+			return json(errorResponse, { status: 403 });
+		}
+
 		// If position is provided, this is a move operation
 		if (position !== undefined) {
 			const result = await locals.notebookCommandService.moveCell(notebookId, cellId, position);
@@ -87,6 +100,19 @@ export async function DELETE({ params, locals }: RequestEvent): Promise<Response
 		if (!notebook) {
 			const errorResponse: ApiError = { error: 'Notebook not found' };
 			return json(errorResponse, { status: 404 });
+		}
+
+		// Check access control (edit permission)
+		const userId = locals.user?.id || null;
+		const isAuthenticated = locals.isAuthenticated;
+		const canEdit = locals.notebookAccessControlService.canEdit(notebook, userId, isAuthenticated);
+
+		if (!canEdit) {
+			logger.warn(
+				`Access denied: User ${userId || 'anonymous'} cannot edit notebook ${notebookId}`
+			);
+			const errorResponse: ApiError = { error: 'Access denied' };
+			return json(errorResponse, { status: 403 });
 		}
 
 		const result = await locals.notebookCommandService.deleteCell(notebookId, cellId);

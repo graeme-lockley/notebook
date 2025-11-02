@@ -44,6 +44,7 @@ import { UserNotebookViewProjector } from '$lib/server/application/projectors/us
 import type { UserNotebookViewReadModel } from '$lib/server/application/ports/inbound/user-notebook-view-read-model';
 import { RecentNotebooksService } from '$lib/server/application/services/recent-notebooks.service';
 import { UserSerializationService } from '$lib/server/application/services/user-serialization.service';
+import { NotebookAccessControlService } from '$lib/server/application/services/notebook-access-control.service';
 
 let isInitialized = false;
 let libraryService: LibraryApplicationService;
@@ -65,6 +66,7 @@ let oauthRouteHandler: OAuthRouteHandler | null;
 let userNotebookViewReadModel: UserNotebookViewReadModel;
 let recentNotebooksService: RecentNotebooksService;
 let userSerializationService: UserSerializationService;
+let notebookAccessControlService: NotebookAccessControlService;
 // Initialize event store
 const eventStore: EventStore = eventStoreClient();
 
@@ -94,6 +96,7 @@ export async function handle({ event, resolve }) {
 	// Inject utility services
 	event.locals.recentNotebooksService = recentNotebooksService;
 	event.locals.userSerializationService = userSerializationService;
+	event.locals.notebookAccessControlService = notebookAccessControlService;
 
 	// Process authentication for all requests (non-blocking - doesn't require auth)
 	// This sets user, isAuthenticated, and sessionId in event.locals for page loads
@@ -135,6 +138,7 @@ async function initializeServices() {
 			libraryReadModel
 		);
 		userSerializationService = new UserSerializationService();
+		notebookAccessControlService = new NotebookAccessControlService();
 
 		logger.info('Event bus and library read model initialized');
 
