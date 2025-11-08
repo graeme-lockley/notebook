@@ -32,6 +32,7 @@
 </script>
 
 <svelte:head>
+	<title>NoteForm</title>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 

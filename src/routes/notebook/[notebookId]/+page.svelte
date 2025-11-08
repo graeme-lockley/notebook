@@ -36,9 +36,10 @@
 	let error = $state<string | null>(null);
 
 	// Reactive values for notebook metadata
-	let notebookTitle = $derived(notebookStore?.notebook.title ?? 'Untitled');
+	let notebookTitle = $derived(notebookStore?.notebook.title?.trim() || 'Untitled Notebook');
 	let notebookDescription = $derived(notebookStore?.notebook.description ?? '');
 	let notebookVisibility = $derived(notebookStore?.notebook.visibility ?? 'public');
+	let notebookPageTitle = $derived(notebookStore ? `NoteForm – ${notebookTitle}` : 'NoteForm');
 
 	// Services (initialized when needed)
 	let wsConnection = $state<WebSocketConnectionService | undefined>(undefined);
@@ -279,6 +280,10 @@
 		await commandService.duplicateCell(cellId);
 	}
 </script>
+
+<svelte:head>
+	<title>{notebookPageTitle}</title>
+</svelte:head>
 
 <div class="notebook-page">
 	{#if loading}
